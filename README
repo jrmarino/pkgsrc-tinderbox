@@ -1,0 +1,40 @@
+==========================
+ PKGSRC TINDERBOX PROJECT
+==========================
+
+The purpose of this project is to adapt FreeBSD's package building system
+"Tinderbox" to function under pkgsrc.  As I see it, there are three main
+platforms when it comes to pkgsrc: NetBSD, DragonFlyBSD, and OpenIndiana.
+There are likely some smaller Linux distros that use it as a primary package
+system as well.
+
+I don't think the Bulkbuild utility within pkgsrc serves the same purpose as
+Tinderbox, and frankly I'm a bit shocked that nobody has seriously tried to
+port it yet.
+
+We could take the approach to try to modularize Tinderbox such that it has
+platform-specific configuration files and to feed the patches back upstream. 
+A lot of pkgsrc using platforms will have the same updates, but I suspect
+there are more than a few platform-specific changes.  I'd like to get a
+working patchset before potentially approaching Joe Marcus Clarke to
+considering expanding official support to other platforms.
+
+The approach will be to track release versions of FreeBSD Tinderbox and
+maintain a set of platform-specific files which can be used to generate
+patches.  At this time, I don't intend to have one Tinderbox package support
+multiple platforms, which is normal way pkgsrc works.  I'm primarily a
+DragonFly BSD developer, so I'm going to develop
+pkgtools/tinderbox-dragonfly.  The package will filter out any platform that
+is not *-dragonfly*.
+
+If somebody gets enthusiastic about this project, additional ports such as
+pkgtools/tinderbox-netbsd and pkgtools/tinderbox-illumos could be created,
+one for each platform-specific Tinderbox.
+
+links:
+http://tinderbox.marcuscom.com
+http://www.marcuscom.com:8080/cgi-bin/cvsweb.cgi/portstools/tinderbox/
+http://www.netbsd.org/docs/software/packages.html
+
+
+John Marino
