@@ -1,6 +1,6 @@
-
-===============================================================================
-pkgtools/tinderbox is now installed, but it requires some additional setup.
+===========================================================================
+$NetBSD$
+pkgtools/tinderbox is installed, but it requires some additional setup.
 
 ****************************************************
 Please do read: ${PREFIX}/tinderbox/scripts/README
@@ -45,5 +45,4 @@ Alias = /tb/:${PREFIX}/tinderbox/scripts/webui
 
   Check your system by going to http://localhost/tb/
 
-=============================================================================
-
+===========================================================================

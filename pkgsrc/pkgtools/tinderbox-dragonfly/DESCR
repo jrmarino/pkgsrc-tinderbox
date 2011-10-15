@@ -5,7 +5,7 @@ One can define multiple jails (base system versions) and multiple portstrees
 (portstree = pkgsrc tree).  The combination of jail and portstree is called
 a build.  A Tinderbox jail is not what is understood as a jail in *BSD, it
 is in fact a given world in a chroot.  TInderbox supports automatic tracking
-of dependencies and only rebuilds packages that changed since last run. 
+of dependencies and only rebuilds packages that changed since last run.
 Tinderbox has support for email notification of failed builds.
 
 Tinderbox is designed to easily provide package sets of needed ports for

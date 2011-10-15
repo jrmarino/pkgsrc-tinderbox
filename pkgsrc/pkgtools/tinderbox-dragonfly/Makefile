@@ -3,8 +3,8 @@
 
 DISTNAME=	tinderbox-dragonfly-${TBOX_VERSION}
 CATEGORIES=	pkgtools
-MASTERSITES=	http://tinderbox.marcuscom.com
-EXTRACT_SUFX=	.tar.gz
+MASTER_SITES=	http://tinderbox.marcuscom.com/
+DISTFILES=	tinderbox-${TBOX_VERSION}.tar.gz
 
 MAINTAINER=	draco@marino.st
 HOMEPAGE=	http://tinderbox/marcuscom.com
@@ -12,11 +12,12 @@ COMMENT=	Tinderbox package building system (pkgsrc)
 LICENSE=	modified-bsd
 
 TBOX_VERSION=		3.4.r1
-PKG_DESTDIR_SUPPORT=	user-destdir	
+PKG_DESTDIR_SUPPORT=	user-destdir
 ONLY_FOR_PLATFORM=	DragonFly-*-*
 
 USE_TOOLS+=		perl
 NO_BUILD=		yes
+RCD_SCRIPTS=		tinderd
 
 .include "options.mk"
 
@@ -33,12 +34,13 @@ post-patch:
 	cd ${WRKSRC} && ${FIND} -E . -regex '.*(orig|bak)' -exec ${RM} {} \;
 
 do-install:
-	${MKDIR} ${DESTDIR}${PREFIX}/tinderbox/scripts
+	${AUTO_MKDIRS} ${DESTDIR}${PREFIX}/tinderbox/scripts
 	${INSTALL_MAN} ${WRKSRC}/man/man1/* \
 	               ${DESTDIR}${PREFIX}/${PKGMANDIR}/man1
 	${RM} -R ${WRKSRC}/man
-	${INSTALL_SCRIPT} ${WRKSRC}/etc/rc.d/tinderd \
-		          ${DESTDIR}${PREFIX}/etc/rc.d/tinderbox
+	${INSTALL} ${WRKSRC}/etc/rc.d/tinderd \
+		   ${DESTDIR}${PREFIX}/share/examples/rc.d
+	${RM} -R ${WRKSRC}/etc/rc.d
 	${INSTALL} ${WRKSRC}/* ${DESTDIR}${PREFIX}/tindexbox/scripts
 	#${INSTALL} ${WRKSRC}/.version ${DESTDIR}${PREFIX}/tinderbox/scripts
 
