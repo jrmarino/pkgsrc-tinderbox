@@ -1,0 +1,36 @@
+<!-- $MCom: portstools/tinderbox/webui/templates/default/tinderstyle.css,v 1.10.2.1 2008/12/21 17:27:30 beat Exp $ //-->
+
+body { background-color: white }
+table { border: 2px solid black; border-collapse: collapse }
+
+table.pattern { background-color: #FFF; border-style: none; }
+table.pattern td { border-width: 0px; }
+
+a { color: darkblue; }
+a:visited { color: darkblue; }
+
+.noborder { border: 0}
+th { font-size:10px; background-color: rgb(255,238,238) }
+td { font-size:12px; border: 1px solid gray; padding-left: 3px; padding-right: 3px }
+
+td.port_success { background-color: #E8FFE8 }
+td.port_dud { background-color: yellow; font-weight: bold; text-align: center }
+td.port_leftovers { background-color: #FFFFD8; color: red; font-weight: bold; text-align: center }
+td.port_broken { background-color: #FFFFD8; color: red; font-weight: bold; text-align: center }
+td.port_fail { background-color: red }
+td.port_depend { background-color: orange }
+td.port_default { background-color: grey }
+
+td.build_portbuild { background-color: green }
+td.build_prepare { background-color: lightblue }
+td.build_default {  }
+
+td.queue_entry_enqueued { background-color: grey }
+td.queue_entry_processing { background-color: green }
+td.queue_entry_success { background-color: #E8FFE8 }
+td.queue_entry_fail { background-color: red }
+
+td.fail_reason_COMMON { background-color: red; color: white}
+a.fail_reason_COMMON { color: white }
+td.fail_reason_RARE { background-color: orange }
+td.fail_reason_TRANSIENT { background-color: yellow }

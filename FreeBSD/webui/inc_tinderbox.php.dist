@@ -1,0 +1,43 @@
+<?php
+
+# Configurable options
+
+# page title
+$tinderbox_name	 = 'Example Tinderbox';
+# used in page header
+$tinderbox_title = 'Example Tinderbox';
+
+# reload interval for "Current And Latest Builds" page while no port is
+# building in miliseconds
+$reload_interval_latest='300000';
+# reload interval for "Current And Latest Builds" page while a port is building
+# in miliseconds
+$reload_interval_current='60000';
+# Define number of shown ports per page
+#$list_limit_nr='1000';
+
+$wwwrootdir	 = dirname( __FILE__ );
+$rootdir	 = realpath( $wwwrootdir . '/../..' );
+$protocol	 = isset( $_SERVER['HTTPS'] ) ? 'https' : 'http';
+$host		 = $_SERVER['SERVER_NAME'];
+$wwwrooturi	 = $protocol . '://' . $host;
+if ($_SERVER['SERVER_PORT'] != 80)
+	$wwwrooturi	.= ':' . $_SERVER['SERVER_PORT'];
+$wwwrooturi	.= dirname( $_SERVER['SCRIPT_NAME'] );
+# Comment out the next line, and uncomment the line after it to enable
+# the paefchen frontend template.
+$template_dir	 = 'default';
+#$template_dir	= 'paefchen';
+
+# These should probably be left alone
+$pkguri		 = $wwwrooturi.'/packages';
+$pkgdir		 = $rootdir.'/packages';
+$loguri		 = $wwwrooturi.'/logs';
+$logdir		 = $rootdir.'/logs';
+$errorloguri	 = $wwwrooturi.'/errors';
+$errorlogdir	 = $rootdir.'/errors';
+$templatesdir	 = $wwwrootdir.'/templates/'.$template_dir;
+$templatesuri	 = $wwwrooturi.'/templates/'.$template_dir;
+#$with_timer	 = 1;
+
+?>

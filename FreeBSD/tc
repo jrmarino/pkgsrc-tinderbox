@@ -1,0 +1,100 @@
+#!/bin/sh
+#
+# Copyright (c) 2008 Ade Lovett <ade@FreeBSD.org>
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions
+# are met:
+# 1. Redistributions of source code must retain the above copyright
+#    notice, this list of conditions and the following disclaimer.
+# 2. Redistributions in binary form must reproduce the above copyright
+#    notice, this list of conditions and the following disclaimer in the
+#    documentation and/or other materials provided with the distribution.
+#
+# THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
+# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
+# FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+# DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+# OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+# HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+# LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+# OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+# SUCH DAMAGE.
+#
+# $MCom: portstools/tinderbox/tc,v 1.83.2.4 2009/02/07 22:40:09 marcus Exp $
+
+# Make sure we're root.  Things aren't going to work so well if not.
+if [ `id -u` != 0 ]; then
+    echo "tc: must run as root"
+    exit 1
+fi
+
+# Find out where we're located, and set prefix accordingly
+# This is available to the perl code as $ENV{'pb'} so we don't
+# need to find it out all over again
+pb=$0
+[ -z "$(echo "${pb}" | sed 's![^/]!!g')" ] && \
+pb=$(type "$pb" | sed 's/^.* //g')
+pb=$(realpath $(dirname $pb))
+pb=${pb%%/scripts}
+export pb
+
+# Load in helper functions
+. ${pb}/scripts/lib/tinderlib.sh
+
+# Load in tc shell functions
+. ${pb}/scripts/lib/tc_command.sh
+
+# Make sure we have at least a command to operate on
+if [ $# -lt 1 ]; then
+    echo "usage: tc <command> [<arguments> ...]"
+    exit 1
+fi
+
+# extract the command
+command=$1
+shift
+rc=0
+
+if [ x"${command}" != x"Setup" -a \( ! -f ${pb}/scripts/ds.ph -o ! -f ${pb}/scripts/tinderbox.ph \) ]; then
+    tinderEcho "ERROR: Please run \"${pb}/scripts/tc Setup\" before running any other commands."
+    exit 1
+fi
+
+# pass control over to the relevant subprogram
+case ${command} in
+
+# The first set of commands are shell-based (from tc_command.sh)
+# If we fail, punt over to the perl dispatcher for usage handling
+init|\
+Setup|\
+Upgrade|\
+createBuild|\
+createJail|\
+createPortsTree|\
+makeJail|\
+resetBuild|\
+tinderbuild|\
+addPort|\
+rescanPorts|\
+enterBuild|\
+tbcleanup|\
+tbkill|\
+copyBuild|\
+tbversion|\
+updatePortsTree)
+		${command} ${1+"$@"} || \
+		    perl ${pb}/scripts/lib/tc_command.pl ${command} ${1+"$@"}
+		rc=$?
+		;;
+
+# Otherwise we punt over to the perl dispatcher
+*)		perl ${pb}/scripts/lib/tc_command.pl ${command} ${1+"$@"}
+		rc=$?
+		;;
+
+esac
+exit ${rc}

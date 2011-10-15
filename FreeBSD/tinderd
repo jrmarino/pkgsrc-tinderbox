@@ -1,0 +1,76 @@
+#!/bin/sh -T
+
+pb=$0
+[ -z "$(echo "${pb}" | sed 's![^/]!!g')" ] && \
+pb=$(type "$pb" | sed 's/^.* //g')
+pb=$(realpath $(dirname $pb))
+pb=${pb%%/scripts}
+
+. ${pb}/scripts/lib/tinderlib.sh
+
+TINDERBUILD_ARGS="$*"
+eval $(${pb}/scripts/tc configTinderd)
+eval $(${pb}/scripts/tc configLog)
+TINDERD_SLEEPTIME=${TINDERD_SLEEPTIME:=120}
+TINDERD_LOGFILE=${TINDERD_LOGFILE:="/dev/null"}
+
+if echo ${TINDERD_LOGFILE} | grep -qv '^/' ; then
+    if [ -n "${LOG_DIRECTORY}" ]; then
+	TINDERD_LOGFILE=$(realpath "${LOG_DIRECTORY}/${TINDERD_LOGFILE}")
+	ld=$(dirname ${TINDERD_LOGFILE})
+	mkdir -p ${ld}
+    fi
+fi
+
+main_loop () {
+
+    while true
+    do
+	trap "" 1
+
+	ENTRY=$(${pb}/scripts/tc listBuildPortsQueue -s ENQUEUED -r | head -1)
+	ID=$(echo ${ENTRY} | cut -d: -f1)
+	USER=$(echo ${ENTRY} | cut -d: -f2)
+	BUILD=$(echo ${ENTRY} | cut -d: -f3)
+	PORT=$(echo ${ENTRY} | cut -d: -f4)
+	MAIL=$(echo ${ENTRY} | cut -d: -f5)
+
+	if [ -n "${BUILD}" -a -n "${PORT}" -a -n "${ID}" ] ; then
+	    tinderEcho "INFO: Going to build ${PORT} on ${BUILD}"
+	    ${pb}/scripts/tc updateBuildPortsQueueEntryStatus \
+			-i "${ID}" -s PROCESSING
+	    if ! ${pb}/scripts/tc addPort -b "${BUILD}" -d "${PORT}"; then
+	        ${pb}/scripts/tc updateBuildPortsQueueEntryStatus \
+	        -i "${ID}" -s FAIL
+	        continue
+	    fi
+
+	    tinderEcho "INFO: Starting tinderbuild; output will be sent to ${TINDERD_LOGFILE}"
+	    echo "===Tinderd build of ${PORT} on ${BUILD} starting at $(date)===" >> ${TINDERD_LOGFILE}
+	    if ${pb}/scripts/tc tinderbuild -b "${BUILD}" ${TINDERBUILD_ARGS} \
+			 "${PORT}" >>${TINDERD_LOGFILE} 2>&1 ; then
+		status="SUCCESS"
+	    else
+		status="FAIL"
+	    fi
+	    echo "===Tinderd build of ${PORT} on ${BUILD} ending at $(date)===" >> ${TINDERD_LOGFILE}
+	    ${pb}/scripts/tc updateBuildPortsQueueEntryStatus \
+			-i "${ID}" -s ${status}
+
+	    ${pb}/scripts/tc updateBuildPortsQueueEntryCompletionDate -i "${ID}"
+	   if [ "${MAIL}" = "1" ] ; then
+		${pb}/scripts/tc sendBuildCompletionMail \
+			-b "${BUILD}" -u "${USER}"
+	   fi
+
+	   ${pb}/scripts/tc reorgBuildPortsQueue
+
+	else
+	    tinderEcho "INFO: Nothing to do. Sleeping ${TINDERD_SLEEPTIME} seconds."
+	    trap main_loop 1
+	    sleep ${TINDERD_SLEEPTIME}
+	fi
+    done
+}
+
+main_loop
