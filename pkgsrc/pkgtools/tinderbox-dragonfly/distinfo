@@ -3,3 +3,6 @@ $NetBSD$
 SHA1 (tinderbox-3.4.r1.tar.gz) = 02dfd17f3c9180b9246defce04b3861ddb7448f6
 RMD160 (tinderbox-3.4.r1.tar.gz) = 73cd062095a82244f9085334e0da4012e8703a24
 Size (tinderbox-3.4.r1.tar.gz) = 140887 bytes
+SHA1 (patch-aa) = bde52dff1445957c7b91815c07dbdf1766d4a7d0
+SHA1 (patch-ab) = b8968e2b034e035a88840a4cbafdc00c3c53c85d
+SHA1 (patch-ac) = 86329dff13fdf315c7d0bbe22d0ceb697d3c5b24

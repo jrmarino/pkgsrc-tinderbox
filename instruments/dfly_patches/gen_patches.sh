@@ -1,11 +1,13 @@
 #!/bin/sh
 
+PKGSRC=pkgsrc/pkgtools/tinderbox-dragonfly
 SCRIPT=`/usr/bin/stat -f $0`
 SCRIPTPATH=`/usr/bin/dirname ${SCRIPT}`
 HEADDIR=`realpath ${SCRIPTPATH}/../..`
 SCRIPTDIR=`realpath ${SCRIPTPATH}`
 DFLYDIR=${HEADDIR}/DragonFly
-PATCHDIR=${HEADDIR}/pkgsrc/pkgtools/tinderbox-dragonfly/patches
+PATCHDIR=${HEADDIR}/${PKGSRC}/patches
+REALPKGLOC=/usr/${PKGSRC}
 
 rm -f ${PATCHDIR}/*
 cd ${DFLYDIR}
@@ -16,6 +18,10 @@ while read mapline; do
 	/usr/pkg/bin/pkgdiff ../FreeBSD/${target} ${target} > ${PATCHDIR}/patch-${patch_id} 
 done < ${SCRIPTDIR}/patch.map
 
-echo "Don't forget to regenerate the distinfo"
+rm ${REALPKGLOC}/patches/*
+cp ${PATCHDIR}/* ${REALPKGLOC}/patches
+cd ${REALPKGLOC}
+/usr/pkg/bin/bmake distinfo
+cp ${REALPKGLOC}/distinfo ${HEADDIR}/${PKGSRC}
 
 
