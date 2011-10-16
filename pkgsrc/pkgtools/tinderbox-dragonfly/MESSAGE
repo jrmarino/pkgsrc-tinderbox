@@ -2,6 +2,17 @@
 $NetBSD$
 pkgtools/tinderbox is installed, but it requires some additional setup.
 
+If tinderbox just installed a database, you'll have to create a
+configuration file for it, and move its startup script from
+${PREFIX}/share/examples/rc.d to /etc/rc.d
+
+As mentioned in the README file, this package did not install any web
+server even though it may have installed a web interface.  Below
+describes how to configure some common webservers.
+
+Finally, tinderbox itself has to be configured now, and don't forget
+to install tinderd as mentioned above.
+
 ****************************************************
 Please do read: ${PREFIX}/tinderbox/scripts/README
 ****************************************************

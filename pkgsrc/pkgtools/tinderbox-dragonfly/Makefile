@@ -16,15 +16,25 @@ PKG_DESTDIR_SUPPORT=	user-destdir
 ONLY_FOR_PLATFORM=	DragonFly-*-*
 
 USE_TOOLS+=		perl
+NO_CONFIGURE=		yes
 NO_BUILD=		yes
 RCD_SCRIPTS=		tinderd
+WRKSRC=			${WRKDIR}/tinderbox-${TBOX_VERSION}
+TRASH=			${WRKDIR}/trash
+MAN_FILES_cmd=		${SED} -ne "s,^man/man1/,,p" PLIST
+MAN_FILES=		${MAN_FILES_cmd:sh}
+
+INSTALLATION_DIRS+=	tinderbox/scripts
+INSTALLATION_DIRS+=	${PKGMANDIR}/man1
 
 .include "options.mk"
 
 post-extract:
+	${MKDIR} ${TRASH}
 .if empty(PKG_OPTIONS:Mwebui)
-	${RM} -R ${WRKSRC}/webui
+	mv ${WRKSRC}/webui ${TRASH}
 .endif
+	mv ${WRKSRC}/etc/rc.d ${TRASH}
 
 post-patch:
 .if !empty(PKG_OPTIONS:Manybody)
@@ -34,14 +44,15 @@ post-patch:
 	cd ${WRKSRC} && ${FIND} -E . -regex '.*(orig|bak)' -exec ${RM} {} \;
 
 do-install:
-	${AUTO_MKDIRS} ${DESTDIR}${PREFIX}/tinderbox/scripts
-	${INSTALL_MAN} ${WRKSRC}/man/man1/* \
-	               ${DESTDIR}${PREFIX}/${PKGMANDIR}/man1
-	${RM} -R ${WRKSRC}/man
-	${INSTALL} ${WRKSRC}/etc/rc.d/tinderd \
-		   ${DESTDIR}${PREFIX}/share/examples/rc.d
-	${RM} -R ${WRKSRC}/etc/rc.d
-	${INSTALL} ${WRKSRC}/* ${DESTDIR}${PREFIX}/tindexbox/scripts
-	#${INSTALL} ${WRKSRC}/.version ${DESTDIR}${PREFIX}/tinderbox/scripts
+	for manual in ${MAN_FILES}; do \
+		${INSTALL_MAN} ${WRKSRC}/man/man1/$${manual} ${DESTDIR}${PREFIX}/${PKGMANDIR}/man1; \
+	done
+	mv ${WRKSRC}/man ${TRASH}
+	cd ${WRKSRC}; for dossier in .version *; do \
+		${TEST} ! -f "$$dossier" || \
+		${INSTALL} "$$dossier" ${DESTDIR}${PREFIX}/tinderbox/scripts; \
+		${TEST} ! -d "$$dossier" || \
+		${CP} -R "$$dossier" ${DESTDIR}${PREFIX}/tinderbox/scripts; \
+	done
 
 .include "../../mk/bsd.pkg.mk"
