@@ -24,7 +24,7 @@
 # OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 # SUCH DAMAGE.
 #
-# $MCom: portstools/tinderbox/webui/core/TinderboxDS.php,v 1.36.2.18 2011/08/11 13:35:43 beat Exp $
+# $MCom: portstools/tinderbox/webui/core/TinderboxDS.php,v 1.36.2.19 2011/10/16 00:40:20 beat Exp $
 #
 
     require_once 'MDB2.php';
@@ -105,7 +105,11 @@
             foreach($results as $result)
                 $data[]=$result['port_maintainer'];
 
-            return $data;
+            if ( empty( $data ) ) {
+                return null;
+            } else {
+                return $data;
+            }
         }
 
         function getAllPortsByPortID($portid) {
