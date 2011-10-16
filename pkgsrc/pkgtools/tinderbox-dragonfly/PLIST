@@ -68,8 +68,10 @@ tinderbox/scripts/upgrade/mig_mysql_tinderbox-3.2_to_3.2.1.sql
 tinderbox/scripts/upgrade/order.lst
 tinderbox/scripts/upgrade/user_permissions.map
 ${PLIST.WEBUI}tinderbox/scripts/webui/core/Build.php
+${PLIST.WEBUI}tinderbox/scripts/webui/core/BuildGroups.php
 ${PLIST.WEBUI}tinderbox/scripts/webui/core/BuildPortsQueue.php
 ${PLIST.WEBUI}tinderbox/scripts/webui/core/Config.php
+${PLIST.WEBUI}tinderbox/scripts/webui/core/Hooks.php
 ${PLIST.WEBUI}tinderbox/scripts/webui/core/Jail.php
 ${PLIST.WEBUI}tinderbox/scripts/webui/core/LogfilePattern.php
 ${PLIST.WEBUI}tinderbox/scripts/webui/core/Port.php
@@ -85,6 +87,7 @@ ${PLIST.WEBUI}tinderbox/scripts/webui/inc_tinderbox.php.dist
 ${PLIST.WEBUI}tinderbox/scripts/webui/index.php
 ${PLIST.WEBUI}tinderbox/scripts/webui/favicon.ico
 ${PLIST.WEBUI}tinderbox/scripts/webui/module/module.php
+${PLIST.WEBUI}tinderbox/scripts/webui/module/moduleBuildGroups.php
 ${PLIST.WEBUI}tinderbox/scripts/webui/module/moduleBuildPorts.php
 ${PLIST.WEBUI}tinderbox/scripts/webui/module/moduleBuilds.php
 ${PLIST.WEBUI}tinderbox/scripts/webui/module/moduleConfig.php
@@ -99,6 +102,7 @@ ${PLIST.WEBUI}tinderbox/scripts/webui/templates/default/config.tpl
 ${PLIST.WEBUI}tinderbox/scripts/webui/templates/default/current_buildports.tpl
 ${PLIST.WEBUI}tinderbox/scripts/webui/templates/default/describe_port.tpl
 ${PLIST.WEBUI}tinderbox/scripts/webui/templates/default/display_login.tpl
+${PLIST.WEBUI}tinderbox/scripts/webui/templates/default/display_build_groups.tpl
 ${PLIST.WEBUI}tinderbox/scripts/webui/templates/default/display_markup_log.tpl
 ${PLIST.WEBUI}tinderbox/scripts/webui/templates/default/failed_buildports.tpl
 ${PLIST.WEBUI}tinderbox/scripts/webui/templates/default/latest_buildports.tpl
@@ -118,6 +122,7 @@ ${PLIST.WEBUI}tinderbox/scripts/webui/templates/paefchen/config.tpl
 ${PLIST.WEBUI}tinderbox/scripts/webui/templates/paefchen/current_buildports.tpl
 ${PLIST.WEBUI}tinderbox/scripts/webui/templates/paefchen/describe_port.tpl
 ${PLIST.WEBUI}tinderbox/scripts/webui/templates/paefchen/display_login.tpl
+${PLIST.WEBUI}tinderbox/scripts/webui/templates/paefchen/display_build_groups.tpl
 ${PLIST.WEBUI}tinderbox/scripts/webui/templates/paefchen/display_markup_log.tpl
 ${PLIST.WEBUI}tinderbox/scripts/webui/templates/paefchen/failed_buildports.tpl
 ${PLIST.WEBUI}tinderbox/scripts/webui/templates/paefchen/footer.inc.tpl

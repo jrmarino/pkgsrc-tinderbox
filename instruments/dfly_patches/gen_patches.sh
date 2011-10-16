@@ -17,6 +17,11 @@ while read mapline; do
 	target=`echo $mapline | /usr/bin/sed "s/[^\w]*://"`
 	if [ -f ${target} ]; then
 	   /usr/pkg/bin/pkgdiff ../FreeBSD/${target} ${target} > ${PATCHDIR}/patch-${patch_id}
+	   DOUBLECHK=`head ${PATCHDIR}/patch-${patch_id}`
+	   if [ "${DOUBLECHK}" = "" ]; then
+	   	echo "patch-${patch_id} is empty, so remove DragonFly/${target}"; \
+	   	rm ${PATCHDIR}/patch-${patch_id};
+	   fi
 	fi
 done < ${SCRIPTDIR}/patch.map
 
