@@ -220,7 +220,7 @@ updateTree () {
 
 Setup () {
     MAN_PREREQS="perl"
-    OPT_PREREQS="php MDB2 Compress-Bzip2"
+    OPT_PREREQS="php php*-pear-MDB2 p5-Compress-Bzip2"
     PREF_FILES="tinderbox.ph"
     README="$(tinderLoc scripts README)"
     TINDERBOX_URL="http://tinderbox.marcuscom.com/"

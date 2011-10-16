@@ -11,6 +11,8 @@ HOMEPAGE=	http://tinderbox/marcuscom.com
 COMMENT=	Tinderbox package building system (pkgsrc)
 LICENSE=	modified-bsd
 
+DEPENDS+=	p5-Compress-Bzip2>=2:../../archivers/p5-Compress-Bzip2
+
 TBOX_VERSION=		3.4.r1
 PKG_DESTDIR_SUPPORT=	user-destdir
 ONLY_FOR_PLATFORM=	DragonFly-*-*

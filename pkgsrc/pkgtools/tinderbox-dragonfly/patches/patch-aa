@@ -76,7 +76,7 @@ $NetBSD$
 -    MAN_PREREQS="lang/perl5.[81]*"
 -    OPT_PREREQS="lang/php[45] databases/pear-MDB2 www/php[45]-session archivers/p5-Compress-Bzip2"
 +    MAN_PREREQS="perl"
-+    OPT_PREREQS="php MDB2 Compress-Bzip2"
++    OPT_PREREQS="php php*-pear-MDB2 p5-Compress-Bzip2"
      PREF_FILES="tinderbox.ph"
      README="$(tinderLoc scripts README)"
      TINDERBOX_URL="http://tinderbox.marcuscom.com/"
