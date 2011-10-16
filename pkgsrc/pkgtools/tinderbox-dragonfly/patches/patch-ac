@@ -1,6 +1,6 @@
 $NetBSD$
 
---- ../FreeBSD/lib/tinderlib.sh	2011-10-08 21:22:52.000000000 +0000
+--- ../FreeBSD/lib/tinderlib.sh	2011-10-16 00:52:55.000000000 +0000
 +++ lib/tinderlib.sh
 @@ -629,7 +629,7 @@ checkPreReqs () {
      missing=""

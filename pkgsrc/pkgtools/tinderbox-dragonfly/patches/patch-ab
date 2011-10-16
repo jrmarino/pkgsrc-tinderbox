@@ -1,6 +1,6 @@
 $NetBSD$
 
---- ../FreeBSD/lib/tinderbox.env	2011-10-08 21:22:52.000000000 +0000
+--- ../FreeBSD/lib/tinderbox.env	2011-10-16 00:52:55.000000000 +0000
 +++ lib/tinderbox.env
 @@ -5,36 +5,20 @@
  #

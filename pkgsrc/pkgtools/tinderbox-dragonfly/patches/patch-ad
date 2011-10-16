@@ -1,6 +1,6 @@
 $NetBSD$
 
---- ../FreeBSD/lib/db-pgsql.sh	2011-10-08 21:22:52.000000000 +0000
+--- ../FreeBSD/lib/db-pgsql.sh	2011-10-16 00:52:55.000000000 +0000
 +++ lib/db-pgsql.sh
 @@ -24,30 +24,30 @@
  #
