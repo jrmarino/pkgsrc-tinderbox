@@ -12,12 +12,13 @@ COMMENT=	Tinderbox package building system (pkgsrc)
 LICENSE=	modified-bsd
 
 DEPENDS+=	p5-Compress-Bzip2>=2:../../archivers/p5-Compress-Bzip2
+DEPENDS+=	csup>=20100101:../../net/csup
 
 TBOX_VERSION=		3.4.r2
 PKG_DESTDIR_SUPPORT=	user-destdir
 ONLY_FOR_PLATFORM=	DragonFly-*-*
 
-USE_TOOLS+=		perl
+USE_TOOLS+=		perl perl:run
 NO_CONFIGURE=		yes
 NO_BUILD=		yes
 RCD_SCRIPTS=		tinderd

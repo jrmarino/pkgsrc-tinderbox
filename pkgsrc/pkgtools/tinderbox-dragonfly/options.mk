@@ -1,8 +1,8 @@
 # $NetBSD$
 
 PKG_OPTIONS_VAR=	PKG_OPTIONS.tbox-dfly
-PKG_SUPPORTED_OPTIONS=	pgsql mysql webui anybody lsof
-PKG_SUGGESTED_OPTIONS=	pgsql webui lsof
+PKG_SUPPORTED_OPTIONS=	pgsql mysql webui anybody lsof emailer
+PKG_SUGGESTED_OPTIONS=	pgsql webui
 PLIST_VARS+=		WEBUI
 
 .include "../../mk/bsd.options.mk"
@@ -49,6 +49,15 @@ DEPENDS+=	${PHP_PKG_PREFIX}-mysql>=5.1:../../databases/php-mysql
 #  LIST OPEN FILES  #
 #####################
 
-.if !empty(PKG_OPTIONS.Mlsof)
-DEPENDS+=	lsof>=4.83:../../sysutils/lsof
+.if !empty(PKG_OPTIONS:Mlsof)
+DEPENDS+=		lsof>=4.83:../../sysutils/lsof
+PKG_FAIL_REASON+=	"LSOF package is broken for DragonFly, remove the option for now."
+.endif
+
+#########################
+#  EMAIL NOTIFICATIONS  #
+#########################
+
+.if !empty(PKG_OPTIONS:Memailer)
+DEPENDS+=	p5-Net>=1.21:../../net/p5-Net
 .endif
