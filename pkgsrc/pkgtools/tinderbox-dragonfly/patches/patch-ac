@@ -1,0 +1,13 @@
+$NetBSD$
+
+--- ../FreeBSD/lib/tinderlib.sh	2011-10-08 21:22:52.000000000 +0000
++++ lib/tinderlib.sh
+@@ -629,7 +629,7 @@ checkPreReqs () {
+     missing=""
+ 
+     for r in ${reqs} ; do
+-	if [ -z $(pkg_info -Q -O ${r}) ]; then
++	if [ -z $(pkg_info -e ${r}) ]; then
+ 	    missing="${missing} ${r}"
+ 	    error=1
+ 	fi

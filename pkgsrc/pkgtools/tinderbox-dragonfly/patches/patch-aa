@@ -1,0 +1,128 @@
+$NetBSD$
+
+--- ../FreeBSD/lib/tc_command.sh	2011-10-08 21:22:52.000000000 +0000
++++ lib/tc_command.sh
+@@ -27,7 +27,7 @@
+ # $MCom: portstools/tinderbox/lib/tc_command.sh,v 1.101.2.43 2011/10/08 21:17:17 marcus Exp $
+ #
+ 
+-export _defaultUpdateHost="cvsup18.FreeBSD.org"
++export _defaultUpdateHost="cvsup.se.netbsd.org"
+ export _defaultUpdateType="CSUP"
+ 
+ #---------------------------------------------------------------------------
+@@ -37,11 +37,11 @@ generateUpdateCode () {
+     case ${1} in
+ 
+     "jail")	  treeDir=$(tinderLoc jail ${2})
+-		  updateCollection="src-all"
++		  updateCollection="netbsd-src"
+ 		  ;;
+ 
+     "portstree")  treeDir=$(tinderLoc portstree ${2})
+-		  updateCollection="ports-all"
++		  updateCollection="netbsd-pkgsrc"
+ 		  ;;
+ 
+     *)		  echo "ERROR: ${1} ${2}: unknown tree type"
+@@ -75,7 +75,7 @@ generateUpdateCode () {
+ 		    updateArch=$(uname -p)
+ 		fi
+ 
+-		updateCmd="/usr/local/bin/lftp"
++		updateCmd="/usr/pkg/bin/lftp"
+ 
+ 		if [ ! -x "${updateCmd}" ]; then
+ 		    echo "ERROR: ${2} ${3}: ${updateCmd} missing"
+@@ -96,9 +96,6 @@ generateUpdateCode () {
+ 		  echo "cd ${treeDir}/sets"
+ 		  echo "${updateCmd} -c \"open ftp://${4}/pub/FreeBSD/releases/${updateArch}/${5}/; mirror base\""
+ 		  echo "${updateCmd} -c \"open ftp://${4}/pub/FreeBSD/releases/${updateArch}/${5}/; mirror dict\""
+-		  if [ "${updateArch}" = "amd64" ]; then
+-		      echo "${updateCmd} -c \"open ftp://${4}/pub/FreeBSD/releases/${updateArch}/${5}/; mirror lib32\""
+-		  fi
+ 		  echo "${updateCmd} -c \"open ftp://${4}/pub/FreeBSD/releases/${updateArch}/${5}/; mirror proflibs\""
+ 		  echo "${updateCmd} -c \"open ftp://${4}/pub/FreeBSD/releases/${updateArch}/${5}/; mirror src\""
+ 		  echo "cd src"
+@@ -110,21 +107,15 @@ generateUpdateCode () {
+ 		chmod +x ${treeDir}/update.sh
+ 		;;
+ 
+-    "CVSUP"|"CSUP")
++    "CSUP")
+     		if [ -z "${5}" -o "${5}" = "UNUSED" ]; then
+ 		    echo "ERROR: ${1} ${2}: no tag specified for ${3}"
+ 		    exit 1
+ 		fi
+ 
+ 		updateCmd=""
+-		if [ "${3}" = "CVSUP" ]; then
+-		    updateCmd="/usr/local/bin/cvsup"
+-		elif [ "${3}" = "CSUP" ]; then
+-		    if [ -x /usr/bin/csup ]; then
+-			updateCmd="/usr/bin/csup"
+-		    else
+-			updateCmd="/usr/local/bin/csup"
+-		    fi
++		if [ "${3}" = "CSUP" ]; then
++		   updateCmd="/usr/pkg/bin/csup"
+ 		fi
+ 		if [ -z "${updateCmd}" ]; then
+ 		    echo "ERROR: ${2}: unable to determine updateCmd for ${3}"
+@@ -228,8 +219,8 @@ updateTree () {
+ #---------------------------------------------------------------------------
+ 
+ Setup () {
+-    MAN_PREREQS="lang/perl5.[81]*"
+-    OPT_PREREQS="lang/php[45] databases/pear-MDB2 www/php[45]-session archivers/p5-Compress-Bzip2"
++    MAN_PREREQS="perl"
++    OPT_PREREQS="php MDB2 Compress-Bzip2"
+     PREF_FILES="tinderbox.ph"
+     README="$(tinderLoc scripts README)"
+     TINDERBOX_URL="http://tinderbox.marcuscom.com/"
+@@ -509,7 +500,7 @@ Upgrade () {
+     for jail in ${jails}; do
+ 	f=$(tinderLoc jail ${jail})
+ 	ucmd=$(${tc} getUpdateCmd -j ${jail} 2>/dev/null)
+-	if [ x"${ucmd}" != x"CVSUP" -a x"${ucmd}" != x"CSUP" -a x"${ucmd}" != x"NONE" ]; then
++	if [ x"${ucmd}" != x"CSUP" -a x"${ucmd}" != x"NONE" ]; then
+ 	    if [ -f "${ucmd}" ]; then
+ 		mv -f "${ucmd}" "${f}/update.sh"
+ 		chmod +x "${f}/update.sh"
+@@ -524,11 +515,8 @@ Upgrade () {
+ 		    tinderEcho "WARN: You must manually set the update command for ${jail} to \"USER\" using the query ${query}."
+ 		fi
+ 	    fi
+-	elif [ x"${ucmd}" = x"CVSUP" -o x"${ucmd}" = x"CSUP" ]; then
+-	    updateCmd="/usr/bin/csup"
+-	    if [ x"${ucmd}" = x"CVSUP" ]; then
+-		updateCmd="/usr/local/bin/cvsup"
+-	    fi
++	elif [ x"${ucmd}" = x"CSUP" ]; then
++	    updateCmd="/usr/pkg/bin/csup"
+ 	    ( echo "#!/bin/sh"
+ 	      echo "${updateCmd} ${f}/supfile"
+ 	    ) > ${f}/update.sh
+@@ -542,7 +530,7 @@ Upgrade () {
+     for portstree in ${portstrees}; do
+ 	f=$(tinderLoc portstree ${portstree})
+ 	ucmd=$(${tc} getUpdateCmd -p ${portstree} 2>/dev/null)
+-	if [ x"${ucmd}" != x"CVSUP" -a x"${ucmd}" != x"CSUP" -a x"${ucmd}" != x"NONE" ]; then
++	if [ x"${ucmd}" != x"CSUP" -a x"${ucmd}" != x"NONE" ]; then
+ 	    if [ -f "${ucmd}" ]; then
+ 		mv -f "${ucmd}" "${f}/update.sh"
+ 		chmod +x "${f}/update.sh"
+@@ -557,11 +545,8 @@ Upgrade () {
+ 		    tinderEcho "WARN: You must manually set the update command for ${portstree} to \"USER\" using the query ${query}."
+ 		fi
+ 	    fi
+-	elif [ x"${ucmd}" = x"CVSUP" -o x"${ucmd}" = "CSUP" ]; then
+-	    updateCmd="/usr/bin/csup"
+-	    if [ x"${ucmd}" = x"CVSUP" ]; then
+-		updateCmd="/usr/local/bin/cvsup"
+-	    fi
++	elif [ x"${ucmd}" = "CSUP" ]; then
++	    updateCmd="/usr/pkg/bin/csup"
+ 	    ( echo "#!/bin/sh"
+ 	      echo "${updateCmd} ${f}/supfile"
+ 	    ) > ${f}/update.sh
