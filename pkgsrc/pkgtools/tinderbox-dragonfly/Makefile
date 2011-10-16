@@ -13,6 +13,7 @@ LICENSE=	modified-bsd
 
 DEPENDS+=	p5-Compress-Bzip2>=2:../../archivers/p5-Compress-Bzip2
 DEPENDS+=	csup>=20100101:../../net/csup
+DEPENDS+=	lftp>4.0:../../net/lftp
 
 TBOX_VERSION=		3.4.r2
 PKG_DESTDIR_SUPPORT=	user-destdir
