@@ -1,8 +1,8 @@
 # $NetBSD$
 
 PKG_OPTIONS_VAR=	PKG_OPTIONS.tbox-dfly
-PKG_SUPPORTED_OPTIONS=	need-pgsql have-pgsql need-mysql have-mysql webui anybody lsof
-PKG_SUGGESTED_OPTIONS=	need-pgsql webui lsof
+PKG_SUPPORTED_OPTIONS=	pgsql mysql webui anybody lsof
+PKG_SUGGESTED_OPTIONS=	pgsql webui lsof
 PLIST_VARS+=		WEBUI
 
 .include "../../mk/bsd.options.mk"
@@ -11,19 +11,16 @@ PLIST_VARS+=		WEBUI
 #  WEB INTERFACE AND DATABASE OPTIONS  #
 ########################################
 
-.if  empty(PKG_OPTIONS:Mneed-pgsql) \
-  && empty(PKG_OPTIONS:Mhave-pgsql) \
-  && empty(PKG_OPTIONS:Mneed-mysql) \
-  && empty(PKG_OPTIONS:Mhave-mysql)
+.if  empty(PKG_OPTIONS:Mpgsql) && empty(PKG_OPTIONS:Mmysql)
 PKG_FAIL_REASON+=	"Tinderbox requires a database or confirmation you have already installed on."
-PKG_FAIL_REASON+=	"Please select one of need-pgsql, have-pgsql, need-mysql, have-pgsql"
+PKG_FAIL_REASON+=	"Please select either pgsql or mysql"
 .endif
 
-.if !empty(PKG_OPTIONS:Mneed-pgsql)
+.if !empty(PKG_OPTIONS:Mpgsql)
 .include "../../mk/pgsql.buildlink3.mk"
 .endif
 
-.if !empty(PKG_OPTIONS:Mneed-mysql)
+.if !empty(PKG_OPTIONS:Mmysql)
 .include "../../mk/mysql.buildlink3.mk"
 .endif
 
@@ -32,7 +29,7 @@ PLIST.WEBUI=	yes
 .include "../../lang/php/phpversion.mk"
 .endif
 
-.if !empty(PKG_OPTIONS:Mneed-pgsql) || !empty(PKG_OPTIONS:Mhave-pgsql)
+.if !empty(PKG_OPTIONS:Mpgsql)
 DEPENDS+=	p5-DBD-postgresql>=2.12:../../databases/p5-DBD-postgresql
 .if !empty(PKG_OPTIONS:Mwebui)
 DEPENDS+=	${PHP_PKG_PREFIX}-pear-MDB2_Driver_pgsql:../../databases/pear-MDB2_Driver_pgsql
@@ -40,7 +37,7 @@ DEPENDS+=	${PHP_PKG_PREFIX}-pgsql>=5.1:../../databases/php-pgsql
 .endif
 .endif
 
-.if !empty(PKG_OPTIONS:Mneed-mysql) || !empty(PKG_OPTIONS:Mhave-mysql)
+.if !empty(PKG_OPTIONS:Mmysql)
 DEPENDS+=	p5-DBD-mysql>=4:../../databases/p5-DBD-mysql
 .if !empty(PKG_OPTIONS:Mwebui)
 DEPENDS+=	${PHP_PKG_PREFIX}-perar-MDB2_Driver_mysql>1.5:../../databases/pear-MDB2_Driver_mysql
