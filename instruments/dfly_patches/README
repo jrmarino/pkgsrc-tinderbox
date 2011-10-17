@@ -1,0 +1,24 @@
+============================
+ GENERATE DRAGONFLY PATCHES
+============================
+
+gen_patches.sh
+
+This script will compare the DragonFly files, which are overlays, to the
+original FreeBSD files and create NetBSD-style patches from them.  If there
+are no differences, which can happen if bugs get fixed upstream and pulled
+in, then the patch will be deleted.  Advice to remove the identical overlay
+will also be given.
+
+After all the patches are created, a new distinfo file will be generated. 
+The /usr/pkgsrc/pkgtools/tinderbox-dragonfly pkg has to be in a clean state,
+otherwise pkgsrc will ignore the "bmake distinfo" command.  As a bonus, the
+packages patches directory receives the new patches as well.
+
+patch.map
+
+There is a permanent coupling between patch ID (e.g. aa, ab, ac) and a
+specific file.  Each line in this data file means that the indicated file
+was different in the past, if not still different.  If there is no longer
+an overlay, then the line will be skipped and no patch made.  Never re-use
+a patch ID, just keep added new lines with unique ids.

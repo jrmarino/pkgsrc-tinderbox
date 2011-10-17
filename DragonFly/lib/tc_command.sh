@@ -29,8 +29,9 @@
 
 export _defaultUpdateHost="cvsup.netbsd.se"
 export _defaultUpdateType="CSUP"
-export _defaultDragonHost="ftp.tu-clausthal.de"
+export _defaultDragonHost="ftp://mirror.pavlovmedia.net/dragonflybsd"
 export _defaultDragonType="LFTP"
+export _defaultGitSrcHost="koan.bondconsult.net"
 
 #---------------------------------------------------------------------------
 # Generic routines
@@ -96,7 +97,7 @@ generateUpdateCode () {
 		( echo "#!/bin/sh"
 		  echo "mkdir -p ${treeDir}/sets"
 		  echo "cd ${treeDir}/sets"
-		  echo "${updateCmd} -c \"open ftp://${4}/pub/DragonFly/releases/${updateArch}/${5}/; mirror base\""
+		  echo "${updateCmd} -c \"open ftp://${4}/pub/DragonFly/iso-images/${updateArch}/${5}/; mirror base\""
 		  echo "${updateCmd} -c \"open ftp://${4}/pub/DragonFly/releases/${updateArch}/${5}/; mirror miscdict\""
 		  echo "${updateCmd} -c \"open ftp://${4}/pub/DragonFly/releases/${updateArch}/${5}/; mirror src\""
 		  echo "cd src"
@@ -869,8 +870,8 @@ createJail () {
     init=1
 
     setupDefaults
-    updateHost=${defaultUpdateHost}
-    updateType=${defaultUpdateType}
+    updateHost=${defaultDragonHost}
+    updateType=${defaultDragonType}
 
     # argument handling
     while getopts a:d:j:m:t:u:CH:I arg >/dev/null 2>&1
@@ -912,6 +913,11 @@ createJail () {
 	echo "createJail: no update type specified"
 	return 1
     fi
+    
+    if [ "${updateType}" = "CSUP"]; then
+    	echo "createJail: CSUP type cannot be used for DragonFly sources"
+	return 1
+    fi    
 
     echo "${jailName}: initializing tree"
     generateUpdateCode jail ${jailName} ${updateType} ${updateHost} \
@@ -1822,18 +1828,25 @@ init () {
 
     # Update type is not optional, it's CSUP, so we won't ask.
     
-    read -p "Enter a default ftp server for DragonFly [${_defaultDragonHost}]: " dragonhost
+    echo "Server format: (http|ftp)://(host)/path_to_iso-images_directory"
+    read -p "Enter a default ISO server for DragonFly [${_defaultDragonHost}]: " dragonhost
     if [ -z "${dragonhost}" ]; then
 	dragonhost=${_defaultDragonHost}
     fi
 
     # Update type is not optional, it's LFTP, so we won't ask
 
+    read -p "Enter a default Git server for DragonFly [${_defaultGitSrcHost}]: " gitsrchost
+    if [ -z "${gitsrchost}" ]; then
+	gitsrchost=${_defaultGitSrcHost}
+    fi
+
     globalenv=$(tinderLoc scripts etc/env)/GLOBAL
     echo "export defaultUpdateHost=${host}" >> ${globalenv}
     echo "export defaultUpdateType=${_defaultUpdateType}" >> ${globalenv}
     echo "export defaultDragonHost=${dragonhost}" >> ${globalenv}
     echo "export defaultDragonType=${_defaultDragonType}" >> ${globalenv}
+    echo "export defaultGitSrcHost=${gitsrchost}" >> ${globalenv}
 
     tinderEcho "The defaults have been set.  These can be changed later by modifying ${globalenv}."
 
