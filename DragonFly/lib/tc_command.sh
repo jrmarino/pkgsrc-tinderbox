@@ -24,11 +24,12 @@
 # OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 # SUCH DAMAGE.
 #
-# $MCom: portstools/tinderbox/lib/tc_command.sh,v 1.101.2.43 2011/10/08 21:17:17 marcus Exp $
+# $MCom: portstools/tinderbox/lib/tc_command.sh,v 1.101.2.44 2011/10/16 00:52:01 marcus Exp $
 #
 
 export _defaultUpdateHost="cvsup.se.netbsd.org"
 export _defaultUpdateType="CSUP"
+export _defaultDragonHost="ftp.tu-clausthal.de"
 
 #---------------------------------------------------------------------------
 # Generic routines
@@ -94,10 +95,10 @@ generateUpdateCode () {
 		( echo "#!/bin/sh"
 		  echo "mkdir -p ${treeDir}/sets"
 		  echo "cd ${treeDir}/sets"
-		  echo "${updateCmd} -c \"open ftp://${4}/pub/FreeBSD/releases/${updateArch}/${5}/; mirror base\""
-		  echo "${updateCmd} -c \"open ftp://${4}/pub/FreeBSD/releases/${updateArch}/${5}/; mirror dict\""
-		  echo "${updateCmd} -c \"open ftp://${4}/pub/FreeBSD/releases/${updateArch}/${5}/; mirror proflibs\""
-		  echo "${updateCmd} -c \"open ftp://${4}/pub/FreeBSD/releases/${updateArch}/${5}/; mirror src\""
+		  echo "${updateCmd} -c \"open ftp://${4}/pub/DragonFly/releases/${updateArch}/${5}/; mirror base\""
+		  echo "${updateCmd} -c \"open ftp://${4}/pub/DragonFly/releases/${updateArch}/${5}/; mirror dict\""
+		  echo "${updateCmd} -c \"open ftp://${4}/pub/DragonFly/releases/${updateArch}/${5}/; mirror proflibs\""
+		  echo "${updateCmd} -c \"open ftp://${4}/pub/DragonFly/releases/${updateArch}/${5}/; mirror src\""
 		  echo "cd src"
 		  echo "sed -i \"\" 's|usr/src|src|' install.sh"
 		  echo "export DESTDIR=${treeDir}"
@@ -898,7 +899,7 @@ createJail () {
 
     valid=$(echo ${jailName} | awk '{if (/^[[:digit:]]/) {print;}}')
     if [ -z "${valid}" ]; then
-	echo "createJail: jail name must begin with a FreeBSD major version"
+	echo "createJail: jail name must begin with a DragonFly BSD major version"
 	return 1
     fi
 

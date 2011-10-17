@@ -6,3 +6,12 @@ ae:lib/db-mysql.sh
 af:sql/values.hooks
 ag:sql/values.lp
 ah:webui/core/TinderboxDS.php
+ai:lib/portbuild
+aj:lib/buildscript
+ak:contrib/hooks/mass-build-pgsql/mass-build-pgsql.sh
+al:man/man1/tc-configCcache.1
+am:man/man1/tc-configDistfile.1
+an:man/man1/tc-configGet.1
+ao:man/man1/tc-configJail.1
+ap:man/man1/tc-configTinderd.1
+aq:man/man1/tc-init.1

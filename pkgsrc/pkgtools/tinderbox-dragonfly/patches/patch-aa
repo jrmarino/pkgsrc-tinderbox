@@ -2,20 +2,18 @@ $NetBSD$
 
 --- ../FreeBSD/lib/tc_command.sh	2011-10-16 00:52:55.000000000 +0000
 +++ lib/tc_command.sh
-@@ -24,10 +24,10 @@
- # OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
- # SUCH DAMAGE.
- #
--# $MCom: portstools/tinderbox/lib/tc_command.sh,v 1.101.2.44 2011/10/16 00:52:01 marcus Exp $
-+# $MCom: portstools/tinderbox/lib/tc_command.sh,v 1.101.2.43 2011/10/08 21:17:17 marcus Exp $
+@@ -27,8 +27,9 @@
+ # $MCom: portstools/tinderbox/lib/tc_command.sh,v 1.101.2.44 2011/10/16 00:52:01 marcus Exp $
  #
  
 -export _defaultUpdateHost="cvsup18.FreeBSD.org"
 +export _defaultUpdateHost="cvsup.se.netbsd.org"
  export _defaultUpdateType="CSUP"
++export _defaultDragonHost="ftp.tu-clausthal.de"
  
  #---------------------------------------------------------------------------
-@@ -37,11 +37,11 @@ generateUpdateCode () {
+ # Generic routines
+@@ -37,11 +38,11 @@ generateUpdateCode () {
      case ${1} in
  
      "jail")	  treeDir=$(tinderLoc jail ${2})
@@ -29,7 +27,7 @@ $NetBSD$
  		  ;;
  
      *)		  echo "ERROR: ${1} ${2}: unknown tree type"
-@@ -75,7 +75,7 @@ generateUpdateCode () {
+@@ -75,7 +76,7 @@ generateUpdateCode () {
  		    updateArch=$(uname -p)
  		fi
  
@@ -38,17 +36,25 @@ $NetBSD$
  
  		if [ ! -x "${updateCmd}" ]; then
  		    echo "ERROR: ${2} ${3}: ${updateCmd} missing"
-@@ -96,9 +96,6 @@ generateUpdateCode () {
+@@ -94,13 +95,10 @@ generateUpdateCode () {
+ 		( echo "#!/bin/sh"
+ 		  echo "mkdir -p ${treeDir}/sets"
  		  echo "cd ${treeDir}/sets"
- 		  echo "${updateCmd} -c \"open ftp://${4}/pub/FreeBSD/releases/${updateArch}/${5}/; mirror base\""
- 		  echo "${updateCmd} -c \"open ftp://${4}/pub/FreeBSD/releases/${updateArch}/${5}/; mirror dict\""
+-		  echo "${updateCmd} -c \"open ftp://${4}/pub/FreeBSD/releases/${updateArch}/${5}/; mirror base\""
+-		  echo "${updateCmd} -c \"open ftp://${4}/pub/FreeBSD/releases/${updateArch}/${5}/; mirror dict\""
 -		  if [ "${updateArch}" = "amd64" ]; then
 -		      echo "${updateCmd} -c \"open ftp://${4}/pub/FreeBSD/releases/${updateArch}/${5}/; mirror lib32\""
 -		  fi
- 		  echo "${updateCmd} -c \"open ftp://${4}/pub/FreeBSD/releases/${updateArch}/${5}/; mirror proflibs\""
- 		  echo "${updateCmd} -c \"open ftp://${4}/pub/FreeBSD/releases/${updateArch}/${5}/; mirror src\""
+-		  echo "${updateCmd} -c \"open ftp://${4}/pub/FreeBSD/releases/${updateArch}/${5}/; mirror proflibs\""
+-		  echo "${updateCmd} -c \"open ftp://${4}/pub/FreeBSD/releases/${updateArch}/${5}/; mirror src\""
++		  echo "${updateCmd} -c \"open ftp://${4}/pub/DragonFly/releases/${updateArch}/${5}/; mirror base\""
++		  echo "${updateCmd} -c \"open ftp://${4}/pub/DragonFly/releases/${updateArch}/${5}/; mirror dict\""
++		  echo "${updateCmd} -c \"open ftp://${4}/pub/DragonFly/releases/${updateArch}/${5}/; mirror proflibs\""
++		  echo "${updateCmd} -c \"open ftp://${4}/pub/DragonFly/releases/${updateArch}/${5}/; mirror src\""
  		  echo "cd src"
-@@ -110,21 +107,15 @@ generateUpdateCode () {
+ 		  echo "sed -i \"\" 's|usr/src|src|' install.sh"
+ 		  echo "export DESTDIR=${treeDir}"
+@@ -110,21 +108,15 @@ generateUpdateCode () {
  		chmod +x ${treeDir}/update.sh
  		;;
  
@@ -73,7 +79,7 @@ $NetBSD$
  		fi
  		if [ -z "${updateCmd}" ]; then
  		    echo "ERROR: ${2}: unable to determine updateCmd for ${3}"
-@@ -228,8 +219,8 @@ updateTree () {
+@@ -228,8 +220,8 @@ updateTree () {
  #---------------------------------------------------------------------------
  
  Setup () {
@@ -84,7 +90,7 @@ $NetBSD$
      PREF_FILES="tinderbox.ph"
      README="$(tinderLoc scripts README)"
      TINDERBOX_URL="http://tinderbox.marcuscom.com/"
-@@ -327,9 +318,9 @@ Setup () {
+@@ -327,9 +319,9 @@ Setup () {
  #---------------------------------------------------------------------------
  
  Upgrade () {
@@ -96,7 +102,7 @@ $NetBSD$
  
      bkup_file=""
  
-@@ -509,7 +500,7 @@ Upgrade () {
+@@ -509,7 +501,7 @@ Upgrade () {
      for jail in ${jails}; do
  	f=$(tinderLoc jail ${jail})
  	ucmd=$(${tc} getUpdateCmd -j ${jail} 2>/dev/null)
@@ -105,7 +111,7 @@ $NetBSD$
  	    if [ -f "${ucmd}" ]; then
  		mv -f "${ucmd}" "${f}/update.sh"
  		chmod +x "${f}/update.sh"
-@@ -524,11 +515,8 @@ Upgrade () {
+@@ -524,11 +516,8 @@ Upgrade () {
  		    tinderEcho "WARN: You must manually set the update command for ${jail} to \"USER\" using the query ${query}."
  		fi
  	    fi
@@ -119,7 +125,7 @@ $NetBSD$
  	    ( echo "#!/bin/sh"
  	      echo "${updateCmd} ${f}/supfile"
  	    ) > ${f}/update.sh
-@@ -542,7 +530,7 @@ Upgrade () {
+@@ -542,7 +531,7 @@ Upgrade () {
      for portstree in ${portstrees}; do
  	f=$(tinderLoc portstree ${portstree})
  	ucmd=$(${tc} getUpdateCmd -p ${portstree} 2>/dev/null)
@@ -128,7 +134,7 @@ $NetBSD$
  	    if [ -f "${ucmd}" ]; then
  		mv -f "${ucmd}" "${f}/update.sh"
  		chmod +x "${f}/update.sh"
-@@ -557,11 +545,8 @@ Upgrade () {
+@@ -557,11 +546,8 @@ Upgrade () {
  		    tinderEcho "WARN: You must manually set the update command for ${portstree} to \"USER\" using the query ${query}."
  		fi
  	    fi
@@ -142,3 +148,12 @@ $NetBSD$
  	    ( echo "#!/bin/sh"
  	      echo "${updateCmd} ${f}/supfile"
  	    ) > ${f}/update.sh
+@@ -913,7 +899,7 @@ createJail () {
+ 
+     valid=$(echo ${jailName} | awk '{if (/^[[:digit:]]/) {print;}}')
+     if [ -z "${valid}" ]; then
+-	echo "createJail: jail name must begin with a FreeBSD major version"
++	echo "createJail: jail name must begin with a DragonFly BSD major version"
+ 	return 1
+     fi
+ 

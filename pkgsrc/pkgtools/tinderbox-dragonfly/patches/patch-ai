@@ -1,0 +1,57 @@
+$NetBSD$
+
+--- ../FreeBSD/lib/portbuild	2011-10-16 00:52:55.000000000 +0000
++++ lib/portbuild
+@@ -31,9 +31,6 @@ cleanup()
+ 	    rm -rf ${chroot}/tmp/*
+ 
+ 	    chroot ${chroot} /sbin/ldconfig -R
+-	    if [ ${ARCH} = "i386" ]; then
+-	        chroot ${chroot} /sbin/ldconfig -aout -R
+-	    fi
+ 	else
+ 	    ${tc} resetBuild -b ${build} ${nullfs}
+ 	fi
+@@ -151,7 +148,7 @@ echo ${dirname}
+ tc=$(tinderLoc scripts tc)
+ chroot=$(tinderLoc buildroot ${build})
+ echo "chroot is: ${chroot}"
+-portdir=$(echo ${dirname} | sed -e 's|^/usr/ports/||')
++portdir=$(echo ${dirname} | sed -e 's|^/usr/pkg/||')
+ 
+ total_size=$(${tc} getPortTotalSize -d ${portdir} -b ${build})
+ execute_hook "prePortBuild" "PACKAGE_NAME=${pkgname} BUILD=${build} JAIL=${jail} PORTSTREE=${portstree} CHROOT=${chroot} PORTDIR=${portdir} PB=${pb} TOTAL_SIZE=${total_size}"
+@@ -199,11 +196,9 @@ else
+     	>/dev/null 2>&1
+ fi
+ 
+-# mount linprocfs if required
+-if [ "${ARCH}" = "i386" -o "${ARCH}" = "amd64" ]; then
+-    mkdir -p ${chroot}/compat/linux/proc
+-    mount -t linprocfs linprocfs ${chroot}/compat/linux/proc
+-fi
++# mount linprocfs
++mkdir -p ${chroot}/compat/linux/proc
++mount -t linprocfs linprocfs ${chroot}/compat/linux/proc
+ 
+ # mount procfs
+ mkdir -p ${chroot}/proc
+@@ -294,7 +289,7 @@ if [ x"${CCACHE_ENABLED}" ]; then
+     unset CCACHE_DISABLE
+ fi
+ 
+-_ldconfig_dirs="/lib /usr/lib /usr/lib/compat"
++_ldconfig_dirs="/usr/lib"
+ ldconfig_dirs=""
+ for i in ${_ldconfig_dirs}; do
+     if [ -d ${chroot}/${i} ]; then
+@@ -302,9 +297,6 @@ for i in ${_ldconfig_dirs}; do
+     fi
+ done
+ chroot ${chroot} /sbin/ldconfig ${ldconfig_dirs}
+-if [ ${ARCH} = "i386" ]; then
+-    chroot ${chroot} /sbin/ldconfig -aout /usr/lib/aout /usr/lib/compat/aout
+-fi
+ 
+ set x $ED $FD $PD $BD $RD $TD
+ shift 1
