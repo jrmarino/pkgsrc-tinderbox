@@ -27,9 +27,10 @@
 # $MCom: portstools/tinderbox/lib/tc_command.sh,v 1.101.2.44 2011/10/16 00:52:01 marcus Exp $
 #
 
-export _defaultUpdateHost="cvsup.se.netbsd.org"
+export _defaultUpdateHost="cvsup.netbsd.se"
 export _defaultUpdateType="CSUP"
 export _defaultDragonHost="ftp.tu-clausthal.de"
+export _defaultDragonType="LFTP"
 
 #---------------------------------------------------------------------------
 # Generic routines
@@ -38,7 +39,7 @@ generateUpdateCode () {
     case ${1} in
 
     "jail")	  treeDir=$(tinderLoc jail ${2})
-		  updateCollection="netbsd-src"
+		  updateCollection="not-applicable"
 		  ;;
 
     "portstree")  treeDir=$(tinderLoc portstree ${2})
@@ -96,8 +97,7 @@ generateUpdateCode () {
 		  echo "mkdir -p ${treeDir}/sets"
 		  echo "cd ${treeDir}/sets"
 		  echo "${updateCmd} -c \"open ftp://${4}/pub/DragonFly/releases/${updateArch}/${5}/; mirror base\""
-		  echo "${updateCmd} -c \"open ftp://${4}/pub/DragonFly/releases/${updateArch}/${5}/; mirror dict\""
-		  echo "${updateCmd} -c \"open ftp://${4}/pub/DragonFly/releases/${updateArch}/${5}/; mirror proflibs\""
+		  echo "${updateCmd} -c \"open ftp://${4}/pub/DragonFly/releases/${updateArch}/${5}/; mirror miscdict\""
 		  echo "${updateCmd} -c \"open ftp://${4}/pub/DragonFly/releases/${updateArch}/${5}/; mirror src\""
 		  echo "cd src"
 		  echo "sed -i \"\" 's|usr/src|src|' install.sh"
@@ -1815,21 +1815,27 @@ init () {
 	mkdir -p ${pb}/${dir}
     done
 
-    read -p "Enter a default cvsup host [${_defaultUpdateHost}]: " host
+    read -p "Enter a default cvsup server for pkgsrc [${_defaultUpdateHost}]: " host
     if [ -z "${host}" ]; then
 	host=${_defaultUpdateHost}
     fi
 
-    read -p "Enter a default update type or command [${_defaultUpdateType}]: " type
-    if [ -z "${type}" ]; then
-	type=${_defaultUpdateType}
+    # Update type is not optional, it's CSUP, so we won't ask.
+    
+    read -p "Enter a default ftp server for DragonFly [${_defaultDragonHost}]: " dragonhost
+    if [ -z "${dragonhost}" ]; then
+	dragonhost=${_defaultDragonHost}
     fi
+
+    # Update type is not optional, it's LFTP, so we won't ask
 
     globalenv=$(tinderLoc scripts etc/env)/GLOBAL
     echo "export defaultUpdateHost=${host}" >> ${globalenv}
-    echo "export defaultUpdateType=${type}" >> ${globalenv}
+    echo "export defaultUpdateType=${_defaultUpdateType}" >> ${globalenv}
+    echo "export defaultDragonHost=${dragonhost}" >> ${globalenv}
+    echo "export defaultDragonType=${_defaultDragonType}" >> ${globalenv}
 
-    tinderEcho "Default update host and type have been set.  These can be changed later by modifying ${globalenv}."
+    tinderEcho "The defaults have been set.  These can be changed later by modifying ${globalenv}."
 
     return 0
 }
