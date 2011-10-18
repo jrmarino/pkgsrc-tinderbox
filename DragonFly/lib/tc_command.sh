@@ -67,9 +67,9 @@ generateUpdateCode () {
 		fi
 		;;
 
-    "LFTP")
+    "LFTP")	# ONLY USED FOR DRAGONFLY ISO RETRIEVAL (JAILS)
     		if [ -z "${5}" -o "${5}" = "UNUSED" ]; then
-		    echo "ERROR: ${1} ${2}: no tag specified for ${3}"
+		    echo "ERROR: ${1} ${2}: no release number specified for ${3}"
 		    exit 1
 		fi
 
@@ -79,6 +79,7 @@ generateUpdateCode () {
 		fi
 
 		updateCmd="/usr/pkg/bin/lftp"
+		iso_image="dfly-${updateArch}-${5}_REL.iso.bz2"
 
 		if [ ! -x "${updateCmd}" ]; then
 		    echo "ERROR: ${2} ${3}: ${updateCmd} missing"
@@ -97,32 +98,20 @@ generateUpdateCode () {
 		( echo "#!/bin/sh"
 		  echo "mkdir -p ${treeDir}/sets"
 		  echo "cd ${treeDir}/sets"
-		  echo "${updateCmd} -c \"open ftp://${4}/pub/DragonFly/iso-images/${updateArch}/${5}/; mirror base\""
-		  echo "${updateCmd} -c \"open ftp://${4}/pub/DragonFly/releases/${updateArch}/${5}/; mirror miscdict\""
-		  echo "${updateCmd} -c \"open ftp://${4}/pub/DragonFly/releases/${updateArch}/${5}/; mirror src\""
-		  echo "cd src"
-		  echo "sed -i \"\" 's|usr/src|src|' install.sh"
-		  echo "export DESTDIR=${treeDir}"
-		  echo "mkdir ${treeDir}/src"
-		  echo "yes | sh ./install.sh all"
+		  echo "${updateCmd} -c \"open ${4}/iso-images/; get ${iso_image}\""
+		  echo "/usr/bin/tar -xf ${iso_image} -C ../"
 		) > ${treeDir}/update.sh
 		chmod +x ${treeDir}/update.sh
 		;;
 
-    "CSUP")
+    "CSUP")	# ONLY USED FOR PKGSRC UPDATES FROM NETBSD (PORTSTREES)
     		if [ -z "${5}" -o "${5}" = "UNUSED" ]; then
 		    echo "ERROR: ${1} ${2}: no tag specified for ${3}"
 		    exit 1
 		fi
 
-		updateCmd=""
-		if [ "${3}" = "CSUP" ]; then
-		   updateCmd="/usr/pkg/bin/csup"
-		fi
-		if [ -z "${updateCmd}" ]; then
-		    echo "ERROR: ${2}: unable to determine updateCmd for ${3}"
-		    exit 1
-		fi
+		updateCmd="/usr/pkg/bin/csup"
+
 		if [ ! -x "${updateCmd}" ]; then
 		    echo "ERROR: ${2} ${3}: ${updateCmd} missing"
 		    exit 1
@@ -153,6 +142,49 @@ generateUpdateCode () {
 		chmod +x ${treeDir}/update.sh
 		;;
 
+    "GIT")	# ONLY USED FOR RETREIVING DRAGONFLY SOURCE FOR BUILDING JAIL
+    		if [ -z "${5}" -o "${5}" = "UNUSED" ]; then
+		    echo "ERROR: ${1} ${2}: no git branch specified for ${3}"
+		    exit 1
+		fi
+
+		updateCmd="/usr/pkg/bin/git"
+
+		if [ ! -x "${updateCmd}" ]; then
+		    echo "ERROR: ${2} ${3}: ${updateCmd} missing"
+		    exit 1
+		fi
+
+		if [ -d ${treeDir} ]; then
+		    echo "${2}: cleaning out old directories"
+		    cleanDirs ${2} ${treeDir}
+		fi
+		if [ ! -d ${treeDir} ]; then
+		    echo "${2}: creating top-level directory"
+		    mkdir -p ${treeDir} >/dev/null 2>&1
+		fi
+
+		( echo "#!/bin/sh"
+		  echo "if [ -d ${treedir}/src ]; then"
+		  echo "  cd ${treedir}/src"
+		  echo "else"
+		  echo "  mkdir ${treedir}/src"
+		  echo "  cd ${treedir}/src"
+		  echo "  ${updateCmd} init"
+		  echo "  ${updateCmd} remote add origin git://${4}/dragonfly.git"
+		  echo "  ${updateCmd} fetch --depth=1 origin"
+		  echo "  ${updateCmd} branch master origin/master"
+		  echo "fi"
+		  echo "BRANCH=`${updateCmd} branch | /usr/bin/grep -w ${5}`"
+		  echo "if [ "\${BRANCH}" = "" ]; then"
+		  echo "  ${updateCmd} branch ${5} origin/${5}"
+		  echo "fi"
+		  echo "${updateCmd} checkout ${5}"
+		  echo "${updateCmd} pull"
+		) > ${treedir}/update.sh
+		chmod +x ${treeDir}/update.sh
+    		;;	
+
     *)		echo "ERROR: ${1} ${2}: unknown update type: ${3}"
 		exit 1;;
 
@@ -169,6 +201,15 @@ setupDefaults () {
     fi
     if [ -z "${defaultUpdateType}" ]; then
         export defaultUpdateType=${_defaultUpdateType}
+    fi
+    if [ -z "${defaultDragonHost}" ]; then
+        export defaultDragonHost=${_defaultDragonHost}
+    fi
+    if [ -z "${defaultDragonfType}" ]; then
+        export defaultDragonType=${_defaultDragonType}
+    fi
+    if [ -z "${defaultGitSrcHost}" ]; then
+        export defaultGitSrcHost=${_defaultGitSrcHost}
     fi
 }
 
@@ -1826,7 +1867,7 @@ init () {
 	host=${_defaultUpdateHost}
     fi
 
-    # Update type is not optional, it's CSUP, so we won't ask.
+    # Update type is not optional, it's CSUP only, so we won't ask.
     
     echo "Server format: (http|ftp)://(host)/path_to_iso-images_directory"
     read -p "Enter a default ISO server for DragonFly [${_defaultDragonHost}]: " dragonhost
@@ -1834,12 +1875,14 @@ init () {
 	dragonhost=${_defaultDragonHost}
     fi
 
-    # Update type is not optional, it's LFTP, so we won't ask
+    # ISO Update type is not optional, it's LFTP, so we won't ask
 
     read -p "Enter a default Git server for DragonFly [${_defaultGitSrcHost}]: " gitsrchost
     if [ -z "${gitsrchost}" ]; then
 	gitsrchost=${_defaultGitSrcHost}
     fi
+    
+    # Git Update type for Git is limited to git://, so we won't ask 
 
     globalenv=$(tinderLoc scripts etc/env)/GLOBAL
     echo "export defaultUpdateHost=${host}" >> ${globalenv}

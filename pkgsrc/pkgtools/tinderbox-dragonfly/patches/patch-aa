@@ -2,19 +2,20 @@ $NetBSD$
 
 --- ../FreeBSD/lib/tc_command.sh	2011-10-16 00:52:55.000000000 +0000
 +++ lib/tc_command.sh
-@@ -27,8 +27,10 @@
+@@ -27,8 +27,11 @@
  # $MCom: portstools/tinderbox/lib/tc_command.sh,v 1.101.2.44 2011/10/16 00:52:01 marcus Exp $
  #
  
 -export _defaultUpdateHost="cvsup18.FreeBSD.org"
 +export _defaultUpdateHost="cvsup.netbsd.se"
  export _defaultUpdateType="CSUP"
-+export _defaultDragonHost="ftp.tu-clausthal.de"
++export _defaultDragonHost="ftp://mirror.pavlovmedia.net/dragonflybsd"
 +export _defaultDragonType="LFTP"
++export _defaultGitSrcHost="koan.bondconsult.net"
  
  #---------------------------------------------------------------------------
  # Generic routines
-@@ -37,11 +39,11 @@ generateUpdateCode () {
+@@ -37,11 +40,11 @@ generateUpdateCode () {
      case ${1} in
  
      "jail")	  treeDir=$(tinderLoc jail ${2})
@@ -28,16 +29,29 @@ $NetBSD$
  		  ;;
  
      *)		  echo "ERROR: ${1} ${2}: unknown tree type"
-@@ -75,7 +77,7 @@ generateUpdateCode () {
+@@ -64,9 +67,9 @@ generateUpdateCode () {
+ 		fi
+ 		;;
+ 
+-    "LFTP")
++    "LFTP")	# ONLY USED FOR DRAGONFLY ISO RETRIEVAL (JAILS)
+     		if [ -z "${5}" -o "${5}" = "UNUSED" ]; then
+-		    echo "ERROR: ${1} ${2}: no tag specified for ${3}"
++		    echo "ERROR: ${1} ${2}: no release number specified for ${3}"
+ 		    exit 1
+ 		fi
+ 
+@@ -75,7 +78,8 @@ generateUpdateCode () {
  		    updateArch=$(uname -p)
  		fi
  
 -		updateCmd="/usr/local/bin/lftp"
 +		updateCmd="/usr/pkg/bin/lftp"
++		iso_image="dfly-${updateArch}-${5}_REL.iso.bz2"
  
  		if [ ! -x "${updateCmd}" ]; then
  		    echo "ERROR: ${2} ${3}: ${updateCmd} missing"
-@@ -94,13 +96,9 @@ generateUpdateCode () {
+@@ -94,42 +98,20 @@ generateUpdateCode () {
  		( echo "#!/bin/sh"
  		  echo "mkdir -p ${treeDir}/sets"
  		  echo "cd ${treeDir}/sets"
@@ -48,24 +62,25 @@ $NetBSD$
 -		  fi
 -		  echo "${updateCmd} -c \"open ftp://${4}/pub/FreeBSD/releases/${updateArch}/${5}/; mirror proflibs\""
 -		  echo "${updateCmd} -c \"open ftp://${4}/pub/FreeBSD/releases/${updateArch}/${5}/; mirror src\""
-+		  echo "${updateCmd} -c \"open ftp://${4}/pub/DragonFly/releases/${updateArch}/${5}/; mirror base\""
-+		  echo "${updateCmd} -c \"open ftp://${4}/pub/DragonFly/releases/${updateArch}/${5}/; mirror miscdict\""
-+		  echo "${updateCmd} -c \"open ftp://${4}/pub/DragonFly/releases/${updateArch}/${5}/; mirror src\""
- 		  echo "cd src"
- 		  echo "sed -i \"\" 's|usr/src|src|' install.sh"
- 		  echo "export DESTDIR=${treeDir}"
-@@ -110,21 +108,15 @@ generateUpdateCode () {
+-		  echo "cd src"
+-		  echo "sed -i \"\" 's|usr/src|src|' install.sh"
+-		  echo "export DESTDIR=${treeDir}"
+-		  echo "mkdir ${treeDir}/src"
+-		  echo "yes | sh ./install.sh all"
++		  echo "${updateCmd} -c \"open ${4}/iso-images/; get ${iso_image}\""
++		  echo "/usr/bin/tar -xf ${iso_image} -C ../"
+ 		) > ${treeDir}/update.sh
  		chmod +x ${treeDir}/update.sh
  		;;
  
 -    "CVSUP"|"CSUP")
-+    "CSUP")
++    "CSUP")	# ONLY USED FOR PKGSRC UPDATES FROM NETBSD (PORTSTREES)
      		if [ -z "${5}" -o "${5}" = "UNUSED" ]; then
  		    echo "ERROR: ${1} ${2}: no tag specified for ${3}"
  		    exit 1
  		fi
  
- 		updateCmd=""
+-		updateCmd=""
 -		if [ "${3}" = "CVSUP" ]; then
 -		    updateCmd="/usr/local/bin/cvsup"
 -		elif [ "${3}" = "CSUP" ]; then
@@ -74,12 +89,83 @@ $NetBSD$
 -		    else
 -			updateCmd="/usr/local/bin/csup"
 -		    fi
-+		if [ "${3}" = "CSUP" ]; then
-+		   updateCmd="/usr/pkg/bin/csup"
- 		fi
- 		if [ -z "${updateCmd}" ]; then
- 		    echo "ERROR: ${2}: unable to determine updateCmd for ${3}"
-@@ -228,8 +220,8 @@ updateTree () {
+-		fi
+-		if [ -z "${updateCmd}" ]; then
+-		    echo "ERROR: ${2}: unable to determine updateCmd for ${3}"
+-		    exit 1
+-		fi
++		updateCmd="/usr/pkg/bin/csup"
++
+ 		if [ ! -x "${updateCmd}" ]; then
+ 		    echo "ERROR: ${2} ${3}: ${updateCmd} missing"
+ 		    exit 1
+@@ -160,6 +142,49 @@ generateUpdateCode () {
+ 		chmod +x ${treeDir}/update.sh
+ 		;;
+ 
++    "GIT")	# ONLY USED FOR RETREIVING DRAGONFLY SOURCE FOR BUILDING JAIL
++    		if [ -z "${5}" -o "${5}" = "UNUSED" ]; then
++		    echo "ERROR: ${1} ${2}: no git branch specified for ${3}"
++		    exit 1
++		fi
++
++		updateCmd="/usr/pkg/bin/git"
++
++		if [ ! -x "${updateCmd}" ]; then
++		    echo "ERROR: ${2} ${3}: ${updateCmd} missing"
++		    exit 1
++		fi
++
++		if [ -d ${treeDir} ]; then
++		    echo "${2}: cleaning out old directories"
++		    cleanDirs ${2} ${treeDir}
++		fi
++		if [ ! -d ${treeDir} ]; then
++		    echo "${2}: creating top-level directory"
++		    mkdir -p ${treeDir} >/dev/null 2>&1
++		fi
++
++		( echo "#!/bin/sh"
++		  echo "if [ -d ${treedir}/src ]; then"
++		  echo "  cd ${treedir}/src"
++		  echo "else"
++		  echo "  mkdir ${treedir}/src"
++		  echo "  cd ${treedir}/src"
++		  echo "  ${updateCmd} init"
++		  echo "  ${updateCmd} remote add origin git://${4}/dragonfly.git"
++		  echo "  ${updateCmd} fetch --depth=1 origin"
++		  echo "  ${updateCmd} branch master origin/master"
++		  echo "fi"
++		  echo "BRANCH=`${updateCmd} branch | /usr/bin/grep -w ${5}`"
++		  echo "if [ "\${BRANCH}" = "" ]; then"
++		  echo "  ${updateCmd} branch ${5} origin/${5}"
++		  echo "fi"
++		  echo "${updateCmd} checkout ${5}"
++		  echo "${updateCmd} pull"
++		) > ${treedir}/update.sh
++		chmod +x ${treeDir}/update.sh
++    		;;	
++
+     *)		echo "ERROR: ${1} ${2}: unknown update type: ${3}"
+ 		exit 1;;
+ 
+@@ -177,6 +202,15 @@ setupDefaults () {
+     if [ -z "${defaultUpdateType}" ]; then
+         export defaultUpdateType=${_defaultUpdateType}
+     fi
++    if [ -z "${defaultDragonHost}" ]; then
++        export defaultDragonHost=${_defaultDragonHost}
++    fi
++    if [ -z "${defaultDragonfType}" ]; then
++        export defaultDragonType=${_defaultDragonType}
++    fi
++    if [ -z "${defaultGitSrcHost}" ]; then
++        export defaultGitSrcHost=${_defaultGitSrcHost}
++    fi
+ }
+ 
+ tcExists () {
+@@ -228,8 +262,8 @@ updateTree () {
  #---------------------------------------------------------------------------
  
  Setup () {
@@ -90,7 +176,7 @@ $NetBSD$
      PREF_FILES="tinderbox.ph"
      README="$(tinderLoc scripts README)"
      TINDERBOX_URL="http://tinderbox.marcuscom.com/"
-@@ -327,9 +319,9 @@ Setup () {
+@@ -327,9 +361,9 @@ Setup () {
  #---------------------------------------------------------------------------
  
  Upgrade () {
@@ -102,7 +188,7 @@ $NetBSD$
  
      bkup_file=""
  
-@@ -509,7 +501,7 @@ Upgrade () {
+@@ -509,7 +543,7 @@ Upgrade () {
      for jail in ${jails}; do
  	f=$(tinderLoc jail ${jail})
  	ucmd=$(${tc} getUpdateCmd -j ${jail} 2>/dev/null)
@@ -111,7 +197,7 @@ $NetBSD$
  	    if [ -f "${ucmd}" ]; then
  		mv -f "${ucmd}" "${f}/update.sh"
  		chmod +x "${f}/update.sh"
-@@ -524,11 +516,8 @@ Upgrade () {
+@@ -524,11 +558,8 @@ Upgrade () {
  		    tinderEcho "WARN: You must manually set the update command for ${jail} to \"USER\" using the query ${query}."
  		fi
  	    fi
@@ -125,7 +211,7 @@ $NetBSD$
  	    ( echo "#!/bin/sh"
  	      echo "${updateCmd} ${f}/supfile"
  	    ) > ${f}/update.sh
-@@ -542,7 +531,7 @@ Upgrade () {
+@@ -542,7 +573,7 @@ Upgrade () {
      for portstree in ${portstrees}; do
  	f=$(tinderLoc portstree ${portstree})
  	ucmd=$(${tc} getUpdateCmd -p ${portstree} 2>/dev/null)
@@ -134,7 +220,7 @@ $NetBSD$
  	    if [ -f "${ucmd}" ]; then
  		mv -f "${ucmd}" "${f}/update.sh"
  		chmod +x "${f}/update.sh"
-@@ -557,11 +546,8 @@ Upgrade () {
+@@ -557,11 +588,8 @@ Upgrade () {
  		    tinderEcho "WARN: You must manually set the update command for ${portstree} to \"USER\" using the query ${query}."
  		fi
  	    fi
@@ -148,7 +234,18 @@ $NetBSD$
  	    ( echo "#!/bin/sh"
  	      echo "${updateCmd} ${f}/supfile"
  	    ) > ${f}/update.sh
-@@ -913,7 +899,7 @@ createJail () {
+@@ -883,8 +911,8 @@ createJail () {
+     init=1
+ 
+     setupDefaults
+-    updateHost=${defaultUpdateHost}
+-    updateType=${defaultUpdateType}
++    updateHost=${defaultDragonHost}
++    updateType=${defaultDragonType}
+ 
+     # argument handling
+     while getopts a:d:j:m:t:u:CH:I arg >/dev/null 2>&1
+@@ -913,7 +941,7 @@ createJail () {
  
      valid=$(echo ${jailName} | awk '{if (/^[[:digit:]]/) {print;}}')
      if [ -z "${valid}" ]; then
@@ -157,7 +254,19 @@ $NetBSD$
  	return 1
      fi
  
-@@ -1829,21 +1815,27 @@ init () {
+@@ -926,6 +954,11 @@ createJail () {
+ 	echo "createJail: no update type specified"
+ 	return 1
+     fi
++    
++    if [ "${updateType}" = "CSUP"]; then
++    	echo "createJail: CSUP type cannot be used for DragonFly sources"
++	return 1
++    fi    
+ 
+     echo "${jailName}: initializing tree"
+     generateUpdateCode jail ${jailName} ${updateType} ${updateHost} \
+@@ -1829,21 +1862,36 @@ init () {
  	mkdir -p ${pb}/${dir}
      done
  
@@ -170,21 +279,30 @@ $NetBSD$
 -    read -p "Enter a default update type or command [${_defaultUpdateType}]: " type
 -    if [ -z "${type}" ]; then
 -	type=${_defaultUpdateType}
-+    # Update type is not optional, it's CSUP, so we won't ask.
++    # Update type is not optional, it's CSUP only, so we won't ask.
 +    
-+    read -p "Enter a default ftp server for DragonFly [${_defaultDragonHost}]: " dragonhost
++    echo "Server format: (http|ftp)://(host)/path_to_iso-images_directory"
++    read -p "Enter a default ISO server for DragonFly [${_defaultDragonHost}]: " dragonhost
 +    if [ -z "${dragonhost}" ]; then
 +	dragonhost=${_defaultDragonHost}
-     fi
- 
-+    # Update type is not optional, it's LFTP, so we won't ask
++    fi
 +
++    # ISO Update type is not optional, it's LFTP, so we won't ask
++
++    read -p "Enter a default Git server for DragonFly [${_defaultGitSrcHost}]: " gitsrchost
++    if [ -z "${gitsrchost}" ]; then
++	gitsrchost=${_defaultGitSrcHost}
+     fi
++    
++    # Git Update type for Git is limited to git://, so we won't ask 
+ 
      globalenv=$(tinderLoc scripts etc/env)/GLOBAL
      echo "export defaultUpdateHost=${host}" >> ${globalenv}
 -    echo "export defaultUpdateType=${type}" >> ${globalenv}
 +    echo "export defaultUpdateType=${_defaultUpdateType}" >> ${globalenv}
 +    echo "export defaultDragonHost=${dragonhost}" >> ${globalenv}
 +    echo "export defaultDragonType=${_defaultDragonType}" >> ${globalenv}
++    echo "export defaultGitSrcHost=${gitsrchost}" >> ${globalenv}
  
 -    tinderEcho "Default update host and type have been set.  These can be changed later by modifying ${globalenv}."
 +    tinderEcho "The defaults have been set.  These can be changed later by modifying ${globalenv}."

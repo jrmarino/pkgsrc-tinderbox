@@ -184,7 +184,7 @@ nfs_reserved_port_only="YES"
         -t DragonFly_RELEASE_2_12 -u GIT
        or
 # cd ${pb}/scripts && ./tc createJail -j 2.12 -d "DragonFly 2.12-RELEASE" \
-        -t 2.12-RELEASE -u LFTP -H ftp.dragonflybsd.org
+        -t 2.12.1 -u LFTP -H ftp.dragonflybsd.org
        The first method will download source via git and use
        make world to compile a complete DragonFly installation.
        The second method will instead download binary release CD ISOs
