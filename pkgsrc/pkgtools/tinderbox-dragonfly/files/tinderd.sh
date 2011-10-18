@@ -21,7 +21,7 @@ rcvar=`set_rcvar`
 # read settings, set default values
 load_rc_config "${name}"
 : ${tinderd_enable="NO"}
-: ${tinderd_directory="/space/scripts"}
+: ${tinderd_directory="/usr/pkg/tinderbox/scripts"}
 : ${tinderd_flags=""}
 : ${tinderd_debug="NO"}
 
