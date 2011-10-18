@@ -16,3 +16,4 @@ ao:man/man1/tc-configJail.1
 ap:man/man1/tc-configTinderd.1
 aq:man/man1/tc-init.1
 ar:README
+as:lib/tc_command.pl

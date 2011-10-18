@@ -80,6 +80,7 @@ generateUpdateCode () {
 
 		updateCmd="/usr/pkg/bin/lftp"
 		iso_image="dfly-${updateArch}-${5}_REL.iso.bz2"
+		iso_server=${4}
 
 		if [ ! -x "${updateCmd}" ]; then
 		    echo "ERROR: ${2} ${3}: ${updateCmd} missing"
@@ -98,7 +99,7 @@ generateUpdateCode () {
 		( echo "#!/bin/sh"
 		  echo "mkdir -p ${treeDir}/sets"
 		  echo "cd ${treeDir}/sets"
-		  echo "${updateCmd} -c \"open ${4}/iso-images/; get ${iso_image}\""
+		  echo "${updateCmd} -c \"open ${iso_server}/iso-images/; get ${iso_image}\""
 		  echo "/usr/bin/tar -xf ${iso_image} -C ../"
 		) > ${treeDir}/update.sh
 		chmod +x ${treeDir}/update.sh
@@ -770,13 +771,6 @@ buildJail () {
     fi
 
     if [ "${updateCmd}" = "LFTP" ]; then
-	export DESTDIR=${J_TMPDIR}
-	cd ${jailBase}/sets/base && yes | sh ./install.sh > ${jailBase}/world.tmp 2>&1
-	rc=$?
-	if [ ${rc} -eq 0 -a -d "${jailBase}/sets/lib32" ]; then
-	    cd ${jailBase}/sets/lib32 && yes | sh ./install.sh >> ${jailBase}/world.tmp 2>&1
-	    rc=$?
-	fi
 	execute_hook "postJailBuild" "JAIL=${jailName} DESTDIR=${J_TMPDIR} JAIL_ARCH=${jailArch} MY_ARCH=${myArch} JAIL_OBJDIR=${JAIL_OBJDIR} SRCBASE=${SRCBASE} PB=${pb} RC=${rc}"
 	if [ ${rc} -ne 0 ]; then
 	    echo "ERROR: world failed - see ${jailBase}/world.tmp"
@@ -814,7 +808,6 @@ buildJail () {
     fi
 
     # Various hacks to keep the ports building environment happy
-    touch -f ${J_TMPDIR}/etc/fstab
 
     MTREE_DIR=${SRCBASE}/etc/mtree
     mtree -deU -f ${MTREE_DIR}/BSD.root.dist \
@@ -826,7 +819,6 @@ buildJail () {
     mtree -deU -f ${MTREE_DIR}/BSD.local.dist \
 	  -p ${J_TMPDIR}/usr/local >/dev/null 2>&1
 
-    date '+%Y%m%d' > ${J_TMPDIR}/var/db/port.mkversion
     mkdir -p ${J_TMPDIR}/var/run
 
     # Create the jail tarball
@@ -942,7 +934,7 @@ createJail () {
 	return 1
     fi
     
-    if [ "${updateType}" = "CSUP"]; then
+    if [ "${updateType}" = "CSUP" ]; then
     	echo "createJail: CSUP type cannot be used for DragonFly sources"
 	return 1
     fi    

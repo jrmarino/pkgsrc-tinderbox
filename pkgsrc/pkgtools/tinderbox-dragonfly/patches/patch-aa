@@ -41,17 +41,18 @@ $NetBSD$
  		    exit 1
  		fi
  
-@@ -75,7 +78,8 @@ generateUpdateCode () {
+@@ -75,7 +78,9 @@ generateUpdateCode () {
  		    updateArch=$(uname -p)
  		fi
  
 -		updateCmd="/usr/local/bin/lftp"
 +		updateCmd="/usr/pkg/bin/lftp"
 +		iso_image="dfly-${updateArch}-${5}_REL.iso.bz2"
++		iso_server=${4}
  
  		if [ ! -x "${updateCmd}" ]; then
  		    echo "ERROR: ${2} ${3}: ${updateCmd} missing"
-@@ -94,42 +98,20 @@ generateUpdateCode () {
+@@ -94,42 +99,20 @@ generateUpdateCode () {
  		( echo "#!/bin/sh"
  		  echo "mkdir -p ${treeDir}/sets"
  		  echo "cd ${treeDir}/sets"
@@ -67,7 +68,7 @@ $NetBSD$
 -		  echo "export DESTDIR=${treeDir}"
 -		  echo "mkdir ${treeDir}/src"
 -		  echo "yes | sh ./install.sh all"
-+		  echo "${updateCmd} -c \"open ${4}/iso-images/; get ${iso_image}\""
++		  echo "${updateCmd} -c \"open ${iso_server}/iso-images/; get ${iso_image}\""
 +		  echo "/usr/bin/tar -xf ${iso_image} -C ../"
  		) > ${treeDir}/update.sh
  		chmod +x ${treeDir}/update.sh
@@ -99,7 +100,7 @@ $NetBSD$
  		if [ ! -x "${updateCmd}" ]; then
  		    echo "ERROR: ${2} ${3}: ${updateCmd} missing"
  		    exit 1
-@@ -160,6 +142,49 @@ generateUpdateCode () {
+@@ -160,6 +143,49 @@ generateUpdateCode () {
  		chmod +x ${treeDir}/update.sh
  		;;
  
@@ -149,7 +150,7 @@ $NetBSD$
      *)		echo "ERROR: ${1} ${2}: unknown update type: ${3}"
  		exit 1;;
  
-@@ -177,6 +202,15 @@ setupDefaults () {
+@@ -177,6 +203,15 @@ setupDefaults () {
      if [ -z "${defaultUpdateType}" ]; then
          export defaultUpdateType=${_defaultUpdateType}
      fi
@@ -165,7 +166,7 @@ $NetBSD$
  }
  
  tcExists () {
-@@ -228,8 +262,8 @@ updateTree () {
+@@ -228,8 +263,8 @@ updateTree () {
  #---------------------------------------------------------------------------
  
  Setup () {
@@ -176,7 +177,7 @@ $NetBSD$
      PREF_FILES="tinderbox.ph"
      README="$(tinderLoc scripts README)"
      TINDERBOX_URL="http://tinderbox.marcuscom.com/"
-@@ -327,9 +361,9 @@ Setup () {
+@@ -327,9 +362,9 @@ Setup () {
  #---------------------------------------------------------------------------
  
  Upgrade () {
@@ -188,7 +189,7 @@ $NetBSD$
  
      bkup_file=""
  
-@@ -509,7 +543,7 @@ Upgrade () {
+@@ -509,7 +544,7 @@ Upgrade () {
      for jail in ${jails}; do
  	f=$(tinderLoc jail ${jail})
  	ucmd=$(${tc} getUpdateCmd -j ${jail} 2>/dev/null)
@@ -197,7 +198,7 @@ $NetBSD$
  	    if [ -f "${ucmd}" ]; then
  		mv -f "${ucmd}" "${f}/update.sh"
  		chmod +x "${f}/update.sh"
-@@ -524,11 +558,8 @@ Upgrade () {
+@@ -524,11 +559,8 @@ Upgrade () {
  		    tinderEcho "WARN: You must manually set the update command for ${jail} to \"USER\" using the query ${query}."
  		fi
  	    fi
@@ -211,7 +212,7 @@ $NetBSD$
  	    ( echo "#!/bin/sh"
  	      echo "${updateCmd} ${f}/supfile"
  	    ) > ${f}/update.sh
-@@ -542,7 +573,7 @@ Upgrade () {
+@@ -542,7 +574,7 @@ Upgrade () {
      for portstree in ${portstrees}; do
  	f=$(tinderLoc portstree ${portstree})
  	ucmd=$(${tc} getUpdateCmd -p ${portstree} 2>/dev/null)
@@ -220,7 +221,7 @@ $NetBSD$
  	    if [ -f "${ucmd}" ]; then
  		mv -f "${ucmd}" "${f}/update.sh"
  		chmod +x "${f}/update.sh"
-@@ -557,11 +588,8 @@ Upgrade () {
+@@ -557,11 +589,8 @@ Upgrade () {
  		    tinderEcho "WARN: You must manually set the update command for ${portstree} to \"USER\" using the query ${query}."
  		fi
  	    fi
@@ -234,7 +235,80 @@ $NetBSD$
  	    ( echo "#!/bin/sh"
  	      echo "${updateCmd} ${f}/supfile"
  	    ) > ${f}/update.sh
-@@ -883,8 +911,8 @@ createJail () {
+@@ -742,13 +771,6 @@ buildJail () {
+     fi
+ 
+     if [ "${updateCmd}" = "LFTP" ]; then
+-	export DESTDIR=${J_TMPDIR}
+-	cd ${jailBase}/sets/base && yes | sh ./install.sh > ${jailBase}/world.tmp 2>&1
+-	rc=$?
+-	if [ ${rc} -eq 0 -a -d "${jailBase}/sets/lib32" ]; then
+-	    cd ${jailBase}/sets/lib32 && yes | sh ./install.sh >> ${jailBase}/world.tmp 2>&1
+-	    rc=$?
+-	fi
+ 	execute_hook "postJailBuild" "JAIL=${jailName} DESTDIR=${J_TMPDIR} JAIL_ARCH=${jailArch} MY_ARCH=${myArch} JAIL_OBJDIR=${JAIL_OBJDIR} SRCBASE=${SRCBASE} PB=${pb} RC=${rc}"
+ 	if [ ${rc} -ne 0 ]; then
+ 	    echo "ERROR: world failed - see ${jailBase}/world.tmp"
+@@ -758,21 +780,15 @@ buildJail () {
+         # Make world
+         echo "${jailName}: making world"
+ 
+-        # determine if we're cross-building world
+-        crossEnv=""
+-        if [ "${jailArch}" != "${myArch}" ]; then
+-	    crossEnv="TARGET_ARCH=${jailArch}"
+-        fi
+-
+         ncpus=$(/sbin/sysctl hw.ncpu | awk '{print $2}')
+-        factor=$(echo "$ncpus*2+1" | /usr/bin/bc -q)
++        factor=$(echo "$ncpus*2+1" | /usr/bin/bc)
+ 
+         if [ -n "${NO_JAIL_JOBS}" ]; then
+ 	    factor=1
+         fi
+ 
+-        cd ${SRCBASE} && env DESTDIR=${J_TMPDIR} ${crossEnv} \
+-	    make -j${factor} -DNO_CLEAN world > ${jailBase}/world.tmp 2>&1
++        cd ${SRCBASE} && env DESTDIR=${J_TMPDIR} \
++	    make -j${factor} world > ${jailBase}/world.tmp 2>&1
+         rc=$?
+         execute_hook "postJailBuild" "JAIL=${jailName} DESTDIR=${J_TMPDIR} JAIL_ARCH=${jailArch} MY_ARCH=${myArch} JAIL_OBJDIR=${JAIL_OBJDIR} SRCBASE=${SRCBASE} PB=${pb} RC=${rc}"
+         if [ ${rc} -ne 0 ]; then
+@@ -783,12 +799,7 @@ buildJail () {
+         # Make a complete distribution
+         echo "${jailName}: making distribution"
+ 
+-        # determine if we're cross-building world
+-        crossEnv=""
+-        if [ "${jailArch}" != "${myArch}" ]; then
+-	    crossEnv="TARGET_ARCH=${jailArch} MACHINE_ARCH=${jailArch} MAKEOBJDIRPREFIX=${J_OBJDIR}/${jailArch} MACHINE=${jailArch}"
+-        fi
+-        cd ${SRCBASE}/etc && env DESTDIR=${J_TMPDIR} ${crossEnv} \
++        cd ${SRCBASE}/etc && env DESTDIR=${J_TMPDIR} \
+ 	    make -m ${J_TMPDIR}/usr/share/mk distribution > ${jailBase}/distribution.tmp 2>&1
+         if [ $? -ne 0 ]; then
+ 	    echo "ERROR: distribution failed - see ${jailBase}/distribution.tmp"
+@@ -797,7 +808,6 @@ buildJail () {
+     fi
+ 
+     # Various hacks to keep the ports building environment happy
+-    touch -f ${J_TMPDIR}/etc/fstab
+ 
+     MTREE_DIR=${SRCBASE}/etc/mtree
+     mtree -deU -f ${MTREE_DIR}/BSD.root.dist \
+@@ -809,11 +819,8 @@ buildJail () {
+     mtree -deU -f ${MTREE_DIR}/BSD.local.dist \
+ 	  -p ${J_TMPDIR}/usr/local >/dev/null 2>&1
+ 
+-    date '+%Y%m%d' > ${J_TMPDIR}/var/db/port.mkversion
+     mkdir -p ${J_TMPDIR}/var/run
+ 
+-    rm -f ${J_TMPDIR}/usr/lib/aout/lib*_p.a
+-
+     # Create the jail tarball
+     echo "${jailName}: creating tarball"
+     jailDir=$(tinderLoc jail ${jailName})
+@@ -883,8 +890,8 @@ createJail () {
      init=1
  
      setupDefaults
@@ -245,7 +319,7 @@ $NetBSD$
  
      # argument handling
      while getopts a:d:j:m:t:u:CH:I arg >/dev/null 2>&1
-@@ -913,7 +941,7 @@ createJail () {
+@@ -913,7 +920,7 @@ createJail () {
  
      valid=$(echo ${jailName} | awk '{if (/^[[:digit:]]/) {print;}}')
      if [ -z "${valid}" ]; then
@@ -254,19 +328,19 @@ $NetBSD$
  	return 1
      fi
  
-@@ -926,6 +954,11 @@ createJail () {
+@@ -926,6 +933,11 @@ createJail () {
  	echo "createJail: no update type specified"
  	return 1
      fi
 +    
-+    if [ "${updateType}" = "CSUP"]; then
++    if [ "${updateType}" = "CSUP" ]; then
 +    	echo "createJail: CSUP type cannot be used for DragonFly sources"
 +	return 1
 +    fi    
  
      echo "${jailName}: initializing tree"
      generateUpdateCode jail ${jailName} ${updateType} ${updateHost} \
-@@ -1040,20 +1073,21 @@ createPortsTree () {
+@@ -1040,20 +1052,21 @@ createPortsTree () {
      init=1
      mountSrc=""
      portsTreeName=""
@@ -284,13 +358,13 @@ $NetBSD$
  
  	d)	descr="${OPTARG}";;
  	m)	mountSrc="${OPTARG}";;
-+	t)      cvsTag="${OPTARG}";;
++	t)	cvsTag="${OPTARG}";;
  	p)	portsTreeName="${OPTARG}";;
 -	u)	updateType="${OPTARG}";;
  	w)	cvswebUrl="${OPTARG}";;
  	C)	updateCompress=1;;
  	H)	updateHost="${OPTARG}";;
-@@ -1078,10 +1112,16 @@ createPortsTree () {
+@@ -1078,10 +1091,16 @@ createPortsTree () {
  	echo "createPortsTree: no update type specified"
  	return 1
      fi
@@ -308,7 +382,7 @@ $NetBSD$
  
      # add portstree to datastore
      echo -n "${portsTreeName}: adding to datastore... "
-@@ -1829,21 +1869,36 @@ init () {
+@@ -1829,21 +1848,36 @@ init () {
  	mkdir -p ${pb}/${dir}
      done
  

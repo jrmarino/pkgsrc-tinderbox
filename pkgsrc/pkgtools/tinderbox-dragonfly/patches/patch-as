@@ -1,0 +1,42 @@
+$NetBSD$
+
+--- ../FreeBSD/lib/tc_command.pl	2011-10-16 00:52:55.000000000 +0000
++++ lib/tc_command.pl
+@@ -188,15 +188,15 @@ my $ds = new Tinderbox::TinderboxDS();
+                 help =>
+                     "Add a jail to the datastore (do NOT call this directly; use createJail instead)",
+                 usage =>
+-                    "-j <jail name> -u CSUP|CVSUP|LFTP|USER|NONE -t <jail tag> [-d <jail description>] [-m <src mount source>] [-a <arch>]",
++                    "-j <jail name> -u GIT|LFTP|USER|NONE -t <jail tag> [-d <jail description>] [-m <src mount source>] [-a <arch>]",
+                 optstr => 'm:j:t:u:d:a:',
+         },
+         "addPortsTree" => {
+                 func => \&addPortsTree,
+                 help => "Add a portstree to the datastore",
+                 usage =>
+-                    "-p <portstree name> -u CSUP|CVSUP|USER|NONE [-d <portstree description>] [-m <ports mount source>] [-w <CVSweb URL>]",
+-                optstr => 'm:p:u:d:w:',
++                    "-p <portstree name> [-t <cvs tag>] [-d <portstree description>] [-m <ports mount source>] [-w <CVSweb URL>]",
++                optstr => 'm:p:u:t:d:w:',
+         },
+         "addPort" => {
+                 help => "Add a port to the datastore",
+@@ -560,15 +560,15 @@ my $ds = new Tinderbox::TinderboxDS();
+         "createJail" => {
+                 help => "Create a new jail",
+                 usage =>
+-                    "-j <jailname> -u CSUP|CVSUP|LFTP|USER|NONE [-t <tag>] [-d <description>] [-C] [-H <updatehost>] [-m <mountsrc>] [-I] [-a <arch>]",
++                    "-j <jailname> -u GIT|LFTP|USER|NONE -t <tag> [-d <description>] [-C] [-H <updatehost>] [-m <mountsrc>] [-I] [-a <arch>]",
+                 optstr => 'j:t:d:CH:m:u:Ia:',
+         },
+ 
+         "createPortsTree" => {
+                 help => "Create a new portstree",
+                 usage =>
+-                    "-p <portstreename> -u CSUP|CVSUP|USER|NONE [-d <description>] [-C] [-H <updatehost>] [-m <mountsrc>] [-w <cvsweburl>] [-I]",
+-                optstr => 'p:d:CH:Im:u:w:',
++                    "-p <portstreename> [-t <cvs tag>] [-d <description>] [-C] [-H <updatehost>] [-m <mountsrc>] [-w <cvsweburl>] [-I]",
++                optstr => 'p:t:d:CH:Im:u:w:',
+         },
+ 
+         "createBuild" => {
