@@ -786,21 +786,15 @@ buildJail () {
         # Make world
         echo "${jailName}: making world"
 
-        # determine if we're cross-building world
-        crossEnv=""
-        if [ "${jailArch}" != "${myArch}" ]; then
-	    crossEnv="TARGET_ARCH=${jailArch}"
-        fi
-
         ncpus=$(/sbin/sysctl hw.ncpu | awk '{print $2}')
-        factor=$(echo "$ncpus*2+1" | /usr/bin/bc -q)
+        factor=$(echo "$ncpus*2+1" | /usr/bin/bc)
 
         if [ -n "${NO_JAIL_JOBS}" ]; then
 	    factor=1
         fi
 
-        cd ${SRCBASE} && env DESTDIR=${J_TMPDIR} ${crossEnv} \
-	    make -j${factor} -DNO_CLEAN world > ${jailBase}/world.tmp 2>&1
+        cd ${SRCBASE} && env DESTDIR=${J_TMPDIR} \
+	    make -j${factor} world > ${jailBase}/world.tmp 2>&1
         rc=$?
         execute_hook "postJailBuild" "JAIL=${jailName} DESTDIR=${J_TMPDIR} JAIL_ARCH=${jailArch} MY_ARCH=${myArch} JAIL_OBJDIR=${JAIL_OBJDIR} SRCBASE=${SRCBASE} PB=${pb} RC=${rc}"
         if [ ${rc} -ne 0 ]; then
@@ -811,12 +805,7 @@ buildJail () {
         # Make a complete distribution
         echo "${jailName}: making distribution"
 
-        # determine if we're cross-building world
-        crossEnv=""
-        if [ "${jailArch}" != "${myArch}" ]; then
-	    crossEnv="TARGET_ARCH=${jailArch} MACHINE_ARCH=${jailArch} MAKEOBJDIRPREFIX=${J_OBJDIR}/${jailArch} MACHINE=${jailArch}"
-        fi
-        cd ${SRCBASE}/etc && env DESTDIR=${J_TMPDIR} ${crossEnv} \
+        cd ${SRCBASE}/etc && env DESTDIR=${J_TMPDIR} \
 	    make -m ${J_TMPDIR}/usr/share/mk distribution > ${jailBase}/distribution.tmp 2>&1
         if [ $? -ne 0 ]; then
 	    echo "ERROR: distribution failed - see ${jailBase}/distribution.tmp"
@@ -839,8 +828,6 @@ buildJail () {
 
     date '+%Y%m%d' > ${J_TMPDIR}/var/db/port.mkversion
     mkdir -p ${J_TMPDIR}/var/run
-
-    rm -f ${J_TMPDIR}/usr/lib/aout/lib*_p.a
 
     # Create the jail tarball
     echo "${jailName}: creating tarball"
@@ -1086,7 +1073,7 @@ createPortsTree () {
 
 	d)	descr="${OPTARG}";;
 	m)	mountSrc="${OPTARG}";;
-	t)      cvsTag="${OPTARG}";;
+	t)	cvsTag="${OPTARG}";;
 	p)	portsTreeName="${OPTARG}";;
 	w)	cvswebUrl="${OPTARG}";;
 	C)	updateCompress=1;;
