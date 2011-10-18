@@ -266,7 +266,49 @@ $NetBSD$
  
      echo "${jailName}: initializing tree"
      generateUpdateCode jail ${jailName} ${updateType} ${updateHost} \
-@@ -1829,21 +1862,36 @@ init () {
+@@ -1040,20 +1073,21 @@ createPortsTree () {
+     init=1
+     mountSrc=""
+     portsTreeName=""
++    cvsTag="."
+ 
+     setupDefaults
+     updateHost=${defaultUpdateHost}
+     updateType=${defaultUpdateType}
+ 
+     # argument handling
+-    while getopts d:m:p:u:w:CH:I arg >/dev/null 2>&1
++    while getopts d:m:t:p:w:CH:I arg >/dev/null 2>&1
+     do
+ 	case "${arg}" in
+ 
+ 	d)	descr="${OPTARG}";;
+ 	m)	mountSrc="${OPTARG}";;
++	t)      cvsTag="${OPTARG}";;
+ 	p)	portsTreeName="${OPTARG}";;
+-	u)	updateType="${OPTARG}";;
+ 	w)	cvswebUrl="${OPTARG}";;
+ 	C)	updateCompress=1;;
+ 	H)	updateHost="${OPTARG}";;
+@@ -1078,10 +1112,16 @@ createPortsTree () {
+ 	echo "createPortsTree: no update type specified"
+ 	return 1
+     fi
++    
++    if [ "${updateType}" != "CSUP" ]; then
++    	echo "createPortsTree: The defaultUpdateType variable in env was changed to ${updateType}"
++    	echo "Please change it back to 'CSUP', which is the only method supported to get pkgsrc"
++    	return 1
++    fi
+ 
+     echo "${portsTreeName}: initializing tree"
+     generateUpdateCode portstree ${portsTreeName} ${updateType} \
+-		       ${updateHost} "." ${updateCompress}
++		       ${updateHost} ${cvsTag} ${updateCompress}
+ 
+     # add portstree to datastore
+     echo -n "${portsTreeName}: adding to datastore... "
+@@ -1829,21 +1869,36 @@ init () {
  	mkdir -p ${pb}/${dir}
      done
  

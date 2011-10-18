@@ -184,7 +184,12 @@ nfs_reserved_port_only="YES"
         -t DragonFly_RELEASE_2_12 -u GIT
        or
 # cd ${pb}/scripts && ./tc createJail -j 2.12 -d "DragonFly 2.12-RELEASE" \
-        -t 2.12.1 -u LFTP -H ftp.dragonflybsd.org
+        -t 2.12.1 -u LFTP -H http://ftp.dragonflybsd.org/dragonflybsd
+       Note:The protocol for DragonFly host servers can be either
+       http or ftp.  The protocol and the path to the directory
+       "iso-images" must be provided, which is different from other
+       update types.  Also the "tag" must be the release represented
+       by three numbers in <major.minor.point> format.
        The first method will download source via git and use
        make world to compile a complete DragonFly installation.
        The second method will instead download binary release CD ISOs
@@ -193,8 +198,8 @@ nfs_reserved_port_only="YES"
        requires lftp (ftp/lftp) to be installed. You need to
        specify what release (not the GIT branch name, as opposed to the
        first method) you want to download with the -t option. Also
-       note that you need to provide an FTP server to download the
-       sets from (with the -H option).
+       note that you can provide an alternative FTP server to download
+       the sets from (with the -H option).
        Note: all Jail names MUST begin with their DragonFly major
        version number. That is, the following is an illegal jail
        name: "DragonFly-2.12".
@@ -207,11 +212,14 @@ nfs_reserved_port_only="YES"
        does not have to be a complete DragonFly pkgsrc tree. However,
        all packages within a tree must have all of their dependencies
        within the same tree.
-       For example, to create a portstree that tracks the full
-       DragonFly pkgsrc tree:
-# cd ${pb}/scripts && ./tc createPortsTree -p DragonFly \
-        -d "DragonFly pkgsrc tree" \
+       For example, to create a portstree based on 2011Q3 quarterly
+       branch that tracks the full pkgsrc tree:
+# cd ${pb}/scripts && ./tc createPortsTree -p pkgsrc \
+        -d "pkgsrc tree" \
+	-t "pkgsrc-2011Q3" \
         -w http://cvsweb.se.netbsd.org/cgi-bin/bsdweb.cgi/pkgsrc/
+       Omit the "-t" option if you want the HEAD, or alternatively,
+       use -t "." instead.
    14. Create the required Builds using the tc command. A Build is
        a combination of a Jail and a PortsTree. The build is the
        object in which packages are created. To create a build
