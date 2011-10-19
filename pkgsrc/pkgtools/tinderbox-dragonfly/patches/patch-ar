@@ -357,7 +357,7 @@ $NetBSD$
  
     The contents of the wireshark/options file would be:
  _OPTIONS_READ=wireshark-0.99.4
-@@ -784,13 +777,13 @@ WITH_PCRE=true
+@@ -784,19 +777,22 @@ WITH_PCRE=true
  
  8.11. Running Tinderbox in a Jail
  
@@ -372,4 +372,16 @@ $NetBSD$
 +       the DragonFly Handbook.
      2. Install dependencies into the jail (Chapter 2).
      3. Install Tinderbox (in the jail):
++# cd /usr/pkgsrc/pkgtools/tinderbox-dragonfly
++# mkdir ${PICK_TMPDIR}
++# bmake DESTDIR=${PICK_TMPDIR} install
++  (ignore any final message about already being installed)
++# mv ${PICK_TMPDIR}/usr/pkg/tinderbox ${pb}
  # mkdir ${pb}
+-# cd ${pb} && \
+-        fetch -o - path_to_tinderbox-x.x.tar.gz | \
+-        tar xvzf -
++# rm -rf ${PICK_TMPDIR}
+     4. Now we need to leave the jail, and on the host system
+        chroot into it:
+ # chroot ${jail_dir} /bin/csh
