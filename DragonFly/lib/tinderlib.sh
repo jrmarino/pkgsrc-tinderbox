@@ -50,10 +50,10 @@ tinderLoc () {
 			fi
 			;;
     "builddata")	echo "${pb}/builds/${what}";;
-    "buildports")	echo "$(tinderLoc buildroot ${what})/a/ports";;
+    "buildports")	echo "$(tinderLoc buildroot ${what})/a/pkgsrc";;
     "buildsrc")		echo "$(tinderLoc buildroot ${what})/usr/src";;
     "buildccache")	echo "$(tinderLoc buildroot ${what})/ccache";;
-    "buildoptions")	echo "$(tinderLoc buildroot ${what})/var/db/ports";;
+    "buildoptions")	echo "$(tinderLoc buildroot ${what})/var/db/pkg";;
     "builddistcache")	echo "$(tinderLoc buildroot ${what})/distcache";;
     "builderrors")	echo "${pb}/errors/${what}";;
     "buildlogs")	echo "${pb}/logs/${what}";;
@@ -197,7 +197,7 @@ cleanupMounts () {
 	    echo "cleanupMounts: ${_type}: missing portstree"
 	    return 1
 	fi
-	_dstloc=${_dstloc:-$(tinderLoc portstree ${_portstree})/ports}
+	_dstloc=${_dstloc:-$(tinderLoc portstree ${_portstree})/pkgsrc}
 	;;
 
     *)
@@ -267,7 +267,7 @@ requestMount () {
 	if [ -z "${_srcloc}" ] ; then
 	    _srcloc=$(${tc} getPortsMount -p ${_portstree})
 	    if [ -z "${_srcloc}" ] ; then
-		_srcloc=${_srcloc:=$(tinderLoc portstree ${_portstree})/ports}
+		_srcloc=${_srcloc:=$(tinderLoc portstree ${_portstree})/pkgsrc}
 	    else
 		_fqsrcloc=1
 	    fi
@@ -332,7 +332,7 @@ requestMount () {
 	    echo "requestMount: ${_type}: missing portstree"
 	    return 1
 	fi
-	_dstloc=${_dstloc:-$(tinderLoc portstree ${_portstree})/ports}
+	_dstloc=${_dstloc:-$(tinderLoc portstree ${_portstree})/pkgsrc}
 	_srcloc=${_srcloc:-$(${tc} getPortsMount -p ${_portstree})}
 	_fqsrcloc=1
 	;;

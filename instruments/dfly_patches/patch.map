@@ -18,3 +18,4 @@ aq:man/man1/tc-init.1
 ar:README
 as:lib/tc_command.pl
 at:webui/templates/paefchen/list_buildports.tpl
+au:lib/enterbuild

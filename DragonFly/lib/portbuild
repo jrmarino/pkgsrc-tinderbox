@@ -53,7 +53,7 @@ mark_failed() {
 	return
     fi
 
-    dependents=$(grep ${pkgname} ${mf} | grep '^[[:space:]]\{1,\}@' | awk '{print $NF}' | sed -e 's|^/usr/ports/||' | grep -v ${portdir})
+    dependents=$(grep ${pkgname} ${mf} | grep '^[[:space:]]\{1,\}@' | awk '{print $NF}' | sed -e 's|^/usr/pkgsrc/||' | grep -v ${portdir})
     if [ $? -ne 0 ]; then
 	return
     fi
@@ -188,8 +188,8 @@ mtree -deU -f ${chroot}/etc/mtree/BSD.usr.dist \
       -p ${chroot}/usr >/dev/null 2>&1
 
 mkdir -p ${chroot}${LOCALBASE}
-if [ -f ${chroot}/a/ports/Templates/BSD.local.dist ]; then
-    mtree -deU -f ${chroot}/a/ports/Templates/BSD.local.dist -p ${chroot}${LOCALBASE} \
+if [ -f ${chroot}/a/pkgsrc/Templates/BSD.local.dist ]; then
+    mtree -deU -f ${chroot}/a/pkgsrc/Templates/BSD.local.dist -p ${chroot}${LOCALBASE} \
     	>/dev/null 2>&1
 else
     mtree -deU -f ${chroot}/etc/mtree/BSD.local.dist -p ${chroot}${LOCALBASE} \
@@ -247,7 +247,7 @@ if [ x"${CCACHE_ENABLED}" = x"1" ]; then
 fi
 
 if [ x"${OPTIONS_ENABLED}" = x"1" ]; then
-    export PORT_DBDIR=/var/db/ports
+    export PORT_DBDIR=/var/db/pkg
 fi
 
 echo "building $pkgname in $chroot"

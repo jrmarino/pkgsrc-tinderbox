@@ -12,6 +12,15 @@ $NetBSD$
  	else
  	    ${tc} resetBuild -b ${build} ${nullfs}
  	fi
+@@ -56,7 +53,7 @@ mark_failed() {
+ 	return
+     fi
+ 
+-    dependents=$(grep ${pkgname} ${mf} | grep '^[[:space:]]\{1,\}@' | awk '{print $NF}' | sed -e 's|^/usr/ports/||' | grep -v ${portdir})
++    dependents=$(grep ${pkgname} ${mf} | grep '^[[:space:]]\{1,\}@' | awk '{print $NF}' | sed -e 's|^/usr/pkgsrc/||' | grep -v ${portdir})
+     if [ $? -ne 0 ]; then
+ 	return
+     fi
 @@ -151,7 +148,7 @@ echo ${dirname}
  tc=$(tinderLoc scripts tc)
  chroot=$(tinderLoc buildroot ${build})
@@ -21,7 +30,17 @@ $NetBSD$
  
  total_size=$(${tc} getPortTotalSize -d ${portdir} -b ${build})
  execute_hook "prePortBuild" "PACKAGE_NAME=${pkgname} BUILD=${build} JAIL=${jail} PORTSTREE=${portstree} CHROOT=${chroot} PORTDIR=${portdir} PB=${pb} TOTAL_SIZE=${total_size}"
-@@ -199,11 +196,9 @@ else
+@@ -191,19 +188,17 @@ mtree -deU -f ${chroot}/etc/mtree/BSD.us
+       -p ${chroot}/usr >/dev/null 2>&1
+ 
+ mkdir -p ${chroot}${LOCALBASE}
+-if [ -f ${chroot}/a/ports/Templates/BSD.local.dist ]; then
+-    mtree -deU -f ${chroot}/a/ports/Templates/BSD.local.dist -p ${chroot}${LOCALBASE} \
++if [ -f ${chroot}/a/pkgsrc/Templates/BSD.local.dist ]; then
++    mtree -deU -f ${chroot}/a/pkgsrc/Templates/BSD.local.dist -p ${chroot}${LOCALBASE} \
+     	>/dev/null 2>&1
+ else
+     mtree -deU -f ${chroot}/etc/mtree/BSD.local.dist -p ${chroot}${LOCALBASE} \
      	>/dev/null 2>&1
  fi
  
@@ -36,6 +55,15 @@ $NetBSD$
  
  # mount procfs
  mkdir -p ${chroot}/proc
+@@ -252,7 +247,7 @@ if [ x"${CCACHE_ENABLED}" = x"1" ]; then
+ fi
+ 
+ if [ x"${OPTIONS_ENABLED}" = x"1" ]; then
+-    export PORT_DBDIR=/var/db/ports
++    export PORT_DBDIR=/var/db/pkg
+ fi
+ 
+ echo "building $pkgname in $chroot"
 @@ -294,7 +289,7 @@ if [ x"${CCACHE_ENABLED}" ]; then
      unset CCACHE_DISABLE
  fi

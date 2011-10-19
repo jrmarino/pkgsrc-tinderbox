@@ -209,7 +209,7 @@ $NetBSD$
  	    if [ -f "${ucmd}" ]; then
  		mv -f "${ucmd}" "${f}/update.sh"
  		chmod +x "${f}/update.sh"
-@@ -557,11 +589,8 @@ Upgrade () {
+@@ -557,17 +589,14 @@ Upgrade () {
  		    tinderEcho "WARN: You must manually set the update command for ${portstree} to \"USER\" using the query ${query}."
  		fi
  	    fi
@@ -223,6 +223,14 @@ $NetBSD$
  	    ( echo "#!/bin/sh"
  	      echo "${updateCmd} ${f}/supfile"
  	    ) > ${f}/update.sh
+ 	    chmod +x ${f}/update.sh
+-	    if [ -f "${f}/ports-supfile" ]; then
+-		mv -f "${f}/ports-supfile" "${f}/supfile"
++	    if [ -f "${f}/pkgsrc-supfile" ]; then
++		mv -f "${f}/pkgsrc-supfile" "${f}/supfile"
+ 	    fi
+ 	fi
+     done
 @@ -742,13 +771,6 @@ buildJail () {
      fi
  
@@ -370,6 +378,24 @@ $NetBSD$
  
      # add portstree to datastore
      echo -n "${portsTreeName}: adding to datastore... "
+@@ -1158,7 +1177,7 @@ enterBuild () {
+     fi
+ 
+     sleepName=$(echo ${portDir} | sed -e 'y/\//_/')
+-    portFullDir=${buildRoot}/usr/ports/${portDir}
++    portFullDir=${buildRoot}/usr/pkgsrc/${portDir}
+ 
+     if [ ! -d ${portFullDir} ]; then
+ 	echo "enterBuild: Build environment does not exist yet, sleeping."
+@@ -1438,7 +1457,7 @@ tinderbuild_setup () {
+ 	echo "tinderbuild: cannot mount ports source"
+ 	tinderbuild_cleanup 1
+     fi
+-    ln -sf ../a/ports ${buildRoot}/usr/ports
++    ln -sf ../a/pkgsrc ${buildRoot}/usr/pkgsrc
+ 
+     # Mount src/
+     if ! requestMount -t buildsrc -b ${build} -r ${nullfs}; then
 @@ -1780,7 +1799,7 @@ tinderbuild () {
  		echo "tinderbuild: cannot mount portstree: ${portstree}"
  		exit 1
@@ -441,12 +467,29 @@ $NetBSD$
  	pdirs=""
  	if [ -z "${portDir}" ]; then
  	    pdirs=$(${tc} getPortsForBuild -b ${build} 2>/dev/null)
-@@ -2243,7 +2278,7 @@ tbcleanup () {
+@@ -2237,13 +2272,13 @@ tbcleanup () {
+ 	pathFound=0
+         for portstree in ${portstrees} ; do
+ 	    path=$(tinderLoc portstree ${portstree})
+-	    path="${path}/ports/${port}/Makefile"
++	    path="${path}/pkgsrc/${port}/Makefile"
+ 	    if [ -e ${path} ]; then
+ 	        if [ ${cleanDistfiles} = 1 ]; then
  		    oldcwd=${PWD}
  		    path=$(tinderLoc portstree ${portstree})
- 		    cd "${path}/ports/${port}"
+-		    cd "${path}/ports/${port}"
 -		    distinfo=$(env PORTSDIR="${path}/ports" make -V MD5_FILE)
++		    cd "${path}/pkgsrc/${port}"
 +		    distinfo=$(env PORTSDIR="${path}/pkgsrc" make -V MD5_FILE)
  		    if [ -f "${distinfo}" ]; then
  			for df in $(grep '^MD5' ${distinfo} | awk -F '[\(\)]' '{print $2}'); do
  			    if ! grep -q "^${df}\$" ${disttmp}; then
+@@ -2327,7 +2362,7 @@ tbcleanup () {
+ 	    fi
+ 
+ 	    path=$(tinderLoc portstree ${portstree})
+-	    path="${path}/ports/${port}/Makefile"
++	    path="${path}/pkgsrc/${port}/Makefile"
+ 
+ 	    if [ ! -e ${path} ]; then
+ 		echo "Removing build port database entry for nonexistent port ${build}/${port}"
