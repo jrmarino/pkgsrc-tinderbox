@@ -1,0 +1,13 @@
+$NetBSD$
+
+--- ../FreeBSD/lib/makemake	2011-10-16 00:52:55.000000000 +0000
++++ lib/makemake
+@@ -231,7 +231,7 @@ foreach my $key (keys %pkgdir) {
+             $PORTSTREE_NAME, $ENV{'PORTBUILD_ARGS'};
+         printf MK "\"%s\" \"%s\" \"%s\" \"%s\" \"%s\" \"%s\" ", $edeplst, $pdeplst,
+             $fdeplst, $bdeplst, $rdeplst, $tdeplst;
+-        printf MK "%s /usr/ports/%s\n", $pname, $key;
++        printf MK "%s /usr/pkgsrc/%s\n", $pname, $key;
+ }
+ 
+ close(MK);
