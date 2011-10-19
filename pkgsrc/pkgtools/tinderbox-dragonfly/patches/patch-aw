@@ -23,7 +23,7 @@ $NetBSD$
  
 -        $tmp = '-V ' . join(' -V ', @makeTargets);
 +        foreach $target (@makeTargets) {
-+                $tmp .= "-V '\{$" . $target . '} ';		
++                $tmp .= "-V '\${" . $target . "}' ";		
 +        }
          my $dir = $self->{BASEDIR} . '/' . $port;
 -        @ret = split("\n", `cd $dir && make $tmp`);
@@ -31,3 +31,20 @@ $NetBSD$
  
          foreach $tmp (@makeTargets) {
                  $self->{CACHE}->{$port}{$tmp} = shift @ret;
+@@ -98,6 +101,7 @@ sub _getList {
+                         $ddir = $d;
+                 }
+                 $ddir =~ s|^$self->{BASEDIR}/||;
++                $ddir =~ s|^\.\.\/\.\.\/||;
+                 if ($ddir) {
+                         push @deps, $ddir;
+                 }
+@@ -109,7 +113,7 @@ sub _getList {
+ sub Name {
+         my $self = shift;
+         my $port = shift;
+-        return $self->_getVariable($port, 'PORTNAME');
++        return $self->_getVariable($port, 'PKGBASE');
+ }
+ 
+ # Package name

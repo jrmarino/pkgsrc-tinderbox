@@ -66,7 +66,7 @@ sub _execMake {
         return if ($self->{SEEN}->{$port} eq 1);
 
         foreach $target (@makeTargets) {
-                $tmp .= "-V '\{$" . $target . '} ';		
+                $tmp .= "-V '\${" . $target . "}' ";		
         }
         my $dir = $self->{BASEDIR} . '/' . $port;
         @ret = split("\n", `cd $dir && bmake $tmp`);
@@ -101,6 +101,7 @@ sub _getList {
                         $ddir = $d;
                 }
                 $ddir =~ s|^$self->{BASEDIR}/||;
+                $ddir =~ s|^\.\.\/\.\.\/||;
                 if ($ddir) {
                         push @deps, $ddir;
                 }
@@ -112,7 +113,7 @@ sub _getList {
 sub Name {
         my $self = shift;
         my $port = shift;
-        return $self->_getVariable($port, 'PORTNAME');
+        return $self->_getVariable($port, 'PKGBASE');
 }
 
 # Package name
