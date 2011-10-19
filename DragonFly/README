@@ -12,8 +12,8 @@ Tinderbox User Guide
    chroot.  DragonFly uses NetBSD's pkgsrc to build software which
    is known as "packages" rather than "ports".  Rather than update
    DragonFly Tinderbox to change numerous references to "ports" and
-   "portstrees", the users of pkgsrc are to equate the term "port"
-   with "package" whenever they encounter it.
+   "portstrees", the users of pkgsrc are asked to equate the term
+   "port" with "package" whenever they encounter it.
 
    Tinderbox supports automatic tracking of dependencies and only
    rebuilds packages that changed since last run. Tinderbox has
