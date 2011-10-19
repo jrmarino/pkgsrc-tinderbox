@@ -14,7 +14,7 @@ cd ${DFLYDIR}
 
 while read mapline; do
 	patch_id=`echo $mapline | /usr/bin/sed "s/:.*//"`
-	target=`echo $mapline | /usr/bin/sed "s/[^\w]*://"`
+	target=`echo $mapline | /usr/bin/sed "s/^.*://"`
 	if [ -f ${target} ]; then
 	   /usr/pkg/bin/pkgdiff ../FreeBSD/${target} ${target} > ${PATCHDIR}/patch-${patch_id}
 	   DOUBLECHK=`head ${PATCHDIR}/patch-${patch_id}`

@@ -1,0 +1,33 @@
+$NetBSD$
+
+--- ../FreeBSD/lib/Tinderbox/MakeCache.pm	2011-10-16 00:52:55.000000000 +0000
++++ lib/Tinderbox/MakeCache.pm
+@@ -37,7 +37,7 @@ our @makeTargets = (
+         'FETCH_DEPENDS',   'BUILD_DEPENDS',
+         'LIB_DEPENDS',     'RUN_DEPENDS',
+         'TEST_DEPENDS',    'MAINTAINER',
+-        'COMMENT',         'PORTNAME',
++        'COMMENT',         'PKGBASE',
+         'DISTFILES',
+ );
+ 
+@@ -60,13 +60,16 @@ sub _execMake {
+         my $self = shift;
+         my $port = shift;
+         my @ret;
+-        my $tmp;
++        my $target;
++        my $tmp = '';
+ 
+         return if ($self->{SEEN}->{$port} eq 1);
+ 
+-        $tmp = '-V ' . join(' -V ', @makeTargets);
++        foreach $target (@makeTargets) {
++                $tmp .= "-V '\{$" . $target . '} ';		
++        }
+         my $dir = $self->{BASEDIR} . '/' . $port;
+-        @ret = split("\n", `cd $dir && make $tmp`);
++        @ret = split("\n", `cd $dir && bmake $tmp`);
+ 
+         foreach $tmp (@makeTargets) {
+                 $self->{CACHE}->{$port}{$tmp} = shift @ret;
