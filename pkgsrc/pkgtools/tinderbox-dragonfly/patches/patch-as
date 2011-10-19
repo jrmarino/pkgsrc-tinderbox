@@ -2,7 +2,49 @@ $NetBSD$
 
 --- ../FreeBSD/lib/tc_command.pl	2011-10-16 00:52:55.000000000 +0000
 +++ lib/tc_command.pl
-@@ -188,15 +188,15 @@ my $ds = new Tinderbox::TinderboxDS();
+@@ -103,7 +103,7 @@ my $ds = new Tinderbox::TinderboxDS();
+         },
+         "configOptions" => {
+                 func   => \&configOptions,
+-                help   => "Configure Tinderbox port OPTIONS parameters",
++                help   => "Configure Tinderbox package OPTIONS parameters",
+                 usage  => "[-d | -e] [-o <options mount src>]",
+                 optstr => 'deo:',
+         },
+@@ -144,7 +144,7 @@ my $ds = new Tinderbox::TinderboxDS();
+         },
+         "listPorts" => {
+                 func  => \&listPorts,
+-                help  => "List all ports in the datastore",
++                help  => "List all packages in the datastore",
+                 usage => "",
+         },
+         "listPortsTrees" => {
+@@ -154,20 +154,20 @@ my $ds = new Tinderbox::TinderboxDS();
+         },
+         "listBuildPortsQueue" => {
+                 func   => \&listBuildPortsQueue,
+-                help   => "Lists the Ports to Build Queue",
++                help   => "Lists the Packages to Build Queue",
+                 usage  => "[-b <build name>] [-r] [-s <status>]",
+                 optstr => 'b:h:s:r',
+         },
+         "listPortFailPatterns" => {
+                 func => \&listPortFailPatterns,
+                 help =>
+-                    "List all port failure patterns, their reasons, and regular expressions",
++                    "List all package failure patterns, their reasons, and regular expressions",
+                 usage  => "[-i <ID>]",
+                 optstr => 'i:',
+         },
+         "listPortFailReasons" => {
+                 func  => \&listPortFailReasons,
+-                help  => "List all port failure reasons and their descriptions",
++                help  => "List all package failure reasons and their descriptions",
+                 usage => "[-t <tag>]",
+                 optstr => 't:',
+         },
+@@ -188,18 +188,18 @@ my $ds = new Tinderbox::TinderboxDS();
                  help =>
                      "Add a jail to the datastore (do NOT call this directly; use createJail instead)",
                  usage =>
@@ -20,7 +62,178 @@ $NetBSD$
 +                optstr => 'm:p:u:t:d:w:',
          },
          "addPort" => {
-                 help => "Add a port to the datastore",
+-                help => "Add a port to the datastore",
++                help => "Add a package to the datastore",
+                 usage =>
+                     "{-b <build name> | -a} -d <port directory> [-o | -O] [-R]",
+                 optstr => 'ab:d:oOR',
+@@ -211,7 +211,7 @@ my $ds = new Tinderbox::TinderboxDS();
+                 optstr => 'b:d:R',
+         },
+         "rescanPorts" => {
+-                help   => "Update properties for all ports in the datastore",
++                help   => "Update properties for all packages in the datastore",
+                 usage  => "{-b <build name> | -a} [-o] [-O] [-R]",
+                 optstr => 'ab:oOR',
+         },
+@@ -224,21 +224,21 @@ my $ds = new Tinderbox::TinderboxDS();
+         },
+         "addPortFailPattern" => {
+                 func => \&addPortFailPattern,
+-                help => "Add a port failure pattern to the datastore",
++                help => "Add a package failure pattern to the datastore",
+                 usage =>
+                     "-i <ID> -r <reason tag> -e <expression> [-p <parent ID>]",
+                 optstr => 'i:r:e:p:',
+         },
+         "addPortFailReason" => {
+                 func => \&addPortFailReason,
+-                help => "Add a port failure reason to the datastore",
++                help => "Add a package failure reason to the datastore",
+                 usage =>
+                     "-t <tag> [-d <description>] [-y COMMON|RARE|TRANSIENT]",
+                 optstr => 't:d:y:',
+         },
+         "getDependenciesForPort" => {
+                 func => \&getDependenciesForPort,
+-                help => "Get stored dependencies for a given port and build",
++                help => "Get stored dependencies for a given package and build",
+                 usage =>
+                     "-b <build name> -d <port directory> [-t EXTRACT_DEPENDS|PATCH_DEPENDS|FETCH_DEPENDS|BUILD_DEPENDS|LIB_DEPENDS|RUN_DEPENDS|TEST_DEPENDS]",
+                 optstr => 'b:d:t:',
+@@ -270,7 +270,7 @@ my $ds = new Tinderbox::TinderboxDS();
+         },
+         "getPortsForBuild" => {
+                 func   => \&getPortsForBuild,
+-                help   => "Get all the ports associated with a given build",
++                help   => "Get all the packages associated with a given build",
+                 usage  => "-b <build name>",
+                 optstr => 'b:',
+         },
+@@ -300,7 +300,7 @@ my $ds = new Tinderbox::TinderboxDS();
+         },
+         "getPortsMount" => {
+                 func   => \&getPortsMount,
+-                help   => "Get the ports mount source for the given portstree",
++                help   => "Get the packages mount source for the given portstree",
+                 usage  => "-p <portstree name>",
+                 optstr => 'p:',
+         },
+@@ -318,7 +318,7 @@ my $ds = new Tinderbox::TinderboxDS();
+         },
+         "setPortsMount" => {
+                 func   => \&setPortsMount,
+-                help   => "Set the ports mount source for the given portstree",
++                help   => "Set the packages mount source for the given portstree",
+                 usage  => "-p <portstree name> -m <mountsource>",
+                 optstr => 'p:m:',
+         },
+@@ -337,7 +337,7 @@ my $ds = new Tinderbox::TinderboxDS();
+         "rmPort" => {
+                 func => \&rmPort,
+                 help =>
+-                    "Remove a port from the datastore, and optionally its package and logs from the file system",
++                    "Remove a package from the datastore, and optionally its package and logs from the file system",
+                 usage  => "-d <port directory> [-b <build name>] [-f] [-c]",
+                 optstr => 'fb:d:c',
+         },
+@@ -361,13 +361,13 @@ my $ds = new Tinderbox::TinderboxDS();
+         },
+         "rmPortFailPattern" => {
+                 func   => \&rmPortFailPattern,
+-                help   => "Remove a port failure pattern from the datastore",
++                help   => "Remove a package failure pattern from the datastore",
+                 usage  => "-i <ID> [-f]",
+                 optstr => 'i:f',
+         },
+         "rmPortFailReason" => {
+                 func   => \&rmPortFailReason,
+-                help   => "Remove a port failure reason from the datastore",
++                help   => "Remove a package failure reason from the datastore",
+                 usage  => "-t <tag> [-f]",
+                 optstr => 't:f',
+         },
+@@ -392,9 +392,9 @@ my $ds = new Tinderbox::TinderboxDS();
+         },
+         "updatePortStatus" => {
+                 func => \&updatePortStatus,
+-                help => "Update build information about a port",
++                help => "Update build information about a package",
+                 usage =>
+-                    "-d <portdir> -b <build> [-L] [-S] [-s <status>] [-r <reason>] [-v <version>] [-p <dependency port directory>] [-t <total size>]",
++                    "-d <portdir> -b <build> [-L] [-S] [-s <status>] [-r <reason>] [-v <version>] [-p <dependency package directory>] [-t <total size>]",
+                 optstr => 'b:d:Lr:Ss:v:p:t:',
+         },
+         "updateBuildStatus" => {
+@@ -405,7 +405,7 @@ my $ds = new Tinderbox::TinderboxDS();
+         },
+         "updateBuildRemakeCount" => {
+                 func => \&updateBuildRemakeCount,
+-                help => "Update the count of number of ports needing a rebuild",
++                help => "Update the count of number of packages needing a rebuild",
+                 usage  => "-b <build name> {-c <count> | -d}",
+                 optstr => 'b:c:d',
+         },
+@@ -419,28 +419,28 @@ my $ds = new Tinderbox::TinderboxDS();
+         "getPortLastBuiltVersion" => {
+                 func => \&getPortLastBuiltVersion,
+                 help =>
+-                    "Get the last built version for the specified port and build",
++                    "Get the last built version for the specified package and build",
+                 usage  => "-d <port directory> -b <build name>",
+                 optstr => 'd:b:',
+         },
+         "getPortLastBuiltStatus" => {
+                 func => \&getPortLastBuiltStatus,
+                 help =>
+-                    "Get the last built status for the specified port and build",
++                    "Get the last built status for the specified package and build",
+                 usage  => "-d <port directory> -b <build name>",
+                 optstr => 'd:b:',
+         },
+         "getPortTotalSize" => {
+                 func => \&getPortTotalSize,
+                 help =>
+-                    "Get the total size (in KB) required for the specified port and build",
++                    "Get the total size (in KB) required for the specified package and build",
+                 usage  => "-d <port directory> -b <build name>",
+                 optstr => 'd:b:',
+         },
+         "updateBuildCurrentPort" => {
+                 func => \&updateBuildCurrentPort,
+                 help =>
+-                    "Update the port currently being built for the specify build",
++                    "Update the package currently being built for the specify build",
+                 usage =>
+                     "-b <build name> [-d <port directory>] [-n <package name>]",
+                 optstr => 'b:d:n:',
+@@ -482,7 +482,7 @@ my $ds = new Tinderbox::TinderboxDS();
+         "updatePortFailReason" => {
+                 func => \&updatePortFailReason,
+                 help =>
+-                    "Update the type or description of a port failure reason",
++                    "Update the type or description of a package failure reason",
+                 usage  => "-t <tag> <[-d <descr>] | [-y <type>]>",
+                 optstr => 't:d:y:',
+         },
+@@ -508,7 +508,7 @@ my $ds = new Tinderbox::TinderboxDS();
+         "sendBuildErrorMail" => {
+                 func => \&sendBuildErrorMail,
+                 help =>
+-                    "Send email to the build interest list when a port fails to build",
++                    "Send email to the build interest list when a package fails to build",
+                 usage =>
+                     "-b <build name> -d <port directory> -p <package name> [-l] [-x extension]",
+                 optstr => 'b:d:lp:x:',
+@@ -526,7 +526,7 @@ my $ds = new Tinderbox::TinderboxDS();
+         },
+         "copyBuildPorts" => {
+                 func   => \&copyBuildPorts,
+-                help   => "Copy the ports from one build to another",
++                help   => "Copy the packages from one build to another",
+                 usage  => "-s <src build name> -d <dest build name> [-p]",
+                 optstr => 's:d:p',
+         },
 @@ -560,15 +560,15 @@ my $ds = new Tinderbox::TinderboxDS();
          "createJail" => {
                  help => "Create a new jail",
@@ -40,3 +253,393 @@ $NetBSD$
          },
  
          "createBuild" => {
+@@ -604,14 +604,14 @@ my $ds = new Tinderbox::TinderboxDS();
+         },
+ 
+         "updatePortsTree" => {
+-                help   => "Update an existing ports tree",
++                help   => "Update an existing portstree",
+                 usage  => "-p <portstreename>",
+                 optstr => 'p',
+         },
+ 
+         "copyBuild" => {
+                 help =>
+-                    "Copy the environment and ports from one build to another",
++                    "Copy the environment and packages from one build to another",
+                 usage =>
+                     "-s <src build name> -d <dest build name> [-c] [-E] [-O] [-p] [-P]",
+                 optstr => 's:d:cEOpP',
+@@ -1138,10 +1138,10 @@ sub listPorts {
+                 map { print $_->getDirectory() . "\n" } @ports;
+         } elsif (defined($ds->getError())) {
+                 cleanup($ds, 1,
+-                        "Failed to list ports: " . $ds->getError() . "\n");
++                        "Failed to list packages: " . $ds->getError() . "\n");
+         } else {
+                 cleanup($ds, 1,
+-                        "There are no ports configured in the datastore.\n");
++                        "There are no packages configured in the datastore.\n");
+         }
+ }
+ 
+@@ -1166,7 +1166,7 @@ sub listPortFailPatterns {
+ 
+                 if (!defined($pattern)) {
+                         cleanup($ds, 1,
+-                                "Failed to find port failure pattern with the ID "
++                                "Failed to find package failure pattern with the ID "
+                                     . $opts->{'i'}
+                                     . " in the datastore.\n");
+                 }
+@@ -1219,13 +1219,13 @@ $id,         $reason,               $exp
+                         }
+                 } elsif (defined($ds->getError())) {
+                         cleanup($ds, 1,
+-                                      "Failed to list port failure patterns: "
++                                      "Failed to list package failure patterns: "
+                                     . $ds->getError()
+                                     . "\n");
+                 } else {
+                         cleanup(
+                                 $ds, 1,
+-                                "There are no port failure patterns configured in
++                                "There are no package failure patterns configured in
+ the datastore.\n"
+                         );
+                 }
+@@ -1238,7 +1238,7 @@ sub listPortFailReasons {
+ 
+                 if (!defined($reason)) {
+                         cleanup($ds, 1,
+-                                "Failed to find port failure reason with tag "
++                                "Failed to find package failure reason with tag "
+                                     . $opts->{'t'}
+                                     . " in the datastore.\n");
+                 }
+@@ -1289,12 +1289,12 @@ $tag,                  $type,         $d
+                         }
+                 } elsif (defined($ds->getError())) {
+                         cleanup($ds, 1,
+-                                      "Failed to list port failure reasons: "
++                                      "Failed to list package failure reasons: "
+                                     . $ds->getError()
+                                     . "\n");
+                 } else {
+                         cleanup($ds, 1,
+-                                "There are no port failure reasons configured in the datastore.\n"
++                                "There are no package failure reasons configured in the datastore.\n"
+                         );
+                 }
+         }
+@@ -1600,7 +1600,7 @@ sub addBuildPortsQueueEntry {
+                     $ds->addBuildPortsQueueEntry($build, $portdir, $priority,
+                         $user_id);
+                 if (!$rc) {
+-                        warn(         "Failed to add port " 
++                        warn(         "Failed to add package " 
+                                     . $portdir
+                                     . " to the datastore: "
+                                     . $ds->getError()
+@@ -1744,7 +1744,7 @@ sub getDependenciesForPort {
+                 cleanup($ds, 1,
+                               "Port, "
+                             . $opts->{'d'}
+-                            . " is not a valid port for build, "
++                            . " is not a valid package for build, "
+                             . $opts->{'b'}
+                             . "\n");
+         }
+@@ -1764,12 +1764,12 @@ sub getDependenciesForPort {
+                 map { print $_->getDirectory() . "\n" } @deps;
+         } elsif (defined($ds->getError())) {
+                 cleanup($ds, 1,
+-                        "Failed to get dependencies for this port from the datastore: "
++                        "Failed to get dependencies for this package from the datastore: "
+                             . $ds->getError()
+                             . "\n");
+         } else {
+                 cleanup($ds, 0,
+-                        "There are no dependencies for this port in the datastore.\n"
++                        "There are no dependencies for this package in the datastore.\n"
+                 );
+         }
+ }
+@@ -2157,17 +2157,17 @@ sub rmPort {
+         my $port = $ds->getPortByDirectory($opts->{'d'});
+ 
+         if (!defined($port)) {
+-                cleanup($ds, 1, "Unknown port, " . $opts->{'d'} . "\n");
++                cleanup($ds, 1, "Unknown package, " . $opts->{'d'} . "\n");
+         }
+ 
+         unless ($opts->{'f'}) {
+                 if ($opts->{'b'}) {
+-                        print "Really remove port "
++                        print "Really remove package "
+                             . $opts->{'d'}
+                             . " for build "
+                             . $opts->{'b'} . "? ";
+                 } else {
+-                        print "Really remove port " . $opts->{'d'} . "? ";
++                        print "Really remove package " . $opts->{'d'} . "? ";
+                 }
+                 my $response = <STDIN>;
+                 cleanup($ds, 0, undef) unless ($response =~ /^y/i);
+@@ -2218,7 +2218,7 @@ sub rmPort {
+ 
+         if (!$rc) {
+                 cleanup($ds, 1,
+-                        "Failed to remove port: " . $ds->getError() . "\n");
++                        "Failed to remove package: " . $ds->getError() . "\n");
+         }
+ }
+ 
+@@ -2406,7 +2406,7 @@ sub rmPortFailPattern {
+ 
+         if (!defined($pattern)) {
+                 cleanup($ds, 1,
+-                              "Unknown port failure pattern ID, "
++                              "Unknown package failure pattern ID, "
+                             . $opts->{'i'}
+                             . ".\n");
+         }
+@@ -2419,7 +2419,7 @@ sub rmPortFailPattern {
+         }
+ 
+         unless ($opts->{'f'}) {
+-                print "Really remove port failure pattern "
++                print "Really remove package failure pattern "
+                     . $opts->{'i'} . "? ";
+                 my $response = <STDIN>;
+                 print "\n";
+@@ -2430,7 +2430,7 @@ sub rmPortFailPattern {
+ 
+         if (!$rc) {
+                 cleanup($ds, 1,
+-                              "Failed to remove port failure pattern: "
++                              "Failed to remove package failure pattern: "
+                             . $ds->getError()
+                             . "\n");
+         }
+@@ -2448,7 +2448,7 @@ sub rmPortFailReason {
+ 
+         if (!defined($reason)) {
+                 cleanup($ds, 1,
+-                              "Unknown port failure reason tag, "
++                              "Unknown package failure reason tag, "
+                             . $opts->{'t'}
+                             . ".\n");
+         }
+@@ -2460,7 +2460,7 @@ sub rmPortFailReason {
+                         || $pattern->getId() == 2147483647)
+                 {
+                         cleanup($ds, 1,
+-                                "This port failure reason is referenced by system-defined port failure patterns, and cannot be removed.\n"
++                                "This package failure reason is referenced by system-defined package failure patterns, and cannot be removed.\n"
+                         );
+                 }
+         }
+@@ -2468,12 +2468,12 @@ sub rmPortFailReason {
+         unless ($opts->{'f'}) {
+                 if (@patterns) {
+                         print
+-                            "Removing this port failure reason will also remove the following port failure patterns:\n";
++                            "Removing this package failure reason will also remove the following package failure patterns:\n";
+                         foreach my $pattern (@patterns) {
+                                 print "\t" . $pattern->getId() . "\n";
+                         }
+                 }
+-                print "Really remove port failure reason "
++                print "Really remove package failure reason "
+                     . $opts->{'t'} . "? ";
+                 my $response = <STDIN>;
+                 cleanup($ds, 0, undef) unless ($response =~ /^y/i);
+@@ -2484,9 +2484,9 @@ sub rmPortFailReason {
+                 $rc = $ds->removePortFailPattern($pattern);
+                 if (!$rc) {
+                         cleanup($ds, 1,
+-                                      "Failed to remove port failure pattern "
++                                      "Failed to remove package failure pattern "
+                                     . $pattern->getId()
+-                                    . " as part of removing port failure reason "
++                                    . " as part of removing package failure reason "
+                                     . $opts->{'t'} . ": "
+                                     . $ds->getError()
+                                     . "\n");
+@@ -2497,7 +2497,7 @@ sub rmPortFailReason {
+ 
+         if (!$rc) {
+                 cleanup($ds, 1,
+-                              "Failed to remove port failure reason . "
++                              "Failed to remove package failure reason . "
+                             . $opts->{'t'} . ": "
+                             . $ds->getError()
+                             . "\n");
+@@ -2590,7 +2590,7 @@ sub updatePortStatus {
+                 cleanup($ds, 1,
+                               "Port, "
+                             . $opts->{'d'}
+-                            . " is not a valid port for build, "
++                            . " is not a valid package for build, "
+                             . $opts->{'b'}
+                             . "\n");
+         }
+@@ -2744,7 +2744,7 @@ sub getPortLastBuiltVersion {
+                 cleanup($ds, 1,
+                               "Port, "
+                             . $opts->{'d'}
+-                            . " is not a valid port for build, "
++                            . " is not a valid package for build, "
+                             . $opts->{'b'}
+                             . "\n");
+         }
+@@ -2752,7 +2752,7 @@ sub getPortLastBuiltVersion {
+         my $version = $ds->getPortLastBuiltVersion($port, $build);
+         if (!defined($version) && $ds->getError()) {
+                 cleanup($ds, 1,
+-                              "Failed to get last update version for port "
++                              "Failed to get last update version for package "
+                             . $opts->{'d'}
+                             . " for build "
+                             . $opts->{'b'} . ": "
+@@ -2786,7 +2786,7 @@ sub getPortLastBuiltStatus {
+                 cleanup($ds, 1,
+                               "Port, "
+                             . $opts->{'d'}
+-                            . " is not a valid port for build, "
++                            . " is not a valid package for build, "
+                             . $opts->{'b'}
+                             . "\n");
+         }
+@@ -2794,7 +2794,7 @@ sub getPortLastBuiltStatus {
+         my $status = $ds->getPortLastBuiltStatus($port, $build);
+         if (!defined($status) && $ds->getError()) {
+                 cleanup($ds, 1,
+-                              "Failed to get last built status for port "
++                              "Failed to get last built status for package "
+                             . $opts->{'d'}
+                             . " for build "
+                             . $opts->{'b'} . ": "
+@@ -2828,7 +2828,7 @@ sub getPortTotalSize {
+                 cleanup($ds, 1,
+                               "Port, "
+                             . $opts->{'d'}
+-                            . " is not a valid port for build, "
++                            . " is not a valid package for build, "
+                             . $opts->{'b'}
+                             . "\n");
+         }
+@@ -2836,7 +2836,7 @@ sub getPortTotalSize {
+         my $size = $ds->getPortTotalSize($port, $build);
+         if (!defined($size) && $ds->getError()) {
+                 cleanup($ds, 1,
+-                              "Failed to get total size for port "
++                              "Failed to get total size for package "
+                             . $opts->{'d'}
+                             . " for build "
+                             . $opts->{'b'} . ": "
+@@ -2866,7 +2866,7 @@ sub updateBuildCurrentPort {
+             or cleanup(
+                 $ds,
+                 1,
+-                "Failed to get last update build current port for build "
++                "Failed to get last update build current package for build "
+                     . $opts->{'b'} . ": "
+                     . $ds->getError() . "\n"
+             );
+@@ -3071,7 +3071,7 @@ sub updatePortFailReason {
+ 
+         if (!$ds->isValidPortFailReason($opts->{'t'})) {
+                 cleanup($ds, 1,
+-                        "Unknown port failure reason, " . $opts->{'t'} . ".\n");
++                        "Unknown package failure reason, " . $opts->{'t'} . ".\n");
+         }
+ 
+         $reason = $ds->getPortFailReasonByTag($opts->{'t'});
+@@ -3083,7 +3083,7 @@ sub updatePortFailReason {
+ 
+         if (!$rc) {
+                 cleanup($ds, 1,
+-                              "Failed to update port failure reason: "
++                              "Failed to update package failure reason: "
+                             . $ds->getError()
+                             . "\n");
+         }
+@@ -3189,7 +3189,7 @@ sub copyBuildPorts {
+         foreach my $port (@ports) {
+                 my $rc = $ds->addPortForBuild($port, $dest);
+                 if (!$rc) {
+-                        warn "WARN: Failed to add port "
++                        warn "WARN: Failed to add package "
+                             . $port->getName()
+                             . " for build, "
+                             . $dest->getName() . ": "
+@@ -3202,7 +3202,7 @@ sub copyBuildPorts {
+                                 $ds->getPortTotalSize($port, $src));
+                         if (!$rc) {
+                                 warn
+-                                    "WARN: Failed to update port total size for port "
++                                    "WARN: Failed to update package total size for package "
+                                     . $port->getName() . "\n";
+                         }
+ 
+@@ -3211,7 +3211,7 @@ sub copyBuildPorts {
+                                 $ds->getPortLastBuiltVersion($port, $src));
+                         if (!$rc) {
+                                 warn
+-                                    "WARN: Failed to update port last built version for port "
++                                    "WARN: Failed to update package last built version for package "
+                                     . $port->getName() . "\n";
+                         }
+ 
+@@ -3220,7 +3220,7 @@ sub copyBuildPorts {
+                                 $ds->getPortLastBuiltStatus($port, $src));
+                         if (!$rc) {
+                                 warn
+-                                    "WARN: Failed to update port last built status for port "
++                                    "WARN: Failed to update package last built status for package "
+                                     . $port->getName() . "\n";
+                         }
+                 }
+@@ -3361,7 +3361,7 @@ sub addPorts {
+         my $portdir = $ENV{'PORTSDIR'} . "/" . $port;
+         return if (!-d $portdir);
+ 
+-        # Canonicalize the port directory.
++        # Canonicalize the package directory.
+         $port = abs_path($portdir);
+         $port =~ s|$ENV{'PORTSDIR'}/||;
+ 
+@@ -3390,19 +3390,19 @@ sub addPorts {
+         $pCls->setMaintainer($cache->Maintainer($port));
+         $pCls->setComment($cache->Comment($port));
+ 
+-        # Only add the port if it isn't already in the datastore.
++        # Only add the package if it isn't already in the datastore.
+         my $rc;
+         if ($newPort) {
+                 $rc = $ds->addPort(\$pCls);
+                 if (!$rc) {
+-                        warn "WARN: Failed to add port "
++                        warn "WARN: Failed to add package "
+                             . $pCls->getDirectory() . ": "
+                             . $ds->getError() . "\n";
+                 }
+         } else {
+                 $rc = $ds->updatePort(\$pCls);
+                 if (!$rc) {
+-                        warn "WARN: Failed to update port "
++                        warn "WARN: Failed to update package "
+                             . $pCls->getDirectory() . ": "
+                             . $ds->getError() . "\n";
+                 }
+@@ -3411,7 +3411,7 @@ sub addPorts {
+         if (!$ds->isPortInBuild($pCls, $build)) {
+                 $rc = $ds->addPortForBuild($pCls, $build);
+                 if (!$rc) {
+-                        warn "WARN: Failed to add port for build, "
++                        warn "WARN: Failed to add package for build, "
+                             . $build->getName() . ": "
+                             . $ds->getError() . "\n";
+                 }

@@ -382,6 +382,15 @@ $NetBSD$
  
      # add portstree to datastore
      echo -n "${portsTreeName}: adding to datastore... "
+@@ -1780,7 +1799,7 @@ tinderbuild () {
+ 		echo "tinderbuild: cannot mount portstree: ${portstree}"
+ 		exit 1
+ 	    fi
+-	    env PORTSDIR=$(tinderLoc portstree ${portstree})/ports \
++	    env PORTSDIR=$(tinderLoc portstree ${portstree})/pkgsrc \
+ 		$(tinderLoc scripts lib/makemake) ${noduds} ${build} ${ports}
+ 	)
+ 	if [ $? -ne 0 ]; then
 @@ -1829,21 +1848,36 @@ init () {
  	mkdir -p ${pb}/${dir}
      done
@@ -425,3 +434,31 @@ $NetBSD$
  
      return 0
  }
+@@ -1892,7 +1926,7 @@ addPortToBuild () {
+     buildenv ${jail} ${portsTree} ${build}
+     buildenvNoHost ${build}
+ 
+-    export PORTSDIR=$(tinderLoc portstree ${portsTree})/ports
++    export PORTSDIR=$(tinderLoc portstree ${portsTree})/pkgsrc
+     if [ -z "${portDir}" ]; then
+ 	${tc} addPortToOneBuild -b ${build} ${norecurse}
+     else
+@@ -1902,7 +1936,8 @@ addPortToBuild () {
+         fi
+         ${tc} addPortToOneBuild -b ${build} -d ${portDir} ${norecurse}
+     fi
+-    if [ ${options} -eq 1 -a ${OPTIONS_ENABLED} -eq 1 ]; then
++    # disable options for now, this is completely wrong for pkgsrc
++    if [ 0 -a ${options} -eq 1 -a ${OPTIONS_ENABLED} -eq 1 ]; then
+ 	pdirs=""
+ 	if [ -z "${portDir}" ]; then
+ 	    pdirs=$(${tc} getPortsForBuild -b ${build} 2>/dev/null)
+@@ -2243,7 +2278,7 @@ tbcleanup () {
+ 		    oldcwd=${PWD}
+ 		    path=$(tinderLoc portstree ${portstree})
+ 		    cd "${path}/ports/${port}"
+-		    distinfo=$(env PORTSDIR="${path}/ports" make -V MD5_FILE)
++		    distinfo=$(env PORTSDIR="${path}/pkgsrc" make -V MD5_FILE)
+ 		    if [ -f "${distinfo}" ]; then
+ 			for df in $(grep '^MD5' ${distinfo} | awk -F '[\(\)]' '{print $2}'); do
+ 			    if ! grep -q "^${df}\$" ${disttmp}; then

@@ -2,6 +2,42 @@ $NetBSD$
 
 --- ../FreeBSD/lib/buildscript	2011-10-16 00:52:55.000000000 +0000
 +++ lib/buildscript
+@@ -121,7 +121,7 @@ if [ $phase = 1 ]; then
+   echo "---End Environment---"
+   echo ""
+   echo "---Begin OPTIONS List---"
+-  make showconfig
++  bmake show-options
+   echo "---End OPTIONS List---"
+   echo ""
+   optionsfile=$(make -V OPTIONSFILE)
+@@ -177,7 +177,7 @@ EOF
+   echo "================================================================"
+   echo "====================<phase 1: make checksum>===================="
+ 
+-  if /pnohang $TIMEOUT /tmp/make.log1 ${pkgname} make checksum; then
++  if /pnohang $TIMEOUT /tmp/make.log1 ${pkgname} bmake checksum; then
+     cat /tmp/make.log1
+     echo "0" > /tmp/status
+   else
+@@ -194,7 +194,7 @@ else
+ 
+   add_pkg ${ED}
+   cd $dir
+-  /pnohang $TIMEOUT /tmp/make.log2 ${pkgname} make extract || cleanup 2
++  /pnohang $TIMEOUT /tmp/make.log2 ${pkgname} bmake extract || cleanup 2
+   cat /tmp/make.log2
+   del_pkg ${ED}
+ 
+@@ -207,7 +207,7 @@ else
+   echo "====================<phase 3: make patch>===================="
+   add_pkg ${PD}
+   cd $dir
+-  /pnohang $TIMEOUT /tmp/make.log3 ${pkgname} make patch || cleanup 3
++  /pnohang $TIMEOUT /tmp/make.log3 ${pkgname} bmake patch || cleanup 3
+   cat /tmp/make.log3
+   del_pkg ${PD}
+ 
 @@ -247,7 +247,7 @@ EOF
    fi
  
@@ -11,3 +47,39 @@ $NetBSD$
  
    if [ -f .sleepme ]; then
        set > /tmp/.set_${portdir}
+@@ -259,7 +259,7 @@ EOF
+       rm -f /tmp/.set_${portdir}
+   fi
+ 
+-  /pnohang $TIMEOUT /tmp/make.log4 ${pkgname} make build || cleanup 4
++  /pnohang $TIMEOUT /tmp/make.log4 ${pkgname} bmake build || cleanup 4
+   cat /tmp/make.log4
+ 
+   echo "================================================================"
+@@ -269,7 +269,7 @@ EOF
+   add_pkg ${TD}
+   pkg_info | awk '{print $1}' | sort > /tmp/pkgs_post_test      
+   cd $dir
+-  /pnohang $TIMEOUT /tmp/make.log5 ${pkgname} make -k regression-test
++  /pnohang $TIMEOUT /tmp/make.log5 ${pkgname} bmake -k regression-test
+   cat /tmp/make.log5
+ 
+   RTD=`comm -3 /tmp/pkgs_pre_test /tmp/pkgs_post_test | tr -d '\t'`
+@@ -306,7 +306,7 @@ EOF
+   mtree -X /tmp/mtree.exclude -xcn -k uid,gid,mode -p / > /tmp/mtree
+ 
+   cd $dir
+-  if /pnohang $TIMEOUT /tmp/make.log6 ${pkgname} make install; then
++  if /pnohang $TIMEOUT /tmp/make.log6 ${pkgname} bmake install; then
+     cat /tmp/make.log6
+     echo "0" > /tmp/status
+   else
+@@ -316,7 +316,7 @@ EOF
+   echo "================================================================"
+   echo "====================<phase 7: make package>===================="
+   cd $dir
+-  if /pnohang $TIMEOUT /tmp/make.log7 ${pkgname} make package; then
++  if /pnohang $TIMEOUT /tmp/make.log7 ${pkgname} bmake package; then
+       echo "0" > /tmp/status
+   else
+       echo "1" > /tmp/status
