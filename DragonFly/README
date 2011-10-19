@@ -8,17 +8,23 @@ Tinderbox User Guide
    You can define multiple jails (base system versions) and
    multiple portstrees. The combination of jail and portstree is
    called a build. A Tinderbox jail is not what is understood as a
-   jail in FreeBSD and DragonFly, it is in fact a given world in a chroot.
+   jail in FreeBSD and DragonFly, it is in fact a given world in a 
+   chroot.  DragonFly uses NetBSD's pkgsrc to build software which
+   is known as "packages" rather than "ports".  Rather than update
+   DragonFly Tinderbox to change numerous references to "ports" and
+   "portstrees", the users of pkgsrc are to equate the term "port"
+   with "package" whenever they encounter it.
+
    Tinderbox supports automatic tracking of dependencies and only
    rebuilds packages that changed since last run. Tinderbox has
    support for email notification of failed builds. Tinderbox also
    integrates well with ccache.
 
-   Tinderbox is designed to easily provide package sets of packages
+   Tinderbox is designed to easily provide package sets of ports
    you need, for platforms and architectures you need. Tinderbox
-   is also excellent tool for testing new packages and package upgrades,
+   is also excellent tool for testing new ports and port upgrades,
    especially for testing dependencies and packing lists. It's
-   also useful for testing packages on various releases of DragonFly,
+   also useful for testing ports on various releases of DragonFly,
    since you can run earlier releases as a jail on the DragonFly-current.
 
      __________________________________________________________
@@ -40,8 +46,8 @@ Tinderbox User Guide
         8.3. Distfile Caching
         8.4. Using Ccache
         8.5. Customizing the Environment
-        8.6. Updating package properties
-        8.7. Configuring package OPTIONS
+        8.6. Updating port properties
+        8.7. Configuring port OPTIONS
         8.8. Using Hooks
         8.9. Creating Users
         8.10. Automating/Queuing Port Builds
@@ -208,10 +214,9 @@ nfs_reserved_port_only="YES"
        just "2-DragonFly") as this may prove useful when using
        things such as Hooks (Section 8.8).
    13. Create the required PortsTrees using the tc command. A
-       PortsTree is a set of packages you wish to build. A PortsTree
-       does not have to be a complete DragonFly pkgsrc tree. However,
-       all packages within a tree must have all of their dependencies
-       within the same tree.
+       PortsTree is a set of ports you wish to build. A PortsTree
+       does not have to be complete. However, all ports within a 
+       tree must have all of their dependencies within the same tree.
        For example, to create a portstree based on 2011Q3 quarterly
        branch that tracks the full pkgsrc tree:
 # cd ${pb}/scripts && ./tc createPortsTree -p pkgsrc \
@@ -249,8 +254,8 @@ Chapter 4. Upgrading
    first upgrade to the latest 2.4 release, then upgrade to 3.0.
 
    The 3.0 upgrade will migrate all data, configuration, and
-   scripts from 2.x EXCEPT any customized package fail reasons and
-   package fail patterns. These will have to be re-entered by hand
+   scripts from 2.x EXCEPT any customized port fail reasons and
+   port fail patterns. These will have to be re-entered by hand
    after completing the 3.0 upgrade.
 
    CAVEAT: If you are doing a major upgrade (i.e. moving from one
@@ -263,22 +268,22 @@ Chapter 4. Upgrading
 Chapter 5. Using Tinderbox
 
    To run a Tinderbox build, and track the progress in the
-   database, you must first add the package you wish to build to the
+   database, you must first add the port you wish to build to the
    database using the ${pb}/scripts/tc application:
 # cd ${pb}/scripts && ./tc addPort -b {BUILD} -d {PORT DIRECTORY}
 
-   Where {BUILD} is the name of the Build for which this package
+   Where {BUILD} is the name of the Build for which this port
    should be built and {PORT DIRECTORY} is the directory within
-   the PortsTree where this package can be found. For example, to
-   build the Joe editor package for the Build "2.12-DragonFly":
+   the PortsTree where this port can be found. For example, to
+   build the Joe editor port for the Build "2.12-DragonFly":
 # cd ${pb}/scripts && ./tc addPort -b 2.12-DragonFly -d editors/joe
 
-   Note: a package does not have to be added to the database for
+   Note: a port does not have to be added to the database for
    Tinderbox to build it. If you just want to do a quick ad hoc
-   package build, forgo the previously mentioned step.
+   port build, forgo the previously mentioned step.
 
    Note: in Tinderbox 2.x, addPort took a -r argument which
-   resursively added packages to the datastore. In Tinderbox 3.0 and
+   resursively added ports to the datastore. In Tinderbox 3.0 and
    higher, this option is assumed. If you do not want to enable
    recursion, specify the -R argument to addPort.
 
@@ -301,16 +306,16 @@ Chapter 5. Using Tinderbox
         editors/joe >& ${pb}/builds/2.12-DragonFly/build.log &
 
    More advanced logging options are also available. All log files
-   including tinderbuild output, make logs, and individual package
+   including tinderbuild output, make logs, and individual port
    build logs can be captured in one location. This location is
    specified by the LOG_DIRECTORY configuration option. By
    default, this option is unset meaning that logs will not be
    centralized. If set to a directory, a subdirectory will be
    created in the format of {BUILD}-{DATE} where {BUILD} is the
    Build name, and {DATE} is the date in the format YYYYMMDDHHMMSS
-   (e.g. 2.12-DragonFly-20091012112105). Within this subdirectory
+   (e.g. 2.6-DragonFly-20091012112105). Within this subdirectory
    will be the tinderbuild log, and symlinks to the make logs and
-   individual package build logs. If you would rather have the log
+   individual port build logs. If you would rather have the log
    files copied to this location (instead of using symlinks), set
    the LOG_DOCOPY configuration option to "1".
 
@@ -340,7 +345,7 @@ Chapter 5. Using Tinderbox
                   this option if a good Makefile already exists)
   -noduds         skips the duds file generation stage (NOTE: packages
                   which are forbidden or ignored will be built)
-  -noclean        does not clean up the Build hierarchy after the package
+  -noclean        does not clean up the Build hierarchy after the port
                   build completes
   -plistcheck     makes any plist verification problems (e.g.
                   leftover files) fatal
@@ -385,7 +390,7 @@ Chapter 6. Maintenance
    The source and destination Builds (i.e. 2.12-DragonFly and
    2.13-DragonFly respectively in this example) must already exist. By
    default, copyBuild will copy the environment file, OPTIONS, and
-   packages from the source Build to the destination Build. It can
+   ports from the source Build to the destination Build. It can
    also optionally copy ccache data and packages. The options
    supported by copyBuild are in Table 6-1.
 
@@ -395,7 +400,7 @@ Chapter 6. Maintenance
    -c (optional) copy ccache data
    -E (optional) do NOT copy environment files
    -O (optional) do NOT copy OPTIONS data
-   -P (optional) do NOT copy packages
+   -P (optional) do NOT copy ports
    -p (optional) copy packages (including last build status,
       version, and size)
 
@@ -423,7 +428,7 @@ Chapter 6. Maintenance
 
    Table 6-2. tbcleanup Options
    -d Cleanup unreferenced distfiles from the distfile cache
-   -E Do NOT remove old error logs (regular package build logs are
+   -E Do NOT remove old error logs (regular port build logs are
       still removed)
    -p Cleanup stale packages
 
@@ -450,32 +455,32 @@ Chapter 7. Troubleshooting
    found under ${pb}/builds/{BUILD} (where {BUILD} is the Build
    name). This is where tinderbuild output should be redirected
    (see Chapter 5. The make.0 and make.1 logs contain the initial
-   buildsetup for each package. The reason there are two logs is that
+   buildsetup for each port. The reason there are two logs is that
    tinderbuild runs in two phases. The second build phase is
    identical to the first, and is run to catch any transient
    problems that may have occurred in the first phase.
 
-   The full build log of each package will be copied to
+   The full build log of each port will be copied to
    ${pb}/logs/{BUILD} (where {BUILD} is the Build name). If the
-   package failed to build successfully, the log will also be copied
+   port failed to build successfully, the log will also be copied
    to ${pb}/errors/{BUILD} (where {BUILD} is the Build name).
 
    Sometimes, the log alone is not sufficient for figuring out why
-   a package failed to build. In such cases, one must also see the
-   package's work directory. To have Tinderbox save this, create an
-   empty file called .keep in the package's directory, and the work
+   a port failed to build. In such cases, one must also see the
+   port's work directory. To have Tinderbox save this, create an
+   empty file called .keep in the port's directory, and the work
    directory will be tarred, compressed, and copied to
    ${pb}/wrkdirs/{BUILD} (where {BUILD} is the Build name).
 
    When it becomes too difficult to figure out the problem based
    on the wrkdir, it may become necessary to access the Build
-   itself. To do this, touch a file called .sleepme in the package's
+   itself. To do this, touch a file called .sleepme in the port's
    directory. The moment the .sleepme file is detected by the
-   build system, the package build will suspend just before executing
+   build system, the port build will suspend just before executing
    "make build". You can access the Build with the command:
 # ./tc enterBuild -b {BUILD} -d {PORT_DIRECTORY}
 
-   When you have finished, remove the .sleepme file, and the package
+   When you have finished, remove the .sleepme file, and the port
    build will continue.
      __________________________________________________________
 
@@ -483,19 +488,27 @@ Chapter 8. Advanced Topics
 
 8.1. Alternative Means of Creating Jail Sources and PortsTrees
 
-   By default, PortsTrees are updated using csup (/usr/pkg/bin/csup)
-   and Jails are updated by LFTP or GIT. Every time a new Jail or 
-   PortsTree is created, they will inherit the default update type. 
-   This update type is stored in ${pb}/scripts/etc/env/GLOBAL as 
-   defaultUpdateType. The allowed values are GIT, CSUP, LFTP, USER, 
-   and NONE. For CSUP there is also a defaultUpdateHost. This can also
-   be changed in ${pb}/scripts/etc/env/GLOBAL.
+   PortsTrees are updated using csup (/usr/pkg/bin/csup) and Jails
+   are updated by LFTP or GIT.  Variables controlling how these 
+   are updated are stored at ${pb}/scripts/etc/env/GLOBAL:
+   defaultUpdateHost: The host name of the cvsup server that
+                      creates and updates the NetBSD pkgsrc tree
+   defaultUpdateType: CSUP.  Don't modify.
+   defaultDragonHost: The protocol + host + path-to-iso-images
+                      directory that contains DragonFly release ISO
+                      images.  The protocol can be http:// or ftp://
+                      and the path-to-iso-images (which does not
+                      include "/iso-images") can be omitted if the
+                      it's a top level directory.
+   defaultDragonType: LFTP (for ISO)
+                      GIT  (to build world from source)
+   defaultGitSrcHost: The host name of the DragonFly Git mirror
 
    A Jail or PortsTree's update type can also be set when creating
    the Jail or PortsTree. To do this, specify the -u option to the
-   appropriate create command. If the value is NONE, then no updates can be
-   performed once the Jail or PortsTree is created. Instead, it is
-   assumed these trees already exist in the appropriate format.
+   appropriate create command. If the value is NONE, then no updates
+   can be performed once the Jail or PortsTree is created. Instead,
+   it is assumed these trees already exist in the appropriate format.
 
    If the value is USER, then an update.sh script must be created
    under the Jail or PortsTree's root directory. This script will
@@ -514,11 +527,11 @@ Chapter 8. Advanced Topics
 
    Examples for NFS:
 # ./tc createPortsTree -p DragonFly -m server:/directory
-# ./tc createJail -j 2-DragonFly -m server:/directory
+# ./tc createJail -j 2.8-DragonFly -m server:/directory
 
    Examples for nullfs:
 # ./tc createPortsTree -p DragonFly -m /directory
-# ./tc createJail -j 2-DragonFly -m /directory
+# ./tc createJail -j 2.8-DragonFly -m /directory
 
    Tinderbuild will ensure that these file systems are correctly
    mounted so you do not need to mount them by your own before
@@ -532,7 +545,7 @@ Chapter 8. Advanced Topics
 8.3. Distfile Caching
 
    Caching distfiles in a local repository can greatly improve
-   build times, and in cases where downloading a particular package
+   build times, and in cases where downloading a particular port
    is only necessary for a new build, can reduce bandwidth. As
    long as there is sufficient disk space, enabling a local
    distfile cache can be accomplished by one of the following
@@ -599,25 +612,25 @@ CFLAGS="-O -g -pipe"
 STRIP=
      __________________________________________________________
 
-8.6. Updating package properties
+8.6. Updating port properties
 
    Every time "./tc addPort" is called, it will determine if a
-   port is already present in the datastore. If it is, the package's
+   port is already present in the datastore. If it is, the port's
    properties (i.e. MAINTAINER, COMMENT, etc.) are updated. If you
-   just want rescan all of the packages currently in the datastore,
+   just want rescan all of the ports currently in the datastore,
    and update their properties, use the command "./tc
    rescanPorts". It accepts many of the same options as addPort.
      __________________________________________________________
 
-8.7. Configuring package OPTIONS
+8.7. Configuring port OPTIONS
 
-   It is possible to manipulate package OPTIONS on a per-Build basis.
+   It is possible to manipulate port OPTIONS on a per-Build basis.
    To do this, create a directory under which all build OPTIONS
    sub-directories will go (e.g. ${pb}/options/). For each Build
    that you wish to use to use OPTIONS, create a subdirectory
    named for that build (e.g. 2.12-DragonFly/). This directory
    should look like /var/db/pkg/ in that it contains
-   sub-directories for each OPTIONS-supporting package.
+   sub-directories for each OPTIONS-supporting port.
 
    For example, if you wanted to build net/wireshark with RTP
    support for the Build 2.12-DragonFly, you would have the
@@ -646,8 +659,8 @@ WITH_PCRE=true
    -o set an OPTIONS source directory tree
 
    If you would like to interactively choose OPTIONS for your
-   packages, specify the -o option to "./tc addPort". This will
-   perform a make config on all packages, displaying the ncurses
+   ports, specify the -o option to "./tc addPort". This will
+   perform a make config on all ports, displaying the ncurses
    OPTIONS dialog. All OPTIONS settings will be automatically
    saved to the correct location. Each time addPort or rescanPorts
    is run with the -o flag, all existing OPTIONS settings will be
@@ -718,12 +731,12 @@ WITH_PCRE=true
 
 8.10. Automating/Queuing Port Builds
 
-   If you want to use Tinderbox to test many different packages one
+   If you want to use Tinderbox to test many different ports one
    after the other you probably want tinderd. tinderd runs as a
-   daemon and looks to see if something was added to the "packages to
-   build queue". You can add different packages for different builds
+   daemon and looks to see if something was added to the "ports to
+   build queue". You can add different ports for different builds
    with different priorities. tinderd will automatically pick up
-   the package with the highest priority and starts building it. That
+   the port with the highest priority and starts building it. That
    repeats until the queue is empty. After the queue empties
    tinderd will sleep for a configurable amount of time (default:
    120 seconds) thereafter it starts searching for new queue
@@ -739,7 +752,7 @@ WITH_PCRE=true
    copy the included ${pb}/etc/rc.d/tinderd script to
    /usr/local/etc/rc.d/. Be sure to check out the various rc.conf
    variables documented in this script before using it. If you
-   installed Tinderbox using the package then the script will have
+   installed Tinderbox using the port then the script will have
    been installed for you as tinderbox.
 
    NOTE: the script used to be called tinderd.sh. If you have a
@@ -750,7 +763,7 @@ WITH_PCRE=true
 # cd ${pb}/scripts && ./tc addBuildPortsQueueEntry -b {BUILD} \
         -d {PORT DIRECTORY}
 
-   To add a package to the queue for tinderd to automatically pick
+   To add a port to the queue for tinderd to automatically pick
    up, run a tinderbuild on it, and delete the entry after
    tinderbuild completion.
 
@@ -758,7 +771,7 @@ WITH_PCRE=true
    directory under {BUILDS}'s PortsTree (e.g. x11/gnome2).)
 
    If the addBuildPortsQueueEntry command is run without the -d
-   argument, then all parkages for the specified {BUILD} will be
+   argument, then all ports for the specified {BUILD} will be
    added to the queue.
      __________________________________________________________
 

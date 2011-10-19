@@ -2,7 +2,7 @@ $NetBSD$
 
 --- ../FreeBSD/lib/tinderbox.env	2011-10-16 00:52:55.000000000 +0000
 +++ lib/tinderbox.env
-@@ -5,36 +5,20 @@
+@@ -5,36 +5,24 @@
  #
  # There are no longer any user-servicable parts in this file
  
@@ -30,6 +30,10 @@ $NetBSD$
 +#2PKGZIPCMD=bzip2
 +#2INDEXFILE=INDEX-2
 +#2X_WINDOW_SYSTEM=xorg
++#3PKGSUFFIX=.tbz
++#3PKGZIPCMD=bzip2
++#3INDEXFILE=INDEX-3
++#3X_WINDOW_SYSTEM=xorg
  #
 -LOCALBASE=/usr/local
 -OSVERSION=`awk '/^#define __FreeBSD_version/ {print $3}' < ^^SRCBASE^^/sys/sys/param.h`

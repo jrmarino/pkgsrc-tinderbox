@@ -177,18 +177,6 @@ $NetBSD$
      PREF_FILES="tinderbox.ph"
      README="$(tinderLoc scripts README)"
      TINDERBOX_URL="http://tinderbox.marcuscom.com/"
-@@ -327,9 +362,9 @@ Setup () {
- #---------------------------------------------------------------------------
- 
- Upgrade () {
--    VERSION="3.2.5"
-+    VERSION="3.2.4"
-     TINDERBOX_URL="http://tinderbox.marcuscom.com/"
--    DB_MIGRATION_PATH="3.0 3.1 3.2 3.2.1 3.2.2 3.2.3 3.2.4 ${VERSION}"
-+    DB_MIGRATION_PATH="3.0 3.1 3.2 3.2.1 3.2.2 3.2.3 ${VERSION}"
- 
-     bkup_file=""
- 
 @@ -509,7 +544,7 @@ Upgrade () {
      for jail in ${jails}; do
  	f=$(tinderLoc jail ${jail})
@@ -358,9 +346,9 @@ $NetBSD$
  
  	d)	descr="${OPTARG}";;
  	m)	mountSrc="${OPTARG}";;
-+	t)	cvsTag="${OPTARG}";;
  	p)	portsTreeName="${OPTARG}";;
 -	u)	updateType="${OPTARG}";;
++	t)	cvsTag="${OPTARG}";;
  	w)	cvswebUrl="${OPTARG}";;
  	C)	updateCompress=1;;
  	H)	updateHost="${OPTARG}";;

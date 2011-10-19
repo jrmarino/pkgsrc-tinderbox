@@ -362,9 +362,9 @@ Setup () {
 #---------------------------------------------------------------------------
 
 Upgrade () {
-    VERSION="3.2.4"
+    VERSION="3.2.5"
     TINDERBOX_URL="http://tinderbox.marcuscom.com/"
-    DB_MIGRATION_PATH="3.0 3.1 3.2 3.2.1 3.2.2 3.2.3 ${VERSION}"
+    DB_MIGRATION_PATH="3.0 3.1 3.2 3.2.1 3.2.2 3.2.3 3.2.4 ${VERSION}"
 
     bkup_file=""
 
@@ -1065,8 +1065,8 @@ createPortsTree () {
 
 	d)	descr="${OPTARG}";;
 	m)	mountSrc="${OPTARG}";;
-	t)	cvsTag="${OPTARG}";;
 	p)	portsTreeName="${OPTARG}";;
+	t)	cvsTag="${OPTARG}";;
 	w)	cvswebUrl="${OPTARG}";;
 	C)	updateCompress=1;;
 	H)	updateHost="${OPTARG}";;
