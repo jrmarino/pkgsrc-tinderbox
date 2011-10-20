@@ -100,7 +100,8 @@ generateUpdateCode () {
 		  echo "mkdir -p ${treeDir}/sets"
 		  echo "cd ${treeDir}/sets"
 		  echo "${updateCmd} -c \"open ${iso_server}/iso-images/; get ${iso_image}\""
-		  echo "/usr/bin/tar -xf ${iso_image} -C ../"
+		  echo "mkdir ../tmp ../obj ../src"
+		  echo "/usr/bin/tar -xf ${iso_image} -C ../tmp"
 		) > ${treeDir}/update.sh
 		chmod +x ${treeDir}/update.sh
 		;;
@@ -171,6 +172,7 @@ generateUpdateCode () {
 		  echo "else"
 		  echo "  mkdir ${treedir}/src"
 		  echo "  cd ${treedir}/src"
+		  echo "  mkdir ../tmp ../obj"
 		  echo "  ${updateCmd} init"
 		  echo "  ${updateCmd} remote add origin git://${4}/dragonfly.git"
 		  echo "  ${updateCmd} fetch --depth=1 origin"
@@ -772,10 +774,6 @@ buildJail () {
 
     if [ "${updateCmd}" = "LFTP" ]; then
 	execute_hook "postJailBuild" "JAIL=${jailName} DESTDIR=${J_TMPDIR} JAIL_ARCH=${jailArch} MY_ARCH=${myArch} JAIL_OBJDIR=${JAIL_OBJDIR} SRCBASE=${SRCBASE} PB=${pb} RC=${rc}"
-	if [ ${rc} -ne 0 ]; then
-	    echo "ERROR: world failed - see ${jailBase}/world.tmp"
-	    buildJailCleanup 1 ${jailName} ${J_SRCDIR}
-	fi
     else
         # Make world
         echo "${jailName}: making world"
