@@ -2,6 +2,12 @@ $NetBSD$
 
 --- ../FreeBSD/lib/tc_command.pl	2011-10-16 00:52:55.000000000 +0000
 +++ lib/tc_command.pl
+@@ -1,4 +1,4 @@
+-#!/usr/bin/perl
++#!/usr/pkg/bin/perl
+ #-
+ # Copyright (c) 2004-2008 FreeBSD GNOME Team <freebsd-gnome@FreeBSD.org>
+ # All rights reserved.
 @@ -188,15 +188,15 @@ my $ds = new Tinderbox::TinderboxDS();
                  help =>
                      "Add a jail to the datastore (do NOT call this directly; use createJail instead)",

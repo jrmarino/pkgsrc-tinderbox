@@ -1467,8 +1467,8 @@ tinderbuild_setup () {
 
     # For use by pnohang
     # XXX: though killall may not work since it's a dynamic executable
-    cp -p /rescue/mount /rescue/umount ${buildRoot}/sbin
-    cp -p /rescue/ps ${buildRoot}/bin
+    cp -p /sbin/mount /sbin/umount ${buildRoot}/sbin
+    cp -p /bin/ps ${buildRoot}/bin
 
     # Mount /dev, since we're going to be chrooting shortly
     mount -t devfs devfs ${buildRoot}/dev >/dev/null 2>&1
@@ -1818,10 +1818,6 @@ tinderbuild () {
 
     # Set up the chrooted environment
     osmajor=$(echo ${jail} | sed -E -e 's|(^[[:digit:]]+).*$|\1|')
-    if [ ${osmajor} -lt 6 ]; then
-	echo "tinderbuild: unhandled OS version: ${osmajor}"
-	tinderbuild_cleanup 1
-    fi
 
     tinderbuild_setup
 
