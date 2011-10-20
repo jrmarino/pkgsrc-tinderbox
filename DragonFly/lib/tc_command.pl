@@ -560,8 +560,8 @@ my $ds = new Tinderbox::TinderboxDS();
         "createJail" => {
                 help => "Create a new jail",
                 usage =>
-                    "-j <jailname> -u GIT|LFTP|USER|NONE -t <tag> [-d <description>] [-C] [-H <updatehost>] [-m <mountsrc>] [-I] [-a <arch>]",
-                optstr => 'j:t:d:CH:m:u:Ia:',
+                    "-j <jailname> -u GIT|LFTP|USER|NONE -t <tag> [-d <description>] [-H <updatehost>] [-m <mountsrc>] [-I] [-a <arch>]",
+                optstr => 'j:t:d:H:m:u:Ia:',
         },
 
         "createPortsTree" => {

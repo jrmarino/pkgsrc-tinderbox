@@ -772,8 +772,8 @@ buildJail () {
     fi
 
     if [ "${updateCmd}" = "LFTP" ]; then
-    	iso_image=`ls ${jailbase}/sets`
-	/usr/bin/tar -xf ${iso_image} -C ${J_TMPDIR} > ${jailbase}/world.tmp 2>&1
+    	iso_image=`ls ${jailBase}/sets`
+	/usr/bin/tar -xf ${jailBase}/sets/${iso_image} -C ${J_TMPDIR} > ${jailBase}/world.tmp 2>&1
 	rc=$?
 	execute_hook "postJailBuild" "JAIL=${jailName} DESTDIR=${J_TMPDIR} JAIL_ARCH=${jailArch} MY_ARCH=${myArch} JAIL_OBJDIR=${JAIL_OBJDIR} SRCBASE=${SRCBASE} PB=${pb} RC=${rc}"
 	if [ ${rc} -ne 0 ]; then
@@ -898,7 +898,7 @@ createJail () {
     updateType=${defaultDragonType}
 
     # argument handling
-    while getopts a:d:j:m:t:u:CH:I arg >/dev/null 2>&1
+    while getopts a:d:j:m:t:u:H:I arg >/dev/null 2>&1
     do
 	case "${arg}" in
 
@@ -908,7 +908,6 @@ createJail () {
 	m)	mountSrc="${OPTARG}";;
 	t)	updateTag="${OPTARG}";;
 	u)	updateType="${OPTARG}";;
-	C)	updateCompress=1;;
 	H)	updateHost="${OPTARG}";;
 	I)	init=0;;
 	?)	return 1;;
