@@ -100,8 +100,7 @@ generateUpdateCode () {
 		  echo "mkdir -p ${treeDir}/sets"
 		  echo "cd ${treeDir}/sets"
 		  echo "${updateCmd} -c \"open ${iso_server}/iso-images/; get ${iso_image}\""
-		  echo "mkdir ../tmp ../obj ../src"
-		  echo "/usr/bin/tar -xf ${iso_image} -C ../tmp"
+		  echo "mkdir -p ../tmp ../obj ../src"
 		) > ${treeDir}/update.sh
 		chmod +x ${treeDir}/update.sh
 		;;
@@ -773,7 +772,14 @@ buildJail () {
     fi
 
     if [ "${updateCmd}" = "LFTP" ]; then
+    	iso_image=`ls ${jailbase}/sets`
+	/usr/bin/tar -xf ${iso_image} -C ${J_TMPDIR} > ${jailbase}/world.tmp 2>&1
+	rc=$?
 	execute_hook "postJailBuild" "JAIL=${jailName} DESTDIR=${J_TMPDIR} JAIL_ARCH=${jailArch} MY_ARCH=${myArch} JAIL_OBJDIR=${JAIL_OBJDIR} SRCBASE=${SRCBASE} PB=${pb} RC=${rc}"
+	if [ ${rc} -ne 0 ]; then
+	    echo "ERROR: world failed - see ${jailBase}/world.tmp"
+	    buildJailCleanup 1 ${jailName} ${J_SRCDIR}
+	fi
     else
         # Make world
         echo "${jailName}: making world"
