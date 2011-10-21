@@ -390,8 +390,8 @@ requestMount () {
 		    # as NFS can't directly mount HAMMER.
 
 		    # find out the filesystem the requested source is in
-		    fsys=$(df | grep '^${_srcloc}' | awk '{a=$1}  END {print a}')
-		    mtpt=$(df | grep '^${_srcloc}' | awk '{a=$NF} END {print a}')
+		    fsys=$(df ${_srcloc} | awk '{a=$1}  END {print a}')
+		    mtpt=$(df ${_srcloc} | awk '{a=$NF} END {print a}')
 
 		    SNAPLS=`/sbin/hammer snapls ${fsys} 2>/dev/null`
 		    if [ "$SNAPLS" = "" ]; then
