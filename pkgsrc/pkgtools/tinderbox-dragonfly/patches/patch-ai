@@ -35,10 +35,25 @@ $NetBSD$
  
  total_size=$(${tc} getPortTotalSize -d ${portdir} -b ${build})
  execute_hook "prePortBuild" "PACKAGE_NAME=${pkgname} BUILD=${build} JAIL=${jail} PORTSTREE=${portstree} CHROOT=${chroot} PORTDIR=${portdir} PB=${pb} TOTAL_SIZE=${total_size}"
-@@ -191,19 +193,17 @@ mtree -deU -f ${chroot}/etc/mtree/BSD.us
+@@ -175,12 +177,12 @@ if [ -f ${dudsfile} ]; then
+ fi
+ 
+ # directories to clean
++# These are created/recreated after blowing the directories away
+ cleandirs="${LOCALBASE} /compat /var/db/pkg"
+ 
+ for dir in ${cleandirs}; do
+     cleanDirs ${build} ${chroot}${dir}
+ done
+-rm -rf ${chroot}/var/db/pkg/*
+ 
+ # reset mtrees for plist checking
+ mtree -deU -f ${chroot}/etc/mtree/BSD.root.dist \
+@@ -190,20 +192,23 @@ mtree -deU -f ${chroot}/etc/mtree/BSD.va
+ mtree -deU -f ${chroot}/etc/mtree/BSD.usr.dist \
        -p ${chroot}/usr >/dev/null 2>&1
  
- mkdir -p ${chroot}${LOCALBASE}
+-mkdir -p ${chroot}${LOCALBASE}
 -if [ -f ${chroot}/a/ports/Templates/BSD.local.dist ]; then
 -    mtree -deU -f ${chroot}/a/ports/Templates/BSD.local.dist -p ${chroot}${LOCALBASE} \
 +if [ -f ${chroot}/a/pkgsrc/Templates/BSD.local.dist ]; then
@@ -54,13 +69,27 @@ $NetBSD$
 -    mkdir -p ${chroot}/compat/linux/proc
 -    mount -t linprocfs linprocfs ${chroot}/compat/linux/proc
 -fi
++# copy over pkgsrc bootstrap tools, ${LOCALBASE}/bin & /etc exist now
++cp    ${chroot}/usr/4bootstrap/bmake   ${chroot}${LOCALBASE}/bin/
++cp    ${chroot}/usr/4bootstrap/pkg_*   ${chroot}${LOCALBASE}/sbin/
++cp    ${chroot}/usr/4bootstrap/mk.conf ${chroot}${LOCALBASE}/etc/
++cp -R ${chroot}/usr/4bootstrap/mk      ${chroot}${LOCALBASE}/share/
++
 +# mount linprocfs
 +mkdir -p ${chroot}/compat/linux/proc
 +mount -t linprocfs linprocfs ${chroot}/compat/linux/proc
  
  # mount procfs
  mkdir -p ${chroot}/proc
-@@ -252,7 +252,7 @@ if [ x"${CCACHE_ENABLED}" = x"1" ]; then
+@@ -221,6 +226,7 @@ export PACKAGES=/tmp/packages
+ unset MAKEFLAGS
+ unset PORTSDIR
+ unset SRCBASE
++unset PKG_PATH
+ 
+ # Unset all of the locale variables to ensure C/POSIX is used to build
+ # everything.
+@@ -252,7 +258,7 @@ if [ x"${CCACHE_ENABLED}" = x"1" ]; then
  fi
  
  if [ x"${OPTIONS_ENABLED}" = x"1" ]; then
@@ -69,7 +98,7 @@ $NetBSD$
  fi
  
  echo "building $pkgname in $chroot"
-@@ -294,7 +294,7 @@ if [ x"${CCACHE_ENABLED}" ]; then
+@@ -294,7 +300,7 @@ if [ x"${CCACHE_ENABLED}" ]; then
      unset CCACHE_DISABLE
  fi
  
@@ -78,7 +107,7 @@ $NetBSD$
  ldconfig_dirs=""
  for i in ${_ldconfig_dirs}; do
      if [ -d ${chroot}/${i} ]; then
-@@ -302,9 +302,6 @@ for i in ${_ldconfig_dirs}; do
+@@ -302,9 +308,6 @@ for i in ${_ldconfig_dirs}; do
      fi
  done
  chroot ${chroot} /sbin/ldconfig ${ldconfig_dirs}

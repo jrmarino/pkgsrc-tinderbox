@@ -177,12 +177,12 @@ if [ -f ${dudsfile} ]; then
 fi
 
 # directories to clean
+# These are created/recreated after blowing the directories away
 cleandirs="${LOCALBASE} /compat /var/db/pkg"
 
 for dir in ${cleandirs}; do
     cleanDirs ${build} ${chroot}${dir}
 done
-rm -rf ${chroot}/var/db/pkg/*
 
 # reset mtrees for plist checking
 mtree -deU -f ${chroot}/etc/mtree/BSD.root.dist \
@@ -192,7 +192,6 @@ mtree -deU -f ${chroot}/etc/mtree/BSD.var.dist \
 mtree -deU -f ${chroot}/etc/mtree/BSD.usr.dist \
       -p ${chroot}/usr >/dev/null 2>&1
 
-mkdir -p ${chroot}${LOCALBASE}
 if [ -f ${chroot}/a/pkgsrc/Templates/BSD.local.dist ]; then
     mtree -deU -f ${chroot}/a/pkgsrc/Templates/BSD.local.dist -p ${chroot}${LOCALBASE} \
     	>/dev/null 2>&1
@@ -200,6 +199,12 @@ else
     mtree -deU -f ${chroot}/etc/mtree/BSD.local.dist -p ${chroot}${LOCALBASE} \
     	>/dev/null 2>&1
 fi
+
+# copy over pkgsrc bootstrap tools, ${LOCALBASE}/bin & /etc exist now
+cp    ${chroot}/usr/4bootstrap/bmake   ${chroot}${LOCALBASE}/bin/
+cp    ${chroot}/usr/4bootstrap/pkg_*   ${chroot}${LOCALBASE}/sbin/
+cp    ${chroot}/usr/4bootstrap/mk.conf ${chroot}${LOCALBASE}/etc/
+cp -R ${chroot}/usr/4bootstrap/mk      ${chroot}${LOCALBASE}/share/
 
 # mount linprocfs
 mkdir -p ${chroot}/compat/linux/proc
@@ -221,6 +226,7 @@ export PACKAGES=/tmp/packages
 unset MAKEFLAGS
 unset PORTSDIR
 unset SRCBASE
+unset PKG_PATH
 
 # Unset all of the locale variables to ensure C/POSIX is used to build
 # everything.

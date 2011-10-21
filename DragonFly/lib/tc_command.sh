@@ -777,11 +777,24 @@ buildJail () {
     if [ "${updateCmd}" = "LFTP" ]; then
     	iso_image=`ls ${jailBase}/sets`
 	/usr/bin/tar -xf ${jailBase}/sets/${iso_image} -C ${J_TMPDIR} > ${jailBase}/world.tmp 2>&1
-	/bin/cp -r ${jailBase}/src/* ${J_TMPDIR}/usr/src/
 	rc=$?
-	execute_hook "postJailBuild" "JAIL=${jailName} DESTDIR=${J_TMPDIR} JAIL_ARCH=${jailArch} MY_ARCH=${myArch} JAIL_OBJDIR=${JAIL_OBJDIR} SRCBASE=${SRCBASE} PB=${pb} RC=${rc}"
 	if [ ${rc} -ne 0 ]; then
-	    echo "ERROR: world failed - see ${jailBase}/world.tmp"
+	    echo "ERROR: extract world failed - see ${jailBase}/world.tmp"
+	fi
+	rm -rf ${J_TMPDIR}/usr/src
+	cp -R ${jailBase}/src ${J_TMPDIR}/usr
+	mkdir -p ${J_TMPDIR}/usr/src/sys/sys
+	cp ${J_TMPDIR}/usr/include/sys/param.h ${J_TMPDIR}/usr/src/sys/sys
+	mkdir ${J_TMPDIR}/usr/4bootstrap
+	mv ${J_TMPDIR}/usr/pkg/bin/bmake   ${J_TMPDIR}/usr/4bootstrap
+	mv ${J_TMPDIR}/usr/pkg/etc/mk.conf ${J_TMPDIR}/usr/4bootstrap
+	mv ${J_TMPDIR}/usr/pkg/share/mk    ${J_TMPDIR}/usr/4bootstrap
+	mv ${J_TMPDIR}/usr/pkg/sbin/pkg_*  ${J_TMPDIR}/usr/4bootstrap
+	rm -rf ${J_TMPDIR}/usr/pkg ${J_TMPDIR}/usr/src-sys.tar.bz2
+	execute_hook "postJailBuild" "JAIL=${jailName} DESTDIR=${J_TMPDIR} JAIL_ARCH=${jailArch} MY_ARCH=${myArch} JAIL_OBJDIR=${JAIL_OBJDIR} SRCBASE=${SRCBASE} PB=${pb} RC=${rc}"
+	if [ $? -ne 0 ]; then
+	    echo "buildJail: Terminating Jail build since hook postJailBuild failed."
+	    return 1
 	fi
     else
         # Make world
