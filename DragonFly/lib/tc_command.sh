@@ -1460,7 +1460,8 @@ tinderbuild_setup () {
 	echo "tinderbuild: cannot mount ports source"
 	tinderbuild_cleanup 1
     fi
-    ln -sf ../a/pkgsrc ${buildRoot}/usr/pkgsrc
+    rm -rf ${buildRoot}/usr/pkgsrc
+    ln -s ../a/pkgsrc ${buildRoot}/usr/pkgsrc
 
     # Mount src/
     if ! requestMount -t buildsrc -b ${build} -r ${nullfs}; then
@@ -2277,7 +2278,7 @@ tbcleanup () {
 		    oldcwd=${PWD}
 		    path=$(tinderLoc portstree ${portstree})
 		    cd "${path}/pkgsrc/${port}"
-		    distinfo=$(env PORTSDIR="${path}/pkgsrc" make -V MD5_FILE)
+		    distinfo=$(env PORTSDIR="${path}/pkgsrc" bmake -V MD5_FILE)
 		    if [ -f "${distinfo}" ]; then
 			for df in $(grep '^MD5' ${distinfo} | awk -F '[\(\)]' '{print $2}'); do
 			    if ! grep -q "^${df}\$" ${disttmp}; then
@@ -2438,7 +2439,7 @@ tbkill () {
 	return 0
     fi
 
-    makepid=$(pgrep -f -f -P ${tbpid} "make")
+    makepid=$(pgrep -f -f -P ${tbpid} "bmake")
     makechild=$(pgrep -P ${makepid})
     pbpid=$(pgrep -f -f "/bin/sh.*/portbuild")
 
