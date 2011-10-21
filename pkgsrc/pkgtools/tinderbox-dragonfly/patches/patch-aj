@@ -2,7 +2,34 @@ $NetBSD$
 
 --- ../FreeBSD/lib/buildscript	2011-10-16 00:52:55.000000000 +0000
 +++ lib/buildscript
-@@ -121,7 +121,7 @@ if [ $phase = 1 ]; then
+@@ -8,7 +8,7 @@ cleanup() {
+ 
+   if [ -e ${dir}/.keep ]; then
+     cd ${dir}
+-    objdir=$(make -V WRKDIR)
++    objdir=`bmake -V '\${WRKDIR}'`
+     tar cfjC /tmp/work.tbz ${objdir}/.. work
+   fi
+ 
+@@ -109,22 +109,25 @@ L=$(echo ${LOCALBASE} | sed 's,^/,,')
+ if [ $phase = 1 ]; then
+ 
+   cd $dir || exit 1
++  INFO_MAINTAINER=`bmake -V '\${MAINTAINER}'`
++  INFO_PREFIX=`bmake -V '\${PREFIX}'`
+   echo "build started at $(date)"
+   echo "port directory: ${dir}"
+   echo "building for:  $(uname -rm)"
+-  echo "maintained by: $(make maintainer)"
+-  echo "Makefile ident: $(ident ${dir}/Makefile | grep 'FreeBSD:' | sed 's/^[ \t]*//')"
+-  echo "prefixes: LOCALBASE=${L} PREFIX=$(make -V PREFIX)"
++  echo "maintained by: ${INFO_MAINTAINER}"
++  echo "Makefile ident: $(ident ${dir}/Makefile | grep 'NetBSD:' | sed 's/^[ \t]*//')"
++  echo "prefixes: LOCALBASE=${L} PREFIX=${INFO_PREFIX}"
++  echo "jail directory: $dir"
+   echo "Begin Configuration:"
+   echo "---Begin Environment---"
+   printenv
    echo "---End Environment---"
    echo ""
    echo "---Begin OPTIONS List---"
@@ -10,8 +37,17 @@ $NetBSD$
 +  bmake show-options
    echo "---End OPTIONS List---"
    echo ""
-   optionsfile=$(make -V OPTIONSFILE)
-@@ -177,7 +177,7 @@ EOF
+-  optionsfile=$(make -V OPTIONSFILE)
++  optionsfile=`bmake -V '\${OPTIONSFILE}'`
+   if [ -f "${optionsfile}" ]; then
+       echo "---Begin OPTIONS configuration---"
+       cat ${optionsfile}
+@@ -173,11 +176,11 @@ EOF
+   add_pkg $FD
+ 
+   cd $dir || exit 1
+-  pkgname=$(make package-name)
++  pkgname=`bmake -V '\${PKGNAME}'`
    echo "================================================================"
    echo "====================<phase 1: make checksum>===================="
  
@@ -20,7 +56,15 @@ $NetBSD$
      cat /tmp/make.log1
      echo "0" > /tmp/status
    else
-@@ -194,7 +194,7 @@ else
+@@ -187,14 +190,14 @@ EOF
+ else
+ 
+   cd $dir || exit 1
+-  pkgname=$(make package-name)
++  pkgname=`bmake -V '\${PKGNAME}'`
+ 
+   echo "================================================================"
+   echo "====================<phase 2: make extract>===================="
  
    add_pkg ${ED}
    cd $dir
@@ -29,7 +73,7 @@ $NetBSD$
    cat /tmp/make.log2
    del_pkg ${ED}
  
-@@ -207,7 +207,7 @@ else
+@@ -207,7 +210,7 @@ else
    echo "====================<phase 3: make patch>===================="
    add_pkg ${PD}
    cd $dir
@@ -38,7 +82,7 @@ $NetBSD$
    cat /tmp/make.log3
    del_pkg ${PD}
  
-@@ -247,7 +247,7 @@ EOF
+@@ -247,7 +250,7 @@ EOF
    fi
  
    cd $dir
@@ -47,7 +91,7 @@ $NetBSD$
  
    if [ -f .sleepme ]; then
        set > /tmp/.set_${portdir}
-@@ -259,7 +259,7 @@ EOF
+@@ -259,7 +262,7 @@ EOF
        rm -f /tmp/.set_${portdir}
    fi
  
@@ -56,7 +100,7 @@ $NetBSD$
    cat /tmp/make.log4
  
    echo "================================================================"
-@@ -269,7 +269,7 @@ EOF
+@@ -269,7 +272,7 @@ EOF
    add_pkg ${TD}
    pkg_info | awk '{print $1}' | sort > /tmp/pkgs_post_test      
    cd $dir
@@ -65,7 +109,7 @@ $NetBSD$
    cat /tmp/make.log5
  
    RTD=`comm -3 /tmp/pkgs_pre_test /tmp/pkgs_post_test | tr -d '\t'`
-@@ -306,7 +306,7 @@ EOF
+@@ -306,7 +309,7 @@ EOF
    mtree -X /tmp/mtree.exclude -xcn -k uid,gid,mode -p / > /tmp/mtree
  
    cd $dir
@@ -74,7 +118,7 @@ $NetBSD$
      cat /tmp/make.log6
      echo "0" > /tmp/status
    else
-@@ -316,7 +316,7 @@ EOF
+@@ -316,14 +319,14 @@ EOF
    echo "================================================================"
    echo "====================<phase 7: make package>===================="
    cd $dir
@@ -83,3 +127,20 @@ $NetBSD$
        echo "0" > /tmp/status
    else
        echo "1" > /tmp/status
+   fi
+ 
+   cat /tmp/make.log7
+-  prefix=$(make -V PREFIX)
++  prefix=$(/usr/pkg/bin/bmake -V "\${PREFIX}")
+   du -skx / | awk '{print $1}' > /tmp/size
+   del_pkg ${pkgname}
+ 
+@@ -430,7 +433,7 @@ EOF
+ 
+   if [ -e ${dir}/.keep ]; then
+     cd ${dir}
+-    objdir=$(make -V WRKDIR)
++    objdir=$(/usr/pkg/bin/bmake -V "\${WRKDIR}")
+     tar cfjC /tmp/work.tbz ${objdir}/.. work
+   fi
+ 

@@ -53,7 +53,12 @@ mark_failed() {
 	return
     fi
 
-    dependents=$(grep ${pkgname} ${mf} | grep '^[[:space:]]\{1,\}@' | awk '{print $NF}' | sed -e 's|^/usr/pkgsrc/||' | grep -v ${portdir})
+    dependents=$(grep ${pkgname} ${mf} | \
+    	grep '^[[:space:]]\{1,\}@' | \
+    	awk '{print $NF}' | \
+    	sed -e 's|^/usr/pkgsrc/||' | \
+    	sed -e 's|^../../||' | \
+    	grep -v ${portdir})
     if [ $? -ne 0 ]; then
 	return
     fi
@@ -148,7 +153,7 @@ echo ${dirname}
 tc=$(tinderLoc scripts tc)
 chroot=$(tinderLoc buildroot ${build})
 echo "chroot is: ${chroot}"
-portdir=$(echo ${dirname} | sed -e 's|^/usr/pkg/||')
+portdir=$(echo ${dirname} | sed -e 's|^/usr/pkgsrc/||')
 
 total_size=$(${tc} getPortTotalSize -d ${portdir} -b ${build})
 execute_hook "prePortBuild" "PACKAGE_NAME=${pkgname} BUILD=${build} JAIL=${jail} PORTSTREE=${portstree} CHROOT=${chroot} PORTDIR=${portdir} PB=${pb} TOTAL_SIZE=${total_size}"

@@ -434,6 +434,7 @@ requestMount () {
 	mkdir -p ${_dstloc}
     fi
 
+    echo "mount ${_options} ${_srcloc} ${_dstloc}"
     mount ${_options} ${_srcloc} ${_dstloc}
     return ${?}
 }

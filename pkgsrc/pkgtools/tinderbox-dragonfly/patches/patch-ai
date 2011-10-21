@@ -12,25 +12,30 @@ $NetBSD$
  	else
  	    ${tc} resetBuild -b ${build} ${nullfs}
  	fi
-@@ -56,7 +53,7 @@ mark_failed() {
+@@ -56,7 +53,12 @@ mark_failed() {
  	return
      fi
  
 -    dependents=$(grep ${pkgname} ${mf} | grep '^[[:space:]]\{1,\}@' | awk '{print $NF}' | sed -e 's|^/usr/ports/||' | grep -v ${portdir})
-+    dependents=$(grep ${pkgname} ${mf} | grep '^[[:space:]]\{1,\}@' | awk '{print $NF}' | sed -e 's|^/usr/pkgsrc/||' | grep -v ${portdir})
++    dependents=$(grep ${pkgname} ${mf} | \
++    	grep '^[[:space:]]\{1,\}@' | \
++    	awk '{print $NF}' | \
++    	sed -e 's|^/usr/pkgsrc/||' | \
++    	sed -e 's|^../../||' | \
++    	grep -v ${portdir})
      if [ $? -ne 0 ]; then
  	return
      fi
-@@ -151,7 +148,7 @@ echo ${dirname}
+@@ -151,7 +153,7 @@ echo ${dirname}
  tc=$(tinderLoc scripts tc)
  chroot=$(tinderLoc buildroot ${build})
  echo "chroot is: ${chroot}"
 -portdir=$(echo ${dirname} | sed -e 's|^/usr/ports/||')
-+portdir=$(echo ${dirname} | sed -e 's|^/usr/pkg/||')
++portdir=$(echo ${dirname} | sed -e 's|^/usr/pkgsrc/||')
  
  total_size=$(${tc} getPortTotalSize -d ${portdir} -b ${build})
  execute_hook "prePortBuild" "PACKAGE_NAME=${pkgname} BUILD=${build} JAIL=${jail} PORTSTREE=${portstree} CHROOT=${chroot} PORTDIR=${portdir} PB=${pb} TOTAL_SIZE=${total_size}"
-@@ -191,19 +188,17 @@ mtree -deU -f ${chroot}/etc/mtree/BSD.us
+@@ -191,19 +193,17 @@ mtree -deU -f ${chroot}/etc/mtree/BSD.us
        -p ${chroot}/usr >/dev/null 2>&1
  
  mkdir -p ${chroot}${LOCALBASE}
@@ -55,7 +60,7 @@ $NetBSD$
  
  # mount procfs
  mkdir -p ${chroot}/proc
-@@ -252,7 +247,7 @@ if [ x"${CCACHE_ENABLED}" = x"1" ]; then
+@@ -252,7 +252,7 @@ if [ x"${CCACHE_ENABLED}" = x"1" ]; then
  fi
  
  if [ x"${OPTIONS_ENABLED}" = x"1" ]; then
@@ -64,7 +69,7 @@ $NetBSD$
  fi
  
  echo "building $pkgname in $chroot"
-@@ -294,7 +289,7 @@ if [ x"${CCACHE_ENABLED}" ]; then
+@@ -294,7 +294,7 @@ if [ x"${CCACHE_ENABLED}" ]; then
      unset CCACHE_DISABLE
  fi
  
@@ -73,7 +78,7 @@ $NetBSD$
  ldconfig_dirs=""
  for i in ${_ldconfig_dirs}; do
      if [ -d ${chroot}/${i} ]; then
-@@ -302,9 +297,6 @@ for i in ${_ldconfig_dirs}; do
+@@ -302,9 +302,6 @@ for i in ${_ldconfig_dirs}; do
      fi
  done
  chroot ${chroot} /sbin/ldconfig ${ldconfig_dirs}

@@ -134,7 +134,15 @@ $NetBSD$
  		fi
  		;;
  	esac
-@@ -629,7 +639,7 @@ checkPreReqs () {
+@@ -424,6 +434,7 @@ requestMount () {
+ 	mkdir -p ${_dstloc}
+     fi
+ 
++    echo "mount ${_options} ${_srcloc} ${_dstloc}"
+     mount ${_options} ${_srcloc} ${_dstloc}
+     return ${?}
+ }
+@@ -629,7 +640,7 @@ checkPreReqs () {
      missing=""
  
      for r in ${reqs} ; do

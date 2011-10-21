@@ -777,11 +777,11 @@ buildJail () {
     if [ "${updateCmd}" = "LFTP" ]; then
     	iso_image=`ls ${jailBase}/sets`
 	/usr/bin/tar -xf ${jailBase}/sets/${iso_image} -C ${J_TMPDIR} > ${jailBase}/world.tmp 2>&1
+	/bin/cp -r ${jailBase}/src/* ${J_TMPDIR}/usr/src/
 	rc=$?
 	execute_hook "postJailBuild" "JAIL=${jailName} DESTDIR=${J_TMPDIR} JAIL_ARCH=${jailArch} MY_ARCH=${myArch} JAIL_OBJDIR=${JAIL_OBJDIR} SRCBASE=${SRCBASE} PB=${pb} RC=${rc}"
 	if [ ${rc} -ne 0 ]; then
 	    echo "ERROR: world failed - see ${jailBase}/world.tmp"
-	    buildJailCleanup 1 ${jailName} ${J_SRCDIR}
 	fi
     else
         # Make world

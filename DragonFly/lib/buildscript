@@ -8,7 +8,7 @@ cleanup() {
 
   if [ -e ${dir}/.keep ]; then
     cd ${dir}
-    objdir=$(bmake -V "\${WRKDIR}")
+    objdir=`bmake -V '\${WRKDIR}'`
     tar cfjC /tmp/work.tbz ${objdir}/.. work
   fi
 
@@ -109,12 +109,15 @@ L=$(echo ${LOCALBASE} | sed 's,^/,,')
 if [ $phase = 1 ]; then
 
   cd $dir || exit 1
+  INFO_MAINTAINER=`bmake -V '\${MAINTAINER}'`
+  INFO_PREFIX=`bmake -V '\${PREFIX}'`
   echo "build started at $(date)"
   echo "port directory: ${dir}"
   echo "building for:  $(uname -rm)"
-  echo "maintained by: $(bmake -V '\${MAINTAINER}')"
+  echo "maintained by: ${INFO_MAINTAINER}"
   echo "Makefile ident: $(ident ${dir}/Makefile | grep 'NetBSD:' | sed 's/^[ \t]*//')"
-  echo "prefixes: LOCALBASE=${L} PREFIX=$(bmake -V '\${PREFIX}')"
+  echo "prefixes: LOCALBASE=${L} PREFIX=${INFO_PREFIX}"
+  echo "jail directory: $dir"
   echo "Begin Configuration:"
   echo "---Begin Environment---"
   printenv
@@ -124,7 +127,7 @@ if [ $phase = 1 ]; then
   bmake show-options
   echo "---End OPTIONS List---"
   echo ""
-  optionsfile=$(bmake -V "\${OPTIONSFILE}")
+  optionsfile=`bmake -V '\${OPTIONSFILE}'`
   if [ -f "${optionsfile}" ]; then
       echo "---Begin OPTIONS configuration---"
       cat ${optionsfile}
@@ -173,7 +176,7 @@ EOF
   add_pkg $FD
 
   cd $dir || exit 1
-  pkgname=$(bmake -V '\${PKGNAME}')
+  pkgname=`bmake -V '\${PKGNAME}'`
   echo "================================================================"
   echo "====================<phase 1: make checksum>===================="
 
@@ -187,7 +190,7 @@ EOF
 else
 
   cd $dir || exit 1
-  pkgname=$(bmake -V "\${PKGNAME}")
+  pkgname=`bmake -V '\${PKGNAME}'`
 
   echo "================================================================"
   echo "====================<phase 2: make extract>===================="
@@ -323,7 +326,7 @@ EOF
   fi
 
   cat /tmp/make.log7
-  prefix=$(bmake -V "\${PREFIX}")
+  prefix=$(/usr/pkg/bin/bmake -V "\${PREFIX}")
   du -skx / | awk '{print $1}' > /tmp/size
   del_pkg ${pkgname}
 
@@ -430,7 +433,7 @@ EOF
 
   if [ -e ${dir}/.keep ]; then
     cd ${dir}
-    objdir=$(bmake -V "\${WRKDIR}")
+    objdir=$(/usr/pkg/bin/bmake -V "\${WRKDIR}")
     tar cfjC /tmp/work.tbz ${objdir}/.. work
   fi
 
