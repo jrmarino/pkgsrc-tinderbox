@@ -238,8 +238,8 @@ $NetBSD$
      if [ "${updateCmd}" = "LFTP" ]; then
 -	export DESTDIR=${J_TMPDIR}
 -	cd ${jailBase}/sets/base && yes | sh ./install.sh > ${jailBase}/world.tmp 2>&1
-+    	iso_image=`ls ${jailbase}/sets`
-+	/usr/bin/tar -xf ${iso_image} -C ${J_TMPDIR} > ${jailbase}/world.tmp 2>&1
++    	iso_image=`ls ${jailBase}/sets`
++	/usr/bin/tar -xf ${jailBase}/sets/${iso_image} -C ${J_TMPDIR} > ${jailBase}/world.tmp 2>&1
  	rc=$?
 -	if [ ${rc} -eq 0 -a -d "${jailBase}/sets/lib32" ]; then
 -	    cd ${jailBase}/sets/lib32 && yes | sh ./install.sh >> ${jailBase}/world.tmp 2>&1
@@ -307,7 +307,7 @@ $NetBSD$
      # Create the jail tarball
      echo "${jailName}: creating tarball"
      jailDir=$(tinderLoc jail ${jailName})
-@@ -883,8 +894,8 @@ createJail () {
+@@ -883,11 +894,11 @@ createJail () {
      init=1
  
      setupDefaults
@@ -317,8 +317,20 @@ $NetBSD$
 +    updateType=${defaultDragonType}
  
      # argument handling
-     while getopts a:d:j:m:t:u:CH:I arg >/dev/null 2>&1
-@@ -913,7 +924,7 @@ createJail () {
+-    while getopts a:d:j:m:t:u:CH:I arg >/dev/null 2>&1
++    while getopts a:d:j:m:t:u:H:I arg >/dev/null 2>&1
+     do
+ 	case "${arg}" in
+ 
+@@ -897,7 +908,6 @@ createJail () {
+ 	m)	mountSrc="${OPTARG}";;
+ 	t)	updateTag="${OPTARG}";;
+ 	u)	updateType="${OPTARG}";;
+-	C)	updateCompress=1;;
+ 	H)	updateHost="${OPTARG}";;
+ 	I)	init=0;;
+ 	?)	return 1;;
+@@ -913,7 +923,7 @@ createJail () {
  
      valid=$(echo ${jailName} | awk '{if (/^[[:digit:]]/) {print;}}')
      if [ -z "${valid}" ]; then
@@ -327,7 +339,7 @@ $NetBSD$
  	return 1
      fi
  
-@@ -926,6 +937,11 @@ createJail () {
+@@ -926,6 +936,11 @@ createJail () {
  	echo "createJail: no update type specified"
  	return 1
      fi
@@ -339,7 +351,7 @@ $NetBSD$
  
      echo "${jailName}: initializing tree"
      generateUpdateCode jail ${jailName} ${updateType} ${updateHost} \
-@@ -1040,20 +1056,21 @@ createPortsTree () {
+@@ -1040,20 +1055,21 @@ createPortsTree () {
      init=1
      mountSrc=""
      portsTreeName=""
@@ -363,7 +375,7 @@ $NetBSD$
  	w)	cvswebUrl="${OPTARG}";;
  	C)	updateCompress=1;;
  	H)	updateHost="${OPTARG}";;
-@@ -1078,10 +1095,16 @@ createPortsTree () {
+@@ -1078,10 +1094,16 @@ createPortsTree () {
  	echo "createPortsTree: no update type specified"
  	return 1
      fi
@@ -381,7 +393,7 @@ $NetBSD$
  
      # add portstree to datastore
      echo -n "${portsTreeName}: adding to datastore... "
-@@ -1158,7 +1181,7 @@ enterBuild () {
+@@ -1158,7 +1180,7 @@ enterBuild () {
      fi
  
      sleepName=$(echo ${portDir} | sed -e 'y/\//_/')
@@ -390,7 +402,7 @@ $NetBSD$
  
      if [ ! -d ${portFullDir} ]; then
  	echo "enterBuild: Build environment does not exist yet, sleeping."
-@@ -1438,7 +1461,7 @@ tinderbuild_setup () {
+@@ -1438,7 +1460,7 @@ tinderbuild_setup () {
  	echo "tinderbuild: cannot mount ports source"
  	tinderbuild_cleanup 1
      fi
@@ -399,7 +411,7 @@ $NetBSD$
  
      # Mount src/
      if ! requestMount -t buildsrc -b ${build} -r ${nullfs}; then
-@@ -1448,8 +1471,8 @@ tinderbuild_setup () {
+@@ -1448,8 +1470,8 @@ tinderbuild_setup () {
  
      # For use by pnohang
      # XXX: though killall may not work since it's a dynamic executable
@@ -410,7 +422,7 @@ $NetBSD$
  
      # Mount /dev, since we're going to be chrooting shortly
      mount -t devfs devfs ${buildRoot}/dev >/dev/null 2>&1
-@@ -1780,7 +1803,7 @@ tinderbuild () {
+@@ -1780,7 +1802,7 @@ tinderbuild () {
  		echo "tinderbuild: cannot mount portstree: ${portstree}"
  		exit 1
  	    fi
@@ -419,7 +431,7 @@ $NetBSD$
  		$(tinderLoc scripts lib/makemake) ${noduds} ${build} ${ports}
  	)
  	if [ $? -ne 0 ]; then
-@@ -1799,10 +1822,6 @@ tinderbuild () {
+@@ -1799,10 +1821,6 @@ tinderbuild () {
  
      # Set up the chrooted environment
      osmajor=$(echo ${jail} | sed -E -e 's|(^[[:digit:]]+).*$|\1|')
@@ -430,7 +442,7 @@ $NetBSD$
  
      tinderbuild_setup
  
-@@ -1829,21 +1848,36 @@ init () {
+@@ -1829,21 +1847,36 @@ init () {
  	mkdir -p ${pb}/${dir}
      done
  
@@ -473,7 +485,7 @@ $NetBSD$
  
      return 0
  }
-@@ -1892,7 +1926,7 @@ addPortToBuild () {
+@@ -1892,7 +1925,7 @@ addPortToBuild () {
      buildenv ${jail} ${portsTree} ${build}
      buildenvNoHost ${build}
  
@@ -482,7 +494,7 @@ $NetBSD$
      if [ -z "${portDir}" ]; then
  	${tc} addPortToOneBuild -b ${build} ${norecurse}
      else
-@@ -1902,7 +1936,8 @@ addPortToBuild () {
+@@ -1902,7 +1935,8 @@ addPortToBuild () {
          fi
          ${tc} addPortToOneBuild -b ${build} -d ${portDir} ${norecurse}
      fi
@@ -492,7 +504,7 @@ $NetBSD$
  	pdirs=""
  	if [ -z "${portDir}" ]; then
  	    pdirs=$(${tc} getPortsForBuild -b ${build} 2>/dev/null)
-@@ -2237,13 +2272,13 @@ tbcleanup () {
+@@ -2237,13 +2271,13 @@ tbcleanup () {
  	pathFound=0
          for portstree in ${portstrees} ; do
  	    path=$(tinderLoc portstree ${portstree})
@@ -509,7 +521,7 @@ $NetBSD$
  		    if [ -f "${distinfo}" ]; then
  			for df in $(grep '^MD5' ${distinfo} | awk -F '[\(\)]' '{print $2}'); do
  			    if ! grep -q "^${df}\$" ${disttmp}; then
-@@ -2327,7 +2362,7 @@ tbcleanup () {
+@@ -2327,7 +2361,7 @@ tbcleanup () {
  	    fi
  
  	    path=$(tinderLoc portstree ${portstree})

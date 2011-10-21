@@ -164,7 +164,7 @@ $NetBSD$
 -        -p FreeBSD -d "8.2-RELEASE with FreeBSD ports tree"
 +       that combines a 2.12 Jail with the DragonFly pkgsrc tree:
 +# cd ${pb}/scripts && ./tc createBuild -b 2.12-DragonFly -j 2.12 \
-+        -p DragonFly -d "2.12-RELEASE with DragonFly pkgsrc tree"
++        -p pkgsrc -d "2.12-RELEASE with DragonFly pkgsrc tree"
         Note: the recommended way to name Builds is
         "Jail-PortsTree". All builds must also begin with their
 -       FreeBSD major version number.
