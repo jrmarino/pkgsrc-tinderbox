@@ -81,6 +81,8 @@ generateUpdateCode () {
 		updateCmd="/usr/pkg/bin/lftp"
 		iso_image="dfly-${updateArch}-${5}_REL.iso.bz2"
 		iso_server=${4}
+		rev_number=`echo ${5} | awk 'BEGIN {FS="."}; {printf("%s_%s", $1, $2)}'`
+		fakebranch="BRANCH=\"RELEASE_${rev_number}\""
 
 		if [ ! -x "${updateCmd}" ]; then
 		    echo "ERROR: ${2} ${3}: ${updateCmd} missing"
@@ -100,7 +102,8 @@ generateUpdateCode () {
 		  echo "mkdir -p ${treeDir}/sets"
 		  echo "cd ${treeDir}/sets"
 		  echo "${updateCmd} -c \"open ${iso_server}/iso-images/; get ${iso_image}\""
-		  echo "mkdir -p ../tmp ../obj ../src"
+		  echo "mkdir -p ../tmp ../obj ../src/sys/conf"
+		  echo "echo '${fakebranch}' > ../src/sys/conf/newvers.sh"
 		) > ${treeDir}/update.sh
 		chmod +x ${treeDir}/update.sh
 		;;
