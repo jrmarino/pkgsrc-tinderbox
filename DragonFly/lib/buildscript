@@ -110,6 +110,9 @@ PLISTCHECK=$9
 
 L=$(echo ${LOCALBASE} | sed 's,^/,,')
 
+export NO_PKGTOOLS_REQD_CHECK=1
+export WRKOBJDIR=/work
+
 if [ $phase = 1 ]; then
 
   cd $dir || exit 1
