@@ -203,6 +203,13 @@ else
     	>/dev/null 2>&1
 fi
 
+# pkgsrc is "helpful" that it removes directories that result empty after
+# as the plist removes files of a package.  This includes standard mtree
+# directories such as man/man1, so we need to touch a file in every directory
+# of pkgsrc to prevent this side-effect which often fails the fs state check.
+
+find ${chroot}${LOCALBASE}/ -type d -exec touch {}/.keep \;
+
 # copy over pkgsrc bootstrap tools, ${LOCALBASE}/bin & /etc exist now
 cp    ${chroot}/usr/4bootstrap/bmake   ${chroot}${LOCALBASE}/bin/
 cp    ${chroot}/usr/4bootstrap/pkg_*   ${chroot}${LOCALBASE}/sbin/
