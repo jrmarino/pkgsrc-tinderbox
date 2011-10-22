@@ -2,15 +2,17 @@ $NetBSD$
 
 --- ../FreeBSD/lib/Tinderbox/MakeCache.pm	2011-10-16 00:52:55.000000000 +0000
 +++ lib/Tinderbox/MakeCache.pm
-@@ -37,7 +37,7 @@ our @makeTargets = (
+@@ -37,8 +37,8 @@ our @makeTargets = (
          'FETCH_DEPENDS',   'BUILD_DEPENDS',
          'LIB_DEPENDS',     'RUN_DEPENDS',
          'TEST_DEPENDS',    'MAINTAINER',
 -        'COMMENT',         'PORTNAME',
+-        'DISTFILES',
 +        'COMMENT',         'PKGBASE',
-         'DISTFILES',
++        'DISTFILES',       'BOOTSTRAP_DEPENDS',
  );
  
+ # Create a new cache object
 @@ -60,13 +60,16 @@ sub _execMake {
          my $self = shift;
          my $port = shift;
@@ -48,3 +50,43 @@ $NetBSD$
  }
  
  # Package name
+@@ -133,6 +137,13 @@ sub Maintainer {
+         return $self->_getVariable($port, 'MAINTAINER');
+ }
+ 
++# Bootstrap dependencies
++sub BootstrapDepends {
++        my $self = shift;
++        my $port = shift;
++        return $self->_getList($port, 'BOOTSTRAP_DEPENDS');
++}
++
+ # Extract dependencies
+ sub ExtractDepends {
+         my $self = shift;
+@@ -206,6 +217,17 @@ sub FetchDependsList {
+         return grep { !$uniq{$_}++ } @deps;
+ }
+ 
++sub BootstrapDependsList {
++        my $self = shift;
++        my $port = shift;
++
++        my @deps;
++        push(@deps, $self->BootstrapDepends($port));
++
++        my %uniq;
++        return grep { !$uniq{$_}++ } @deps;
++}
++
+ sub ExtractDependsList {
+         my $self = shift;
+         my $port = shift;
+@@ -245,6 +267,7 @@ sub BuildDependsList {
+         my $port = shift;
+ 
+         my @deps;
++        push(@deps, $self->BootstrapDepends($port));
+         push(@deps, $self->ExtractDepends($port));
+         push(@deps, $self->PatchDepends($port));
+         push(@deps, $self->FetchDepends($port));

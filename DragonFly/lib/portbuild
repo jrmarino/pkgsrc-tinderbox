@@ -5,7 +5,7 @@
 . ${pb}/scripts/lib/tinderlib.sh
 
 usage () {
-    echo "usage: $0 <build name> <jail name> <portstree name> [-noclean] [-plistcheck] [-nullfs] [-fetch-original] [-nolog] ED PD FD BD RD TD pkgname dirname"
+    echo "usage: $0 <build name> <jail name> <portstree name> [-noclean] [-plistcheck] [-nullfs] [-fetch-original] [-nolog] ED PD FD BD RD TD SD pkgname dirname"
     exit 1
 }
 
@@ -19,7 +19,9 @@ cleanup()
     build=$6
     nullfs=$7
 
-    umount ${chroot}/compat/linux/proc >/dev/null
+    if [ ${ARCH} = "i386" ]; then 
+	umount ${chroot}/compat/linux/proc >/dev/null
+    fi
     umount ${chroot}/proc >/dev/null
 
     if [ $noclean -eq 0 ]; then
@@ -144,8 +146,9 @@ FD=$3
 BD=$4
 RD=$5
 TD=$6
-pkgname=$(basename $7 ${PKGSUFFIX})
-dirname=$8
+SD=$7
+pkgname=$(basename $8 ${PKGSUFFIX})
+dirname=$9
 
 echo ${pkgname}
 echo ${dirname}
@@ -206,9 +209,11 @@ cp    ${chroot}/usr/4bootstrap/pkg_*   ${chroot}${LOCALBASE}/sbin/
 cp    ${chroot}/usr/4bootstrap/mk.conf ${chroot}${LOCALBASE}/etc/
 cp -R ${chroot}/usr/4bootstrap/mk      ${chroot}${LOCALBASE}/share/
 
-# mount linprocfs
-mkdir -p ${chroot}/compat/linux/proc
-mount -t linprocfs linprocfs ${chroot}/compat/linux/proc
+# mount linprocfs if available
+if [ ${ARCH} = "i386" ]; then 
+    mkdir -p ${chroot}/compat/linux/proc
+    mount -t linprocfs linprocfs ${chroot}/compat/linux/proc
+fi
 
 # mount procfs
 mkdir -p ${chroot}/proc

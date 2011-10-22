@@ -38,7 +38,7 @@ our @makeTargets = (
         'LIB_DEPENDS',     'RUN_DEPENDS',
         'TEST_DEPENDS',    'MAINTAINER',
         'COMMENT',         'PKGBASE',
-        'DISTFILES',
+        'DISTFILES',       'BOOTSTRAP_DEPENDS',
 );
 
 # Create a new cache object
@@ -137,6 +137,13 @@ sub Maintainer {
         return $self->_getVariable($port, 'MAINTAINER');
 }
 
+# Bootstrap dependencies
+sub BootstrapDepends {
+        my $self = shift;
+        my $port = shift;
+        return $self->_getList($port, 'BOOTSTRAP_DEPENDS');
+}
+
 # Extract dependencies
 sub ExtractDepends {
         my $self = shift;
@@ -210,6 +217,17 @@ sub FetchDependsList {
         return grep { !$uniq{$_}++ } @deps;
 }
 
+sub BootstrapDependsList {
+        my $self = shift;
+        my $port = shift;
+
+        my @deps;
+        push(@deps, $self->BootstrapDepends($port));
+
+        my %uniq;
+        return grep { !$uniq{$_}++ } @deps;
+}
+
 sub ExtractDependsList {
         my $self = shift;
         my $port = shift;
@@ -249,6 +267,7 @@ sub BuildDependsList {
         my $port = shift;
 
         my @deps;
+        push(@deps, $self->BootstrapDepends($port));
         push(@deps, $self->ExtractDepends($port));
         push(@deps, $self->PatchDepends($port));
         push(@deps, $self->FetchDepends($port));

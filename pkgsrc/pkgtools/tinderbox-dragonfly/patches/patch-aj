@@ -11,7 +11,31 @@ $NetBSD$
      tar cfjC /tmp/work.tbz ${objdir}/.. work
    fi
  
-@@ -109,22 +109,24 @@ L=$(echo ${LOCALBASE} | sed 's,^/,,')
+@@ -48,6 +48,8 @@ add_pkg() {
+       fi
+     done
+   fi
++  # pkgsrc requires PKG_PATH variable be unset
++  unset PKG_PATH
+ }
+ 
+ del_pkg() {
+@@ -91,6 +93,8 @@ del_pkg() {
+     done
+   fi
+   find /var/db/pkg -type f -empty -delete
++  # pkgsrc requires PKG_PATH variable be unset
++  unset PKG_PATH
+ }
+ 
+ dir=$1
+@@ -106,25 +110,30 @@ PLISTCHECK=$9
+ 
+ L=$(echo ${LOCALBASE} | sed 's,^/,,')
+ 
++export NO_PKGTOOLS_REQD_CHECK=1
++export WRKOBJDIR=/work
++
  if [ $phase = 1 ]; then
  
    cd $dir || exit 1
@@ -41,7 +65,7 @@ $NetBSD$
    if [ -f "${optionsfile}" ]; then
        echo "---Begin OPTIONS configuration---"
        cat ${optionsfile}
-@@ -173,11 +175,11 @@ EOF
+@@ -173,11 +182,11 @@ EOF
    add_pkg $FD
  
    cd $dir || exit 1
@@ -55,7 +79,7 @@ $NetBSD$
      cat /tmp/make.log1
      echo "0" > /tmp/status
    else
-@@ -187,14 +189,14 @@ EOF
+@@ -187,14 +196,14 @@ EOF
  else
  
    cd $dir || exit 1
@@ -72,7 +96,7 @@ $NetBSD$
    cat /tmp/make.log2
    del_pkg ${ED}
  
-@@ -207,7 +209,7 @@ else
+@@ -207,7 +216,7 @@ else
    echo "====================<phase 3: make patch>===================="
    add_pkg ${PD}
    cd $dir
@@ -81,7 +105,7 @@ $NetBSD$
    cat /tmp/make.log3
    del_pkg ${PD}
  
-@@ -247,7 +249,7 @@ EOF
+@@ -247,7 +256,7 @@ EOF
    fi
  
    cd $dir
@@ -90,7 +114,7 @@ $NetBSD$
  
    if [ -f .sleepme ]; then
        set > /tmp/.set_${portdir}
-@@ -259,7 +261,7 @@ EOF
+@@ -259,32 +268,13 @@ EOF
        rm -f /tmp/.set_${portdir}
    fi
  
@@ -99,16 +123,33 @@ $NetBSD$
    cat /tmp/make.log4
  
    echo "================================================================"
-@@ -269,7 +271,7 @@ EOF
-   add_pkg ${TD}
-   pkg_info | awk '{print $1}' | sort > /tmp/pkgs_post_test      
-   cd $dir
--  /pnohang $TIMEOUT /tmp/make.log5 ${pkgname} make -k regression-test
-+  /pnohang $TIMEOUT /tmp/make.log5 ${pkgname} bmake -k regression-test
-   cat /tmp/make.log5
+   echo "====================<phase 5: make test>===================="
  
-   RTD=`comm -3 /tmp/pkgs_pre_test /tmp/pkgs_post_test | tr -d '\t'`
-@@ -306,7 +308,7 @@ EOF
+-  pkg_info | awk '{print $1}' | sort > /tmp/pkgs_pre_test
+-  add_pkg ${TD}
+-  pkg_info | awk '{print $1}' | sort > /tmp/pkgs_post_test      
+-  cd $dir
+-  /pnohang $TIMEOUT /tmp/make.log5 ${pkgname} make -k regression-test
+-  cat /tmp/make.log5
+-
+-  RTD=`comm -3 /tmp/pkgs_pre_test /tmp/pkgs_post_test | tr -d '\t'`
+-  del_pkg ${RTD}
+-  rm /tmp/pkgs_pre_test /tmp/pkgs_post_test
+-
+-  mtree -X /tmp/mtree.buildexclude -x -f /tmp/mtree.prebuild -p / | egrep -v "^(${L}/var|${L}/lib/X11/xserver/SecurityPolicy|${L}/share/nls/POSIX|${L}/share/nls/en_US.US-ASCII|etc/services|compat |${L} |etc/manpath.config|etc/.*.bak|${L}/info/dir|${L}/lib/X11/fonts/.*/fonts\.|${L}/man/..( |/man. )|${L}/lib/X11/fonts/TrueType|${L}/etc/gconf/gconf.xml.defaults/%gconf-tree.*.xml|usr/X11R6 )" > /tmp/list.preinstall
+-
+-  if [ -s /tmp/list.preinstall ]; then
+-      echo "================================================================"
+-      echo "Fatal error: filesystem was touched prior to 'make install' phase"
+-      cat /tmp/list.preinstall
+-      echo "================================================================"
+-      cleanup 0
+-  fi
++  echo "Pkgsrc does not have per-package regression test capability, skipped."
+ 
+   echo "================================================================"
+   echo "====================<phase 6: make install>===================="
+@@ -306,7 +296,7 @@ EOF
    mtree -X /tmp/mtree.exclude -xcn -k uid,gid,mode -p / > /tmp/mtree
  
    cd $dir
@@ -117,7 +158,7 @@ $NetBSD$
      cat /tmp/make.log6
      echo "0" > /tmp/status
    else
-@@ -316,14 +318,14 @@ EOF
+@@ -316,14 +306,14 @@ EOF
    echo "================================================================"
    echo "====================<phase 7: make package>===================="
    cd $dir
@@ -134,7 +175,7 @@ $NetBSD$
    du -skx / | awk '{print $1}' > /tmp/size
    del_pkg ${pkgname}
  
-@@ -430,7 +432,7 @@ EOF
+@@ -430,7 +420,7 @@ EOF
  
    if [ -e ${dir}/.keep ]; then
      cd ${dir}
