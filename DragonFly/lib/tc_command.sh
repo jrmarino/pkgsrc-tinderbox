@@ -791,6 +791,7 @@ buildJail () {
 	mv ${J_TMPDIR}/usr/pkg/share/mk    ${J_TMPDIR}/usr/4bootstrap
 	mv ${J_TMPDIR}/usr/pkg/sbin/pkg_*  ${J_TMPDIR}/usr/4bootstrap
 	rm -rf ${J_TMPDIR}/usr/pkg ${J_TMPDIR}/usr/src-sys.tar.bz2
+	rm -rf ${J_TMPDIR}/var/db/pkg
 	execute_hook "postJailBuild" "JAIL=${jailName} DESTDIR=${J_TMPDIR} JAIL_ARCH=${jailArch} MY_ARCH=${myArch} JAIL_OBJDIR=${JAIL_OBJDIR} SRCBASE=${SRCBASE} PB=${pb} RC=${rc}"
 	if [ $? -ne 0 ]; then
 	    echo "buildJail: Terminating Jail build since hook postJailBuild failed."
