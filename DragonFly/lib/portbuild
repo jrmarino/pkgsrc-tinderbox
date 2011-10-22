@@ -226,7 +226,6 @@ export PACKAGES=/tmp/packages
 unset MAKEFLAGS
 unset PORTSDIR
 unset SRCBASE
-unset PKG_PATH
 
 # Unset all of the locale variables to ensure C/POSIX is used to build
 # everything.

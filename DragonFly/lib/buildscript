@@ -48,6 +48,8 @@ add_pkg() {
       fi
     done
   fi
+  # pkgsrc requires PKG_PATH variable be unset
+  unset PKG_PATH
 }
 
 del_pkg() {
@@ -91,6 +93,8 @@ del_pkg() {
     done
   fi
   find /var/db/pkg -type f -empty -delete
+  # pkgsrc requires PKG_PATH variable be unset
+  unset PKG_PATH
 }
 
 dir=$1
