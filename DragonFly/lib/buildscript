@@ -274,26 +274,7 @@ EOF
   echo "================================================================"
   echo "====================<phase 5: make test>===================="
 
-  pkg_info | awk '{print $1}' | sort > /tmp/pkgs_pre_test
-  add_pkg ${TD}
-  pkg_info | awk '{print $1}' | sort > /tmp/pkgs_post_test      
-  cd $dir
-  /pnohang $TIMEOUT /tmp/make.log5 ${pkgname} bmake -k regression-test
-  cat /tmp/make.log5
-
-  RTD=`comm -3 /tmp/pkgs_pre_test /tmp/pkgs_post_test | tr -d '\t'`
-  del_pkg ${RTD}
-  rm /tmp/pkgs_pre_test /tmp/pkgs_post_test
-
-  mtree -X /tmp/mtree.buildexclude -x -f /tmp/mtree.prebuild -p / | egrep -v "^(${L}/var|${L}/lib/X11/xserver/SecurityPolicy|${L}/share/nls/POSIX|${L}/share/nls/en_US.US-ASCII|etc/services|compat |${L} |etc/manpath.config|etc/.*.bak|${L}/info/dir|${L}/lib/X11/fonts/.*/fonts\.|${L}/man/..( |/man. )|${L}/lib/X11/fonts/TrueType|${L}/etc/gconf/gconf.xml.defaults/%gconf-tree.*.xml|usr/X11R6 )" > /tmp/list.preinstall
-
-  if [ -s /tmp/list.preinstall ]; then
-      echo "================================================================"
-      echo "Fatal error: filesystem was touched prior to 'make install' phase"
-      cat /tmp/list.preinstall
-      echo "================================================================"
-      cleanup 0
-  fi
+  echo "Pkgsrc does not have per-package regression test capability, skipped."
 
   echo "================================================================"
   echo "====================<phase 6: make install>===================="
