@@ -267,7 +267,6 @@ sub BuildDependsList {
         my $port = shift;
 
         my @deps;
-        push(@deps, $self->BootstrapDepends($port));
         push(@deps, $self->ExtractDepends($port));
         push(@deps, $self->PatchDepends($port));
         push(@deps, $self->FetchDepends($port));

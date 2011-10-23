@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# usage: $0 DIRNAME PHASE ED PD FD BD RD TD [PLISTCHECK]
+# usage: $0 DIRNAME PHASE ED PD FD BD RD TD SD [PLISTCHECK]
 #   PHASE is 1 (checksum) or 2 (package)
 
 cleanup() {
@@ -106,7 +106,8 @@ FD=$5
 BD=$6
 RD=$7
 TD=$8
-PLISTCHECK=$9
+SD=$9
+PLISTCHECK=${10}
 
 L=$(echo ${LOCALBASE} | sed 's,^/,,')
 
@@ -130,7 +131,8 @@ if [ $phase = 1 ]; then
   echo "---End Environment---"
   echo ""
   echo "---Begin OPTIONS List---"
-  bmake show-options
+  #bmake show-options
+  echo "show options disabled for now"
   echo "---End OPTIONS List---"
   echo ""
   optionsfile=`bmake -V '\${OPTIONSFILE}'`
@@ -142,6 +144,7 @@ if [ $phase = 1 ]; then
   fi
   echo "End Configuration."
 
+  echo "BOOTSTRAP_DEPENDS=${SD}"
   echo "FETCH_DEPENDS=${FD}"
   echo "PATCH_DEPENDS=${PD}"
   echo "EXTRACT_DEPENDS=${ED}"
@@ -179,7 +182,7 @@ EOF
   # Record a "pristine" mtree.
   mtree -X /tmp/mtree.preexclude -xcn -k uid,gid,mode -p / > /tmp/mtree.pristine
 
-  add_pkg $FD
+  add_pkg $SD $FD
 
   cd $dir || exit 1
   pkgname=`bmake -V '\${PKGNAME}'`
