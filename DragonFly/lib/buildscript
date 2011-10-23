@@ -200,6 +200,15 @@ else
   echo "====================<phase 2: make extract>===================="
 
   add_pkg ${ED}
+  
+  # For an unfathomable reason, pkgsrc insists on bringing in build
+  # dependencies in order to extract the files.  Not only is this
+  # annoying if you want to check the contents of the tarball and you
+  # have to build all the dependencies first, it means this script
+  # has to be reordered where build dependencies come in very early.
+  
+  add_pkg ${BD}
+
   cd $dir
   /pnohang $TIMEOUT /tmp/make.log2 ${pkgname} bmake extract || cleanup 2
   cat /tmp/make.log2
@@ -220,8 +229,6 @@ else
 
   echo "================================================================"
   echo "====================<phase 4: make build>===================="
-
-  add_pkg ${BD}
 
   # Files we do not care about changing between pre-build and post-cleanup
   cat > /tmp/mtree.buildexclude <<EOF

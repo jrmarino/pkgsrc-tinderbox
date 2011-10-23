@@ -39,6 +39,7 @@ our @makeTargets = (
         'TEST_DEPENDS',    'MAINTAINER',
         'COMMENT',         'PKGBASE',
         'DISTFILES',       'BOOTSTRAP_DEPENDS',
+        'DEPENDS'
 );
 
 # Create a new cache object
@@ -97,7 +98,7 @@ sub _getList {
         $self->_execMake($port);
         foreach my $dep (split(/\s+/, $self->{CACHE}->{$port}{$item})) {
                 my ($d, $ddir) = split(/:/, $dep);
-                if (!defined($ddir) || $item eq 'DEPENDS') {
+                if (!defined($ddir)) {
                         $ddir = $d;
                 }
                 $ddir =~ s|^$self->{BASEDIR}/||;
@@ -142,6 +143,13 @@ sub BootstrapDepends {
         my $self = shift;
         my $port = shift;
         return $self->_getList($port, 'BOOTSTRAP_DEPENDS');
+}
+
+# Buildlink3 dependencies
+sub Buildlink3Depends {
+        my $self = shift;
+        my $port = shift;
+        return $self->_getList($port, 'DEPENDS');
 }
 
 # Extract dependencies
@@ -228,6 +236,17 @@ sub BootstrapDependsList {
         return grep { !$uniq{$_}++ } @deps;
 }
 
+sub Buildlink3DependsList {
+        my $self = shift;
+        my $port = shift;
+
+        my @deps;
+        push(@deps, $self->Buildlink3Depends($port));
+
+        my %uniq;
+        return grep { !$uniq{$_}++ } @deps;
+}
+
 sub ExtractDependsList {
         my $self = shift;
         my $port = shift;
@@ -272,6 +291,7 @@ sub BuildDependsList {
         push(@deps, $self->FetchDepends($port));
         push(@deps, $self->BuildDepends($port));
         push(@deps, $self->LibDepends($port));
+        push(@deps, $self->Buildlink3Depends($port));
 
         my %uniq;
         return grep { !$uniq{$_}++ } @deps;
