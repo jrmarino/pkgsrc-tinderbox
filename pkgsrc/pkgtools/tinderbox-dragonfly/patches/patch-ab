@@ -26,19 +26,20 @@ $NetBSD$
 -#10PKGZIPCMD=bzip2
 -#10INDEXFILE=INDEX-10
 -#10X_WINDOW_SYSTEM=xorg
-+#2PKGSUFFIX=.tbz
-+#2PKGZIPCMD=bzip2
-+#2INDEXFILE=INDEX-2
-+#2X_WINDOW_SYSTEM=xorg
-+#3PKGSUFFIX=.tbz
-+#3PKGZIPCMD=bzip2
-+#3INDEXFILE=INDEX-3
-+#3X_WINDOW_SYSTEM=xorg
- #
+-#
 -LOCALBASE=/usr/local
 -OSVERSION=`awk '/^#define __FreeBSD_version/ {print $3}' < ^^SRCBASE^^/sys/sys/param.h`
 -OSREL=`awk 'BEGIN {FS="\""}; /^REVISION/ {print $2}' < ^^SRCBASE^^/sys/conf/newvers.sh`
 -BRANCH=`awk 'BEGIN {FS="\""}; /^BRANCH/ {print $2}' < ^^SRCBASE^^/sys/conf/newvers.sh`
++#2PKGSUFFIX=.tgz
++#2PKGZIPCMD=gzip
++#2INDEXFILE=INDEX-2
++#2X_WINDOW_SYSTEM=xorg
++#3PKGSUFFIX=.tgz
++#3PKGZIPCMD=gzip
++#3INDEXFILE=INDEX-3
++#3X_WINDOW_SYSTEM=xorg
++
 +LOCALBASE=/usr/pkg
 +OSVERSION=`awk '/^#define __DragonFly_version/ {print $3}' < ^^SRCBASE^^/sys/sys/param.h`
 +OSREL=`awk 'BEGIN {FS="\""}; /^BRANCH=\"/ {split($2,array,"_"); printf ("%s.%s\n", array[2],array[3])}'  < ^^SRCBASE^^/sys/conf/newvers.sh`

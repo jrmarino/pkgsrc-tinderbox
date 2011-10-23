@@ -250,10 +250,10 @@ $NetBSD$
 +	if [ ${rc} -ne 0 ]; then
 +	    echo "ERROR: extract world failed - see ${jailBase}/world.tmp"
  	fi
++	mkdir -p ${jailBase}/src/sys/sys
++	cp ${J_TMPDIR}/usr/include/sys/param.h ${jailBase}/src/sys/sys	
 +	rm -rf ${J_TMPDIR}/usr/src
 +	cp -R ${jailBase}/src ${J_TMPDIR}/usr
-+	mkdir -p ${J_TMPDIR}/usr/src/sys/sys
-+	cp ${J_TMPDIR}/usr/include/sys/param.h ${J_TMPDIR}/usr/src/sys/sys
 +	mkdir ${J_TMPDIR}/usr/4bootstrap
 +	mv ${J_TMPDIR}/usr/pkg/bin/bmake   ${J_TMPDIR}/usr/4bootstrap
 +	mv ${J_TMPDIR}/usr/pkg/etc/mk.conf ${J_TMPDIR}/usr/4bootstrap

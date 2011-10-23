@@ -134,7 +134,7 @@ $NetBSD$
  ldconfig_dirs=""
  for i in ${_ldconfig_dirs}; do
      if [ -d ${chroot}/${i} ]; then
-@@ -302,9 +319,6 @@ for i in ${_ldconfig_dirs}; do
+@@ -302,11 +319,8 @@ for i in ${_ldconfig_dirs}; do
      fi
  done
  chroot ${chroot} /sbin/ldconfig ${ldconfig_dirs}
@@ -142,5 +142,36 @@ $NetBSD$
 -    chroot ${chroot} /sbin/ldconfig -aout /usr/lib/aout /usr/lib/compat/aout
 -fi
  
- set x $ED $FD $PD $BD $RD $TD
+-set x $ED $FD $PD $BD $RD $TD
++set x $ED $FD $PD $BD $RD $TD $SD
  shift 1
+ 
+ cd ${chroot}/tmp/depends
+@@ -337,7 +351,7 @@ if [ $? -ne 0 ]; then
+     exit 1
+ fi
+ 
+-chroot ${chroot} /buildscript ${dirname} 1 "$ED" "$PD" "$FD" "$BD" "$RD" "$TD" "${plistcheck}" 2>&1 | tee -a ${chroot}/tmp/${pkgname}.log
++chroot ${chroot} /buildscript ${dirname} 1 "$ED" "$PD" "$FD" "$BD" "$RD" "$TD" "$SD" "${plistcheck}" 2>&1 | tee -a ${chroot}/tmp/${pkgname}.log
+ if [ -f ${chroot}/tmp/status ]; then
+     error=$(cat ${chroot}/tmp/status)
+ else
+@@ -358,7 +372,7 @@ if [ "${error}" = "0" ]; then
+ 	    -cf - . | tar --unlink -C ${chroot}${DISTCACHE} -xvf -
+     fi
+ 
+-    chroot ${chroot} /usr/bin/nice -n $nice /buildscript ${dirname} 2  "$ED" "$PD" "$FD" "$BD" "$RD" "$TD" "${plistcheck}" > ${chroot}/tmp/${pkgname}.log2 2>&1
++    chroot ${chroot} /usr/bin/nice -n $nice /buildscript ${dirname} 2  "$ED" "$PD" "$FD" "$BD" "$RD" "$TD" "$SD" "${plistcheck}" > ${chroot}/tmp/${pkgname}.log2 2>&1
+ 
+     grep pnohang ${chroot}/tmp/${pkgname}.log2
+     cat ${chroot}/tmp/${pkgname}.log2 >> ${chroot}/tmp/${pkgname}.log
+@@ -401,7 +415,8 @@ if [ "${error}" = "0" ]; then
+ 	[ -f ${packages}/All/${pkgname}${PKGSUFFIX} ] && \
+ 		touch ${packages}/All/${pkgname}${PKGSUFFIX}
+ 	rm -f ${errorsDir}/${pkgname}.log*
+-	if bzgrep -q "${pkgname} is marked as broken: " ${logsDir}/${pkgname}.log${lext} ; then
++	BROKE=`zgrep -q "${pkgname} is marked as broken: " ${logsDir}/${pkgname}.log${lext}`
++	if [ "${BROKE}" != "" ] ; then
+ 	    status="BROKEN"
+ 	elif [ -f ${chroot}/tmp/leftovers ]; then
+ 	    status="LEFTOVERS"
