@@ -36,7 +36,6 @@ add_pkg() {
     for i in $pkgs; do
       echo "pkg_add $i"
       base=$(basename $i .tgz)
-      base=$(basename $base .tbz)
       if pkg_info -q -e $base; then
         echo "skipping $base, already added"
       else
@@ -369,8 +368,8 @@ EOF
 
   # BUILD_DEPENDS need to be present at install-time, e.g. gmake
   # Concatenate and remove duplicates
-  BRD=$(echo $BD $RD | tr ' ' '\n' | sort -u | tr '\n' ' ')
-  del_pkg ${BRD}
+  BRSD=$(echo $BD $RD $SD | tr ' ' '\n' | sort -u | tr '\n' ' ')
+  del_pkg ${BRSD}
   cd /var/db/pkg
   if [ $(echo $(echo * | wc -c)) != 2 ]; then
     echo "leftover packages:" *
