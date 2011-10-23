@@ -415,7 +415,8 @@ if [ "${error}" = "0" ]; then
 	[ -f ${packages}/All/${pkgname}${PKGSUFFIX} ] && \
 		touch ${packages}/All/${pkgname}${PKGSUFFIX}
 	rm -f ${errorsDir}/${pkgname}.log*
-	if zgrep -q "${pkgname} is marked as broken: " ${logsDir}/${pkgname}.log${lext} ; then
+	BROKE=`zgrep -q "${pkgname} is marked as broken: " ${logsDir}/${pkgname}.log${lext}`
+	if [ "${BROKE}" != "" ] ; then
 	    status="BROKEN"
 	elif [ -f ${chroot}/tmp/leftovers ]; then
 	    status="LEFTOVERS"

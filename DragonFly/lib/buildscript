@@ -130,17 +130,13 @@ if [ $phase = 1 ]; then
   echo "---End Environment---"
   echo ""
   echo "---Begin OPTIONS List---"
-  #bmake show-options
-  echo "show options disabled for now"
+  bmake show-options
   echo "---End OPTIONS List---"
+  setoptions=`bmake -V '\${PKG_OPTIONS}'`
+  echo "---Begin OPTIONS configuration---"
+  echo ${setoptions}
+  echo "---End OPTIONS configuration---"
   echo ""
-  optionsfile=`bmake -V '\${OPTIONSFILE}'`
-  if [ -f "${optionsfile}" ]; then
-      echo "---Begin OPTIONS configuration---"
-      cat ${optionsfile}
-      echo "---End OPTIONS configuration---"
-      echo ""
-  fi
   echo "End Configuration."
 
   echo "BOOTSTRAP_DEPENDS=${SD}"
