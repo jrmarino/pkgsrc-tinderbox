@@ -16,7 +16,7 @@ DEPENDS+=	csup>=20100101:../../net/csup
 DEPENDS+=	lftp>4.0:../../net/lftp
 DEPENDS+=	scmgit>1.6:../../devel/scmgit
 
-TBOX_VERSION=		3.4.r2
+TBOX_VERSION=		3.4.r3
 PKG_DESTDIR_SUPPORT=	user-destdir
 ONLY_FOR_PLATFORM=	DragonFly-*-*
 

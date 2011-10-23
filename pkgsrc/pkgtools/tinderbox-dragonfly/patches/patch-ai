@@ -81,7 +81,7 @@ $NetBSD$
  
  # reset mtrees for plist checking
  mtree -deU -f ${chroot}/etc/mtree/BSD.root.dist \
-@@ -190,17 +195,22 @@ mtree -deU -f ${chroot}/etc/mtree/BSD.va
+@@ -190,17 +195,29 @@ mtree -deU -f ${chroot}/etc/mtree/BSD.va
  mtree -deU -f ${chroot}/etc/mtree/BSD.usr.dist \
        -p ${chroot}/usr >/dev/null 2>&1
  
@@ -98,6 +98,13 @@ $NetBSD$
  
 -# mount linprocfs if required
 -if [ "${ARCH}" = "i386" -o "${ARCH}" = "amd64" ]; then
++# pkgsrc is "helpful" that it removes directories that result empty after
++# as the plist removes files of a package.  This includes standard mtree
++# directories such as man/man1, so we need to touch a file in every directory
++# of pkgsrc to prevent this side-effect which often fails the fs state check.
++
++find ${chroot}${LOCALBASE}/ -type d -exec touch {}/.keep \;
++
 +# copy over pkgsrc bootstrap tools, ${LOCALBASE}/bin & /etc exist now
 +cp    ${chroot}/usr/4bootstrap/bmake   ${chroot}${LOCALBASE}/bin/
 +cp    ${chroot}/usr/4bootstrap/pkg_*   ${chroot}${LOCALBASE}/sbin/
@@ -109,7 +116,7 @@ $NetBSD$
      mkdir -p ${chroot}/compat/linux/proc
      mount -t linprocfs linprocfs ${chroot}/compat/linux/proc
  fi
-@@ -252,7 +262,7 @@ if [ x"${CCACHE_ENABLED}" = x"1" ]; then
+@@ -252,7 +269,7 @@ if [ x"${CCACHE_ENABLED}" = x"1" ]; then
  fi
  
  if [ x"${OPTIONS_ENABLED}" = x"1" ]; then
@@ -118,7 +125,7 @@ $NetBSD$
  fi
  
  echo "building $pkgname in $chroot"
-@@ -294,7 +304,7 @@ if [ x"${CCACHE_ENABLED}" ]; then
+@@ -294,7 +311,7 @@ if [ x"${CCACHE_ENABLED}" ]; then
      unset CCACHE_DISABLE
  fi
  
@@ -127,7 +134,7 @@ $NetBSD$
  ldconfig_dirs=""
  for i in ${_ldconfig_dirs}; do
      if [ -d ${chroot}/${i} ]; then
-@@ -302,9 +312,6 @@ for i in ${_ldconfig_dirs}; do
+@@ -302,9 +319,6 @@ for i in ${_ldconfig_dirs}; do
      fi
  done
  chroot ${chroot} /sbin/ldconfig ${ldconfig_dirs}

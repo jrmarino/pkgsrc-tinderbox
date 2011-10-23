@@ -3,7 +3,7 @@ $NetBSD$
 --- ../FreeBSD/lib/tc_command.sh	2011-10-16 00:52:55.000000000 +0000
 +++ lib/tc_command.sh
 @@ -27,8 +27,11 @@
- # $MCom: portstools/tinderbox/lib/tc_command.sh,v 1.101.2.44 2011/10/16 00:52:01 marcus Exp $
+ # $MCom: portstools/tinderbox/lib/tc_command.sh,v 1.101.2.45 2011/10/17 01:01:23 marcus Exp $
  #
  
 -export _defaultUpdateHost="cvsup18.FreeBSD.org"
