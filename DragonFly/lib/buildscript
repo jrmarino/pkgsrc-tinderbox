@@ -339,8 +339,10 @@ EOF
       echo "================================================================"
   fi
 
-
   echo
+  echo "=== Deleting /var/db/pkg/pkgdb.byfile.db"
+  rm -f /var/db/pkg/pkgdb.byfile.db
+
   echo "=== Checking filesystem state"
 
   if [ -s /tmp/list4 ]; then
