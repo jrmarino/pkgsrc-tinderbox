@@ -402,6 +402,7 @@ if [ "${error}" = "0" ]; then
 	cp ${chroot}/tmp/work.tbz ${workDir}/${pkgname}.tbz
     fi
 
+    rm -f ${errorsDir}/${pkgname}.log*
     if [ "${error}" = "0" ]; then
         if [ ! -z "${last_version}" ]; then
 	    oldpkgs=$(find ${packages} -name "${last_version}${PKGSUFFIX}")
@@ -414,7 +415,6 @@ if [ "${error}" = "0" ]; then
 		tar --unlink -C ${packages} -xvf -
 	[ -f ${packages}/All/${pkgname}${PKGSUFFIX} ] && \
 		touch ${packages}/All/${pkgname}${PKGSUFFIX}
-	rm -f ${errorsDir}/${pkgname}.log*
 	BROKE=`zgrep -q "${pkgname} is marked as broken: " ${logsDir}/${pkgname}.log${lext}`
 	if [ "${BROKE}" != "" ] ; then
 	    status="BROKEN"
