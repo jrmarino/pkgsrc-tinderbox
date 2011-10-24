@@ -243,6 +243,13 @@ my $ds = new Tinderbox::TinderboxDS();
                     "-b <build name> -d <port directory> [-t BOOTSTRAP_DEPENDS|EXTRACT_DEPENDS|PATCH_DEPENDS|FETCH_DEPENDS|BUILD_DEPENDS|LIB_DEPENDS|RUN_DEPENDS|TEST_DEPENDS|DEPENDS]",
                 optstr => 'b:d:t:',
         },
+        "getDependencyCascades" => {
+                func => \&getDependencyCascades,
+                help => "Get unique dependencies of port's dependencies, recursively",
+                usage =>
+                    "-b <build name> -d <port directory>",
+                optstr => 'b:d:',
+        },
         "listHooks" => {
                 func => \&listHooks,
                 help =>
@@ -1771,6 +1778,50 @@ sub getDependenciesForPort {
         } else {
                 cleanup($ds, 0,
                         "There are no dependencies for this port in the datastore.\n"
+                );
+        }
+}
+
+sub getDependencyCascades {
+        if (!$opts->{'b'} || !$opts->{'d'}) {
+                usage("getDependencyCascades");
+        }
+
+        my $port = $ds->getPortByDirectory($opts->{'d'});
+        if (!defined($port)) {
+                cleanup($ds, 1,
+                              "Port, "
+                            . $opts->{'d'}
+                            . " is not in the datastore.\n");
+        }
+
+        if (!$ds->isValidBuild($opts->{'b'})) {
+                cleanup($ds, 1, "Unknown build, " . $opts->{'b'} . "\n");
+        }
+
+        my $build = $ds->getBuildByName($opts->{'b'});
+
+        if (!$ds->isPortForBuild($port, $build)) {
+                cleanup($ds, 1,
+                              "Port, "
+                            . $opts->{'d'}
+                            . " is not a valid port for build, "
+                            . $opts->{'b'}
+                            . "\n");
+        }
+
+        my @deps = $ds->getDependencyCascades($port, $build);
+
+        if (@deps) {
+                map { print $_->getDirectory() . "\n" } @deps;
+        } elsif (defined($ds->getError())) {
+                cleanup($ds, 1,
+                        "Failed to get cascading dependencies for this port from the datastore: "
+                            . $ds->getError()
+                            . "\n");
+        } else {
+                cleanup($ds, 0,
+                        "There are no cascading dependencies for this port in the datastore.\n"
                 );
         }
 }
