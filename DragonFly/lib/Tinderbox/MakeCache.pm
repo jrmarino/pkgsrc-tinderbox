@@ -94,6 +94,7 @@ sub _getList {
         my $port = shift;
         my $item = shift;
         my @deps;
+        my $found;
 
         $self->_execMake($port);
         foreach my $dep (split(/\s+/, $self->{CACHE}->{$port}{$item})) {
@@ -104,7 +105,16 @@ sub _getList {
                 $ddir =~ s|^$self->{BASEDIR}/||;
                 $ddir =~ s|^\.\.\/\.\.\/||;
                 if ($ddir) {
-                        push @deps, $ddir;
+                        $found = 0;
+                        foreach (@deps) {
+                                if ($_ == $ddir) {
+                                        $found = 1;
+                                        last;
+                                }
+                        }
+                        if (!$found) {
+                                push @deps, $ddir;
+                        }
                 }
         }
         return @deps;
