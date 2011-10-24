@@ -165,10 +165,27 @@ $NetBSD$
  
      grep pnohang ${chroot}/tmp/${pkgname}.log2
      cat ${chroot}/tmp/${pkgname}.log2 >> ${chroot}/tmp/${pkgname}.log
-@@ -401,7 +415,8 @@ if [ "${error}" = "0" ]; then
+@@ -372,6 +386,7 @@ if [ "${error}" = "0" ]; then
+         cp ${chroot}/tmp/${pkgname}.log ${logsDir}/${pkgname}.log
+     fi
+     if [ -n "${logdir}" ]; then
++        rm -f ${logdir}/${pkgname}.log${lext}
+ 	if [ ${docopy} -eq 1 ]; then
+ 	    cp ${logsDir}/${pkgname}.log${lext} ${logdir}/${pkgname}.log${lext}
+ 	else
+@@ -388,6 +403,7 @@ if [ "${error}" = "0" ]; then
+ 	cp ${chroot}/tmp/work.tbz ${workDir}/${pkgname}.tbz
+     fi
+ 
++    rm -f ${errorsDir}/${pkgname}.log*
+     if [ "${error}" = "0" ]; then
+         if [ ! -z "${last_version}" ]; then
+ 	    oldpkgs=$(find ${packages} -name "${last_version}${PKGSUFFIX}")
+@@ -400,8 +416,8 @@ if [ "${error}" = "0" ]; then
+ 		tar --unlink -C ${packages} -xvf -
  	[ -f ${packages}/All/${pkgname}${PKGSUFFIX} ] && \
  		touch ${packages}/All/${pkgname}${PKGSUFFIX}
- 	rm -f ${errorsDir}/${pkgname}.log*
+-	rm -f ${errorsDir}/${pkgname}.log*
 -	if bzgrep -q "${pkgname} is marked as broken: " ${logsDir}/${pkgname}.log${lext} ; then
 +	BROKE=`zgrep -q "${pkgname} is marked as broken: " ${logsDir}/${pkgname}.log${lext}`
 +	if [ "${BROKE}" != "" ] ; then

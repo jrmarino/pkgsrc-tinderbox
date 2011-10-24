@@ -34,7 +34,12 @@ $NetBSD$
  
          foreach $tmp (@makeTargets) {
                  $self->{CACHE}->{$port}{$tmp} = shift @ret;
-@@ -94,10 +98,11 @@ sub _getList {
+@@ -90,16 +94,27 @@ sub _getList {
+         my $port = shift;
+         my $item = shift;
+         my @deps;
++        my $found;
+ 
          $self->_execMake($port);
          foreach my $dep (split(/\s+/, $self->{CACHE}->{$port}{$item})) {
                  my ($d, $ddir) = split(/:/, $dep);
@@ -45,9 +50,21 @@ $NetBSD$
                  $ddir =~ s|^$self->{BASEDIR}/||;
 +                $ddir =~ s|^\.\.\/\.\.\/||;
                  if ($ddir) {
-                         push @deps, $ddir;
+-                        push @deps, $ddir;
++                        $found = 0;
++                        foreach (@deps) {
++                                if ($_ == $ddir) {
++                                        $found = 1;
++                                        last;
++                                }
++                        }
++                        if (!$found) {
++                                push @deps, $ddir;
++                        }
                  }
-@@ -109,7 +114,7 @@ sub _getList {
+         }
+         return @deps;
+@@ -109,7 +124,7 @@ sub _getList {
  sub Name {
          my $self = shift;
          my $port = shift;
@@ -56,7 +73,7 @@ $NetBSD$
  }
  
  # Package name
-@@ -133,6 +138,20 @@ sub Maintainer {
+@@ -133,6 +148,20 @@ sub Maintainer {
          return $self->_getVariable($port, 'MAINTAINER');
  }
  
@@ -77,7 +94,7 @@ $NetBSD$
  # Extract dependencies
  sub ExtractDepends {
          my $self = shift;
-@@ -206,6 +225,28 @@ sub FetchDependsList {
+@@ -206,6 +235,28 @@ sub FetchDependsList {
          return grep { !$uniq{$_}++ } @deps;
  }
  
@@ -106,7 +123,7 @@ $NetBSD$
  sub ExtractDependsList {
          my $self = shift;
          my $port = shift;
-@@ -250,6 +291,7 @@ sub BuildDependsList {
+@@ -250,6 +301,7 @@ sub BuildDependsList {
          push(@deps, $self->FetchDepends($port));
          push(@deps, $self->BuildDepends($port));
          push(@deps, $self->LibDepends($port));
