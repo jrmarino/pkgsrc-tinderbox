@@ -281,11 +281,7 @@ packages=$(tinderLoc packages ${build})
 major_version=$(echo ${jail} | sed -E -e 's|(^[[:digit:]]+).*$|\1|')
 
 if [ -n "${DISTFILE_CACHE}" ]; then
-    export DISTCACHE=/distcache
-    if [ ${fetchorig} -eq 0 ]; then
-        _MSO='file:///distcache/${DIST_SUBDIR}/'
-        export MASTER_SITE_OVERRIDE="${_MSO} ${MASTER_SITE_OVERRIDE}"
-    fi
+    export DISTDIR=/distcache
 fi
 
 if [ -n "${DISTFILE_URI}" ]; then
@@ -365,13 +361,6 @@ errorsDir=$(tinderLoc builderrors ${build})
 
 if [ "${error}" = "0" ]; then
     ln -sf ${pkgname}.log2 ${chroot}/tmp/make.log
-    # Cache the distfiles if requested.  We will wait a maximum of
-    # ten minutes before giving up on the lock.
-    if [ -n "${DISTFILE_CACHE}" ]; then
-	lockf -t 600 ${chroot}${DISTCACHE}/.lock tar -C ${chroot}/${DISTDIR} \
-	    -cf - . | tar --unlink -C ${chroot}${DISTCACHE} -xvf -
-    fi
-
     chroot ${chroot} /usr/bin/nice -n $nice /buildscript ${dirname} 2  "$ED" "$PD" "$FD" "$BD" "$RD" "$TD" "$SD" "${plistcheck}" > ${chroot}/tmp/${pkgname}.log2 2>&1
 
     grep pnohang ${chroot}/tmp/${pkgname}.log2

@@ -172,6 +172,7 @@ if [ $phase = 1 ]; then
 ./${L}/share/xml
 ./${L}/etc/gconf
 ./var/db/fontconfig
+./distcache
 EOF
 
   # Record a "pristine" mtree.
