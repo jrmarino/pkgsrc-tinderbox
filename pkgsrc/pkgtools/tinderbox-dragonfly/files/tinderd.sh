@@ -5,7 +5,7 @@
 #
 
 # PROVIDE: tinderd
-# REQUIRE: LOGIN mysql postgresql
+# REQUIRE: LOGIN mysql pgsql
 # KEYWORD: shutdown
 
 # Add the following line to /etc/rc.conf to enable `tinderd':
