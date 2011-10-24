@@ -386,6 +386,7 @@ if [ "${error}" = "0" ]; then
         cp ${chroot}/tmp/${pkgname}.log ${logsDir}/${pkgname}.log
     fi
     if [ -n "${logdir}" ]; then
+        rm -f ${logdir}/${pkgname}.log${lext}
 	if [ ${docopy} -eq 1 ]; then
 	    cp ${logsDir}/${pkgname}.log${lext} ${logdir}/${pkgname}.log${lext}
 	else
