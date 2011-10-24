@@ -315,6 +315,7 @@ sub RunDependsList {
         my @deps;
         push(@deps, $self->LibDepends($port));
         push(@deps, $self->RunDepends($port));
+        push(@deps, $self->Buildlink3Depends($port));
 
         my %uniq;
         return grep { !$uniq{$_}++ } @deps;
