@@ -15,15 +15,12 @@ body, td, li, input, select, label, #content h1, #content h2 {
 	font-size			: 11px;
 }
 
-a:link {
+a:link, a:visited {
 	color				: #900;
 	text-decoration                 : none;
 	margin				: 2px 4px;
 }
 
-a:visited {
-	color				: #900;
-}
 
 a:hover {
 	color				: #C30;
@@ -74,6 +71,12 @@ input[type="submit"] {
 	border-color		: #d7d7d7 #868686 #868686 #d7d7d7;
 	border-style		: solid groove groove solid;
 	border-width		: 1px 2px 2px 1px;
+}
+
+#member {
+	margin-left		: 10px;
+	color			: #666;
+	font-weight		: bold;
 }
 
 input:focus, input:hover, select:focus, select:hover {

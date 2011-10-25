@@ -26,3 +26,4 @@ ay:sql/schema.mysql.pre
 az:lib/Tinderbox/TinderboxDS.pm
 ba:tc
 bb:webui/templates/paefchen/tinderstyle.css
+bc:webui/templates/paefchen/header.inc.tpl
