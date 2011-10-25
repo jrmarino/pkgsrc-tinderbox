@@ -338,7 +338,7 @@ $NetBSD$
  CFLAGS="-O -g -pipe"
  STRIP=
       __________________________________________________________
-@@ -635,21 +628,10 @@ STRIP=
+@@ -635,27 +628,16 @@ STRIP=
     To do this, create a directory under which all build OPTIONS
     sub-directories will go (e.g. ${pb}/options/). For each Build
     that you wish to use to use OPTIONS, create a subdirectory
@@ -364,6 +364,13 @@ $NetBSD$
  
     Once this structure is setup, then enable OPTIONS support in
     Tinderbox, and specify the path to the OPTIONS directory
+    structure:
+ # ./tc configOptions -e
+-# ./tc configOptions -o /options
++# ./tc configOptions -o options
+ 
+    The configOptions command takes the arguments described in
+    Table 8-1.
 @@ -665,14 +647,33 @@ WITH_PCRE=true
     -d disable OPTIONS support
     -o set an OPTIONS source directory tree

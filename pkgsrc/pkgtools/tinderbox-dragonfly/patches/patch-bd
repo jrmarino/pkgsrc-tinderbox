@@ -1,0 +1,166 @@
+$NetBSD$
+
+--- ../FreeBSD/webui/module/moduleLogs.php	2011-10-16 00:52:55.000000000 +0000
++++ webui/module/moduleLogs.php
+@@ -86,18 +86,58 @@ class moduleLogs extends module {
+ 			}
+ 		}
+ 
+-		if ( !( is_file( $data['port_logfile_path'] ) ) ) {
++		$zext     = '.bz2';
++		$log_file = $data['port_logfile_path'];
++		$plaintxt = is_file( $log_file );
++		$compress = is_file( $log_file . $zext );
++		if ( !$plaintxt && !$compress ) {
+ 			$this->TinderboxDS->addError( "File cannot be opened for reading: " . $data['port_logfile_path'] );
+ 			return $this->template_parse( 'display_markup_log.tpl' );
+ 		}
+ 
+-		$file_name = realpath( $data['port_logfile_path'] );
++		if ($plaintxt) {
++			$fname_plaintxt = realpath( $log_file );
++			$mtime_plaintxt = filemtime( $log_file );
++		}
++		if ($compress) {
++			$fname_compress = realpath( $log_file . $zext );
++			$mtime_compress = filemtime( $log_file . $zext );
++		}
++		if ($compress && $plaintxt) {
++			$log_compressed = $mtime_compress > $mtime_plaintxt;
++		} else {
++			$log_compressed = $compress && !$plaintxt;
++		}
++		$file_name = $log_compressed ? $fname_compress : $fname_plaintxt;
+ 
+ 		if ( strpos( $file_name, $logdir ) !== 0 ) {
+ 			$this->TinderboxDS->addError( "File " . $file_name . " not in log directory: " . $logdir );
+ 			return $this->template_parse( 'display_markup_log.tpl' );
+ 		}
+ 
++		$breakdown = $log_compressed ? 
++			$this->scan_compress ( $file_name, $patterns ) :
++			$this->scan_plaintxt ( $file_name, $patterns );
++
++		$this->template_assign( 'lines', $breakdown['lines'] );
++		$this->template_assign( 'stats', $breakdown['stats'] );
++		$this->template_assign( 'colors', $breakdown['colors'] );
++		$this->template_assign( 'counts', $breakdown['counts'] );
++		$this->template_assign( 'displaystats', $breakdown['displaystats'] );
++		$this->template_assign( 'build', $build_id );
++		$this->template_assign( 'id', $id );
++		$this->template_assign( 'data', $data );
++
++		$elapsed_time = '';
++		if ( isset( $with_timer ) && $with_timer == 1 )
++			$elapsed_time = get_ui_elapsed_time( $starttimer );
++
++		$this->template_assign( 'ui_elapsed_time', $elapsed_time );
++
++		return $this->template_parse( 'display_markup_log.tpl' );
++	}
++	
++	function scan_plaintxt ( $file_name, $patterns ) {
+ 		$lines = array();
+ 		$stats = array();
+ 		$colors = array();
+@@ -133,27 +173,87 @@ class moduleLogs extends module {
+ 				$counts[$pattern['severity']]++;
+ 			}
+ 		}
++		fclose ( $fh );
+ 
+ 		$displaystats['linenumber'] = true;
+ 		if ( isset( $_COOKIE['linenumber'] ) && $_COOKIE['linenumber'] == '0' )
+ 			$displaystats['linenumber'] = false;
+ 
+-		$this->template_assign( 'lines', $lines );
+-		$this->template_assign( 'stats', $stats );
+-		$this->template_assign( 'colors', $colors );
+-		$this->template_assign( 'counts', $counts );
+-		$this->template_assign( 'displaystats', $displaystats );
+-		$this->template_assign( 'build', $build_id );
+-		$this->template_assign( 'id', $id );
+-		$this->template_assign( 'data', $data );
++		return array (
++			'lines'        => $lines,
++			'stats'        => $stats,
++			'colors'       => $colors,
++			'counts'       => $counts,
++			'displaystats' => $displaystats
++		);
++	}
+ 
+-		$elapsed_time = '';
+-		if ( isset( $with_timer ) && $with_timer == 1 )
+-			$elapsed_time = get_ui_elapsed_time( $starttimer );
++	function scan_compress ( $file_name, $patterns ) {
++		$lines = array();
++		$stats = array();
++		$colors = array();
++		$counts = array();
++		$displaystats = array();
+ 
+-		$this->template_assign( 'ui_elapsed_time', $elapsed_time );
++		$fh = bzopen( $file_name, 'r' );
+ 
+-		return $this->template_parse( 'display_markup_log.tpl' );
++		$advance = TRUE;
++		$chunk = "";
++		$lnr = 0;
++		while ($advance) {
++			$chunk .= bzread( $fh, 4096);
++			$chunklines = explode ("\n", $chunk);
++			$numLines = count($chunklines);
++			if (feof( $fh )) {			
++				$stopline = $numLines;
++				$advance = FALSE;
++			} else {
++				$stopline = $numLines - 1;
++				$chunk = $chunklines[$stopline];
++			}
++			
++			for ($x = 0; $x < $stopline; $x++) {
++				$lnr++;
++				$line = $chunklines[$x];
++		
++				$lines[$lnr] = htmlentities( rtrim( $line ) );
++				$colors[$lnr] = '';
++
++				foreach ( $patterns as $pattern ) {
++					if ( !preg_match( $pattern['expr'], $line ) )
++						continue;
++
++					$colors[$lnr] = $pattern['color'];
++
++					if ( !isset( $stats[$pattern['severity']] ) ) {
++						$stats[$pattern['severity']] = array();
++						$counts[$pattern['severity']] = 0;
++						$displaystats[$pattern['severity']] = true;
++						if ( isset( $_COOKIE[$pattern['severity']] ) && $_COOKIE[$pattern['severity']] == '0' )
++							$displaystats[$pattern['severity']] = false;
++					}
++					
++					if ( !isset( $stats[$pattern['severity']][$pattern['tag']] ) )
++						$stats[$pattern['severity']][$pattern['tag']] = array();
++
++					$stats[$pattern['severity']][$pattern['tag']][] = $lnr;
++					$counts[$pattern['severity']]++;
++				}
++			}
++		}
++		fclose ( $fh );
++
++		$displaystats['linenumber'] = true;
++		if ( isset( $_COOKIE['linenumber'] ) && $_COOKIE['linenumber'] == '0' )
++			$displaystats['linenumber'] = false;
++
++		return array (
++			'lines'        => $lines,
++			'stats'        => $stats,
++			'colors'       => $colors,
++			'counts'       => $counts,
++			'displaystats' => $displaystats
++		);
+ 	}
+ }
+ ?>
