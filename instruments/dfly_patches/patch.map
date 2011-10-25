@@ -25,3 +25,4 @@ ax:sql/schema.pgsql.pre
 ay:sql/schema.mysql.pre
 az:lib/Tinderbox/TinderboxDS.pm
 ba:tc
+bb:webui/templates/paefchen/tinderstyle.css
