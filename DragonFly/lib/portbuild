@@ -268,9 +268,9 @@ if [ x"${CCACHE_ENABLED}" = x"1" ]; then
     export PATH=/opt:${PATH}
 fi
 
-if [ x"${OPTIONS_ENABLED}" != x"1" ]; then
-    export PKG_OPTIONS_FILE=
-else
+export PKG_OPTIONS_FILE=
+original_options=$(tinderLoc options ${build})/pkg_options
+if [ x"${OPTIONS_ENABLED}" = x"1" -a -f ${original_options} ]; then
     export PKG_OPTIONS_FILE=/var/db/options/pkg_options
 fi
 
