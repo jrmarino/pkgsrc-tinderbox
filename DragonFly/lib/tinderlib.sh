@@ -53,7 +53,7 @@ tinderLoc () {
     "buildports")	echo "$(tinderLoc buildroot ${what})/a/pkgsrc";;
     "buildsrc")		echo "$(tinderLoc buildroot ${what})/usr/src";;
     "buildccache")	echo "$(tinderLoc buildroot ${what})/ccache";;
-    "buildoptions")	echo "$(tinderLoc buildroot ${what})/var/db/pkg";;
+    "buildoptions")	echo "$(tinderLoc buildroot ${what})/var/db/options";;
     "builddistcache")	echo "$(tinderLoc buildroot ${what})/distcache";;
     "builderrors")	echo "${pb}/errors/${what}";;
     "buildlogs")	echo "${pb}/logs/${what}";;
@@ -517,13 +517,6 @@ buildenvNoHost () {
     eval "export __MAKE_CONF=${jailBase}/make.conf" >/dev/null 2>&1
     eval "export LOCALBASE=/nonexistentlocal" >/dev/null 2>&1
     eval "export PKG_DBDIR=/nonexistentdb" >/dev/null 2>&1
-    if [ x"${OPTIONS_ENABLED}" != x"1" ]; then
-        eval "export PORT_DBDIR=/nonexistentportdb" >/dev/null 2>&1
-    else
-	optionsDir=$(tinderLoc options ${build})
-
-	eval "export PORT_DBDIR=${optionsDir}" >/dev/null 2>&1
-    fi
     eval "export LINUXBASE=/nonexistentlinux" >/dev/null 2>&1
     eval "unset DISPLAY" >/dev/null 2>&1
 }

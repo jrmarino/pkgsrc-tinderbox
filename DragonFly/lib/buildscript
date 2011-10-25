@@ -96,6 +96,35 @@ del_pkg() {
   unset PKG_PATH
 }
 
+get_package_options() {
+    # If the option file exists, it's stored in PKG_OPTIONS_FILE env var.
+    # The format is ${DISTNAME}:jobs override:options list
+    # example: gcc-4.6.1::-gcc-fortran
+    #          In this example, there is no makejob override, fortran removed
+    # example: gawk-3.1.8:1:portals
+    #          In the above example, MAKE_JOBS=1, portals option added
+    # Don't include any "nbX" suffixes, that is ${PKGNAME}.
+    # Use the "DISTNAME" definition in the makefile.
+
+    INFO_DISTNAME=$1
+    MAKEJOBS_OVERRIDE=
+    SPECIFIC_OPTIONS=
+    if [ -z "${PKG_OPTIONS_FILE}" ]; then
+	return
+    fi
+
+    instructions=`grep ${INFO_DISTNAME}: ${PKG_OPTIONS_FILE}`
+    if [ -z "${instructions}" ]; then
+	return
+    fi
+
+    test_override=`echo ${instructions} | awk 'BEGIN {FS=":"}; /^.+:[0-9]+:/ {print $2}'`
+    if [ -n "{test_override}" ]; then
+	MAKEJOBS_OVERRIDE="${test_override}"
+    fi
+    SPECIFIC_OPTIONS="`echo ${instructions} | awk 'BEGIN {FS=":"}; /^.+:[0-9]*:/ {print $3}'`"
+}
+
 dir=$1
 phase=$2
 
@@ -113,9 +142,14 @@ L=$(echo ${LOCALBASE} | sed 's,^/,,')
 export NO_PKGTOOLS_REQD_CHECK=1
 export WRKOBJDIR=/work
 
+cd $dir || exit 1
+
+pkgname=`bmake -V '\${PKGNAME}'`
+INFO_OPTVAR=`bmake -V '\${PKG_OPTIONS_VAR}'`
+get_package_options `bmake -V '\${DISTNAME}'`
+
 if [ $phase = 1 ]; then
 
-  cd $dir || exit 1
   INFO_MAINTAINER=`bmake -V '\${MAINTAINER}'`
   INFO_PREFIX=`bmake -V '\${PREFIX}'`
   echo "build started at $(date)"
@@ -130,12 +164,12 @@ if [ $phase = 1 ]; then
   echo "---End Environment---"
   echo ""
   echo "---Begin OPTIONS List---"
-  bmake show-options
+  if [ -n "${INFO_OPTVAR}" -a -n "${SPECIFIC_OPTIONS}" ]; then
+      bmake show-options ${INFO_OPTVAR}="${SPECIFIC_OPTIONS}"
+  else
+      bmake show-options
+  fi
   echo "---End OPTIONS List---"
-  setoptions=`bmake -V '\${PKG_OPTIONS}'`
-  echo "---Begin OPTIONS configuration---"
-  echo ${setoptions}
-  echo "---End OPTIONS configuration---"
   echo ""
   echo "End Configuration."
 
@@ -181,7 +215,7 @@ EOF
   add_pkg $SD $FD
 
   cd $dir || exit 1
-  pkgname=`bmake -V '\${PKGNAME}'`
+
   echo "================================================================"
   echo "====================<phase 1: make checksum>===================="
 
@@ -193,9 +227,6 @@ EOF
   fi
 
 else
-
-  cd $dir || exit 1
-  pkgname=`bmake -V '\${PKGNAME}'`
 
   echo "================================================================"
   echo "====================<phase 2: make extract>===================="
@@ -211,7 +242,13 @@ else
   add_pkg ${BD}
 
   cd $dir
-  /pnohang $TIMEOUT /tmp/make.log2 ${pkgname} bmake extract || cleanup 2
+  # The config options need to come here because make extract pulls in 
+  # make configure first, which is where this input is needed.
+  if [ -n "${INFO_OPTVAR}" -a -n "${SPECIFIC_OPTIONS}" ]; then
+      /pnohang $TIMEOUT /tmp/make.log2 ${pkgname} bmake extract ${INFO_OPTVAR}="${SPECIFIC_OPTIONS}" || cleanup 2
+  else
+      /pnohang $TIMEOUT /tmp/make.log2 ${pkgname} bmake extract || cleanup 2
+  fi
   cat /tmp/make.log2
   del_pkg ${ED}
 
@@ -276,20 +313,21 @@ EOF
 
   # MAKE_JOBS normally defined in $LOCALBASE/etc/mk.conf, but it's
   # inside the tarball.  By default it's not set, so we override it here.
-  # We'll use the same NO_JAIL_JOBS global env var that make world uses
-  # to disable this.
-  PORT_JOBS=
-  if [ -n "${NO_JAIL_JOBS}" ]; then
-  	echo "=> Multiple jobs disabled by NO_JAIL_JOBS env var"
+  # We can use the options file to specify exactly the number of jobs we want
+
+  if [ -n "${MAKEJOBS_OVERRIDE}" ]; then
+	echo "=> Number jobs set to ${MAKEJOBS_OVERRIDE} in options file"
+	PORT_JOBS="MAKE_JOBS=${MAKEJOBS_OVERRIDE}"
   else
-  	ncpus=$(/sbin/sysctl hw.ncpu | awk '{print $2}')
-  	if [ "${npcus}" = "1" ]; then
-  		echo "=> Single job, only 1 CPU"
-  	else
-  		factor=$(echo "$ncpus*2+1" | /usr/bin/bc)
-  		PORT_JOBS=MAKE_JOBS=${factor}
-  		echo "=> Multiple CPUs: ${factor} jobs set"
-  	fi
+	ncpus=$(/sbin/sysctl hw.ncpu | awk '{print $2}')
+	if [ "${npcus}" = "1" ]; then
+		echo "=> Single job, only 1 CPU"
+		PORT_JOBS="MAKE_JOBS=1"
+	else
+		factor=$(echo "$ncpus*2+1" | /usr/bin/bc)
+		echo "=> Multiple CPUs: ${factor} jobs set"
+		PORT_JOBS="MAKE_JOBS=${factor}"
+	fi
   fi
 
   /pnohang $TIMEOUT /tmp/make.log4 ${pkgname} bmake build ${PORT_JOBS} || cleanup 4

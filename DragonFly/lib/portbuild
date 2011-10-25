@@ -268,8 +268,10 @@ if [ x"${CCACHE_ENABLED}" = x"1" ]; then
     export PATH=/opt:${PATH}
 fi
 
-if [ x"${OPTIONS_ENABLED}" = x"1" ]; then
-    export PORT_DBDIR=/var/db/pkg
+if [ x"${OPTIONS_ENABLED}" != x"1" ]; then
+    export PKG_OPTIONS_FILE=
+else
+    export PKG_OPTIONS_FILE=/var/db/options/pkg_options
 fi
 
 echo "building $pkgname in $chroot"

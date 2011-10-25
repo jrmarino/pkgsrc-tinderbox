@@ -1953,37 +1953,7 @@ addPortToBuild () {
         fi
         ${tc} addPortToOneBuild -b ${build} -d ${portDir} ${norecurse}
     fi
-    # disable options for now, this is completely wrong for pkgsrc
-    if [ 0 -a ${options} -eq 1 -a ${OPTIONS_ENABLED} -eq 1 ]; then
-	pdirs=""
-	if [ -z "${portDir}" ]; then
-	    pdirs=$(${tc} getPortsForBuild -b ${build} 2>/dev/null)
-	else
-	    pdirs="${PORTSDIR}/${portDir}"
-	fi
-	rmconfig=true
-	if [ ${cleanOptions} -eq 1 ]; then
-	    if [ -z "${norecurse}" ]; then
-		rmconfig="make rmconfig-recursive"
-	    else
-		rmconfig="make rmconfig"
-	    fi
-	fi
-	for pdir in ${pdirs}; do
-	    if [ -d ${pdir} ]; then
-	        export TERM=${save_TERM}
-	        read -p "Generating options for ${build}; hit Enter to continue..." key
-	        echo ""
-	        if [ -z "${norecurse}" ]; then
-		    ( cd ${pdir} && ${rmconfig} \
-		      && make -k config-recursive )
-	        else
-		    ( cd ${pdir} && ${rmconfig} \
-		      && make config )
-	        fi
-	    fi
-	done
-    fi
+    # FreeBSD-style interactive option entering not supported yet
 
     if [ -n "${save_SRCBASE}" ]; then
 	export SRCBASE=${save_SRCBASE}
@@ -2170,10 +2140,7 @@ copyBuild () {
 		if [ ! -d ${destOptionsDir} ]; then
 		    mkdir -p ${destOptionsDir}
 		fi
-		(
-		  cd ${srcOptionsDir}
-		  tar -cpf - . | tar -C ${destOptionsDir} -xpf -
-		)
+		cp ${srcOptionsDir}/pkg_options ${destOptionsDir}
 	    else
 		echo "copyBuild: not copying OPTIONS to ${dest} since it has no OPTIONS directory"
 	    fi

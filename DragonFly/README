@@ -628,21 +628,10 @@ STRIP=
    To do this, create a directory under which all build OPTIONS
    sub-directories will go (e.g. ${pb}/options/). For each Build
    that you wish to use to use OPTIONS, create a subdirectory
-   named for that build (e.g. 2.12-DragonFly/). This directory
-   should look like /var/db/pkg/ in that it contains
-   sub-directories for each OPTIONS-supporting port.
-
-   For example, if you wanted to build net/wireshark with RTP
-   support for the Build 2.12-DragonFly, you would have the
-   following directory structure:
-${pb}/options/2.12-DragonFly/wireshark/options
-
-   The contents of the wireshark/options file would be:
-_OPTIONS_READ=wireshark-0.99.4
-WITH_RTP=true
-WITH_SNMP=true
-WITH_ADNS=true
-WITH_PCRE=true
+   named for that build (e.g. 2.12-DragonFly/), and place a single
+   text file named "pkg_options" in that directory.  This file will
+   contain the customized options for every port in the build on a
+   per-distname basis.
 
    Once this structure is setup, then enable OPTIONS support in
    Tinderbox, and specify the path to the OPTIONS directory
@@ -658,14 +647,33 @@ WITH_PCRE=true
    -d disable OPTIONS support
    -o set an OPTIONS source directory tree
 
-   If you would like to interactively choose OPTIONS for your
-   ports, specify the -o option to "./tc addPort". This will
-   perform a make config on all ports, displaying the ncurses
-   OPTIONS dialog. All OPTIONS settings will be automatically
-   saved to the correct location. Each time addPort or rescanPorts
-   is run with the -o flag, all existing OPTIONS settings will be
-   purged. If you want to retain existing OPTIONS, use the -O flag
-   instead.
+   As an example of a per-distname basis, net/wget-1.12 and 
+   net/wget-1.13.4 are considered two separate ports.  If you had set
+   the options for version 1.12, then you would have to create a new
+   entry for net/wget-1.13.4 when it's time to upgrade that port.
+
+   Each line reports a port, and the line format is as follows:
+   <DISTNAME>:<JOB OVERRIDE>:<PKGSRC OPTIONS>
+
+   The <DISTNAME> would be wget-1.13.4 in this example, not
+   wget-1.13.4nb2.  Leave off the nbX suffixes.
+
+   The <JOB OVERRIDE> is normally empty.  For single CPU systems,
+   there is no point to set this.  SMP systems will assume a job
+   number of 2 * number of CPUs + 1.  If the port crashes and it's
+   suspect that it's an jobs-unsafe issue, set <JOB OVERRIDE> to 1
+   and try the port again.
+
+   The <PKGSRC OPTIONS> is the same as you'd see in the
+   $LOCALBASE/etc/mk.conf file.
+
+   sample pkg_options file:
+   gawk-3.1.8::portals
+   gcc-4.6.1:5:-gcc-fortran -gcc-objc nls
+   heirloom-070715:1:
+
+   Note that heirloom doesn't use the options framework, but we
+   still need to have an entry for it to override the MAKE_JOBS.
      __________________________________________________________
 
 8.8. Using Hooks
