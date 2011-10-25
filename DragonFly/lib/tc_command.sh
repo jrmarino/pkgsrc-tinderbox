@@ -1821,6 +1821,7 @@ tinderbuild () {
 		exit 1
 	    fi
 	    env PORTSDIR=$(tinderLoc portstree ${portstree})/pkgsrc \
+	        OPTNFILE=$(tinderLoc options $build)/pkg_options \
 		$(tinderLoc scripts lib/makemake) ${noduds} ${build} ${ports}
 	)
 	if [ $? -ne 0 ]; then
@@ -1944,6 +1945,7 @@ addPortToBuild () {
     buildenvNoHost ${build}
 
     export PORTSDIR=$(tinderLoc portstree ${portsTree})/pkgsrc
+    export OPTNFILE=$(tinderLoc options $build)/pkg_options
     if [ -z "${portDir}" ]; then
 	${tc} addPortToOneBuild -b ${build} ${norecurse}
     else

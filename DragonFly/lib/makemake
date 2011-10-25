@@ -139,7 +139,7 @@ my (
 );
 
 $portbase  = $ENV{'PORTSDIR'};
-$makecache = new Tinderbox::MakeCache($portbase, $ENV{'PKGSUFFIX'});
+$makecache = new Tinderbox::MakeCache($portbase, $ENV{'OPTNFILE'});
 
 while (scalar(@PORTS)) {
         my $port    = shift @PORTS;

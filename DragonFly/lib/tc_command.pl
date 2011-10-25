@@ -1494,7 +1494,7 @@ sub addPortsTree {
 sub addPortToOneBuild {
         my $build = $ds->getBuildByName($opts->{'b'});
         my $makecache =
-            new Tinderbox::MakeCache($ENV{'PORTSDIR'}, $ENV{'PKGSUFFIX'});
+            new Tinderbox::MakeCache($ENV{'PORTSDIR'}, $ENV{'OPTNFILE'});
         my @bports = ();
 
         if (!$opts->{'d'}) {

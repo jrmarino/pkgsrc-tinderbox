@@ -49,6 +49,7 @@ sub new {
                 CACHE   => undef,
                 SEEN    => undef,
                 BASEDIR => shift,
+                OPTFILE => shift,
         }, $name;
 
         $self;
@@ -70,12 +71,35 @@ sub _execMake {
                 $tmp .= "-V '\${" . $target . "}' ";		
         }
         my $dir = $self->{BASEDIR} . '/' . $port;
-        @ret = split("\n", `cd $dir && bmake $tmp`);
+        my $customOptions = $self->_package_options ($dir);
+        @ret = split("\n", `cd $dir && bmake $customOptions $tmp`);
 
         foreach $tmp (@makeTargets) {
                 $self->{CACHE}->{$port}{$tmp} = shift @ret;
         }
         $self->{SEEN}->{$port} = 1;
+}
+
+# Get option variable name and requested options
+sub _package_options {
+        my $self = shift;
+        my $dir  = shift;
+        unless (-e $self->{OPTFILE}) {
+                return "";
+        }
+        my @data = split("\n", 
+           `cd $dir && bmake -V '\${DISTNAME}' -V '\${PKG_OPTIONS_VAR}'`);
+        my $distname = $data[0];
+        my $optvar   = $data[1];
+        my $instruction = `grep $distname $self->{OPTFILE}`;
+        unless ($instruction) {
+                return "";
+        }
+        my @customSet = split(/:/, $instruction);
+        unless (scalar (@customSet) >= 3) {
+                return "";
+        }
+        return $optvar . '="' . $customSet[2] . '"';
 }
 
 # Internal function for returning a port variable
