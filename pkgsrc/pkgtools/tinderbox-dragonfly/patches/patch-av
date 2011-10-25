@@ -8,7 +8,7 @@ $NetBSD$
  #-
  # Copyright (c) 2004-2005 FreeBSD GNOME Team <freebsd-gnome@FreeBSD.org>
  # All rights reserved.
-@@ -135,7 +135,7 @@ if (!scalar(@ARGV)) {
+@@ -135,11 +135,11 @@ if (!scalar(@ARGV)) {
  my (
          %pkgdir,   %pkgdeps,  %pkgedeps, %pkgpdeps, %pkgfdeps,
          %pkgbdeps, %pkgrdeps, @duds,     $portbase, $makecache,
@@ -17,6 +17,11 @@ $NetBSD$
  );
  
  $portbase  = $ENV{'PORTSDIR'};
+-$makecache = new Tinderbox::MakeCache($portbase, $ENV{'PKGSUFFIX'});
++$makecache = new Tinderbox::MakeCache($portbase, $ENV{'OPTNFILE'});
+ 
+ while (scalar(@PORTS)) {
+         my $port    = shift @PORTS;
 @@ -168,8 +168,9 @@ while (scalar(@PORTS)) {
                  push @duds, $dudpkg if ($dudpkg);
          }

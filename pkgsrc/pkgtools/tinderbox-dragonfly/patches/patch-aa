@@ -444,16 +444,17 @@ $NetBSD$
  
      # Mount /dev, since we're going to be chrooting shortly
      mount -t devfs devfs ${buildRoot}/dev >/dev/null 2>&1
-@@ -1780,7 +1820,7 @@ tinderbuild () {
+@@ -1780,7 +1820,8 @@ tinderbuild () {
  		echo "tinderbuild: cannot mount portstree: ${portstree}"
  		exit 1
  	    fi
 -	    env PORTSDIR=$(tinderLoc portstree ${portstree})/ports \
 +	    env PORTSDIR=$(tinderLoc portstree ${portstree})/pkgsrc \
++	        OPTNFILE=$(tinderLoc options $build)/pkg_options \
  		$(tinderLoc scripts lib/makemake) ${noduds} ${build} ${ports}
  	)
  	if [ $? -ne 0 ]; then
-@@ -1799,10 +1839,6 @@ tinderbuild () {
+@@ -1799,10 +1840,6 @@ tinderbuild () {
  
      # Set up the chrooted environment
      osmajor=$(echo ${jail} | sed -E -e 's|(^[[:digit:]]+).*$|\1|')
@@ -464,7 +465,7 @@ $NetBSD$
  
      tinderbuild_setup
  
-@@ -1829,21 +1865,36 @@ init () {
+@@ -1829,21 +1866,36 @@ init () {
  	mkdir -p ${pb}/${dir}
      done
  
@@ -507,16 +508,17 @@ $NetBSD$
  
      return 0
  }
-@@ -1892,7 +1943,7 @@ addPortToBuild () {
+@@ -1892,7 +1944,8 @@ addPortToBuild () {
      buildenv ${jail} ${portsTree} ${build}
      buildenvNoHost ${build}
  
 -    export PORTSDIR=$(tinderLoc portstree ${portsTree})/ports
 +    export PORTSDIR=$(tinderLoc portstree ${portsTree})/pkgsrc
++    export OPTNFILE=$(tinderLoc options $build)/pkg_options
      if [ -z "${portDir}" ]; then
  	${tc} addPortToOneBuild -b ${build} ${norecurse}
      else
-@@ -1902,36 +1953,7 @@ addPortToBuild () {
+@@ -1902,36 +1955,7 @@ addPortToBuild () {
          fi
          ${tc} addPortToOneBuild -b ${build} -d ${portDir} ${norecurse}
      fi
@@ -554,7 +556,7 @@ $NetBSD$
  
      if [ -n "${save_SRCBASE}" ]; then
  	export SRCBASE=${save_SRCBASE}
-@@ -2118,10 +2140,7 @@ copyBuild () {
+@@ -2118,10 +2142,7 @@ copyBuild () {
  		if [ ! -d ${destOptionsDir} ]; then
  		    mkdir -p ${destOptionsDir}
  		fi
@@ -566,7 +568,7 @@ $NetBSD$
  	    else
  		echo "copyBuild: not copying OPTIONS to ${dest} since it has no OPTIONS directory"
  	    fi
-@@ -2237,13 +2256,13 @@ tbcleanup () {
+@@ -2237,13 +2258,13 @@ tbcleanup () {
  	pathFound=0
          for portstree in ${portstrees} ; do
  	    path=$(tinderLoc portstree ${portstree})
@@ -583,7 +585,7 @@ $NetBSD$
  		    if [ -f "${distinfo}" ]; then
  			for df in $(grep '^MD5' ${distinfo} | awk -F '[\(\)]' '{print $2}'); do
  			    if ! grep -q "^${df}\$" ${disttmp}; then
-@@ -2327,7 +2346,7 @@ tbcleanup () {
+@@ -2327,7 +2348,7 @@ tbcleanup () {
  	    fi
  
  	    path=$(tinderLoc portstree ${portstree})
@@ -592,7 +594,7 @@ $NetBSD$
  
  	    if [ ! -e ${path} ]; then
  		echo "Removing build port database entry for nonexistent port ${build}/${port}"
-@@ -2404,7 +2423,7 @@ tbkill () {
+@@ -2404,7 +2425,7 @@ tbkill () {
  	return 0
      fi
  

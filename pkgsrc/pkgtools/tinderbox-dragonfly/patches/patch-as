@@ -87,6 +87,15 @@ $NetBSD$
          $jail->setTag($tag);
          $jail->setUpdateCmd($ucmd);
          if ($opts->{'d'}) {
+@@ -1489,7 +1494,7 @@ sub addPortsTree {
+ sub addPortToOneBuild {
+         my $build = $ds->getBuildByName($opts->{'b'});
+         my $makecache =
+-            new Tinderbox::MakeCache($ENV{'PORTSDIR'}, $ENV{'PKGSUFFIX'});
++            new Tinderbox::MakeCache($ENV{'PORTSDIR'}, $ENV{'OPTNFILE'});
+         my @bports = ();
+ 
+         if (!$opts->{'d'}) {
 @@ -1524,6 +1529,8 @@ sub addPortToOneBuild {
                                  LIB_DEPENDS     => 'LibDepends',
                                  RUN_DEPENDS     => 'RunDepends',
