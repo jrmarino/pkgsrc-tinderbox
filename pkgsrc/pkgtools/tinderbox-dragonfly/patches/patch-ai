@@ -116,16 +116,33 @@ $NetBSD$
      mkdir -p ${chroot}/compat/linux/proc
      mount -t linprocfs linprocfs ${chroot}/compat/linux/proc
  fi
-@@ -252,7 +269,7 @@ if [ x"${CCACHE_ENABLED}" = x"1" ]; then
+@@ -251,8 +268,10 @@ if [ x"${CCACHE_ENABLED}" = x"1" ]; then
+     export PATH=/opt:${PATH}
  fi
  
- if [ x"${OPTIONS_ENABLED}" = x"1" ]; then
+-if [ x"${OPTIONS_ENABLED}" = x"1" ]; then
 -    export PORT_DBDIR=/var/db/ports
-+    export PORT_DBDIR=/var/db/pkg
++export PKG_OPTIONS_FILE=
++original_options=$(tinderLoc options ${build})/pkg_options
++if [ x"${OPTIONS_ENABLED}" = x"1" -a -f ${original_options} ]; then
++    export PKG_OPTIONS_FILE=/var/db/options/pkg_options
  fi
  
  echo "building $pkgname in $chroot"
-@@ -294,7 +311,7 @@ if [ x"${CCACHE_ENABLED}" ]; then
+@@ -264,11 +283,7 @@ packages=$(tinderLoc packages ${build})
+ major_version=$(echo ${jail} | sed -E -e 's|(^[[:digit:]]+).*$|\1|')
+ 
+ if [ -n "${DISTFILE_CACHE}" ]; then
+-    export DISTCACHE=/distcache
+-    if [ ${fetchorig} -eq 0 ]; then
+-        _MSO='file:///distcache/${DIST_SUBDIR}/'
+-        export MASTER_SITE_OVERRIDE="${_MSO} ${MASTER_SITE_OVERRIDE}"
+-    fi
++    export DISTDIR=/distcache
+ fi
+ 
+ if [ -n "${DISTFILE_URI}" ]; then
+@@ -294,7 +309,7 @@ if [ x"${CCACHE_ENABLED}" ]; then
      unset CCACHE_DISABLE
  fi
  
@@ -134,7 +151,7 @@ $NetBSD$
  ldconfig_dirs=""
  for i in ${_ldconfig_dirs}; do
      if [ -d ${chroot}/${i} ]; then
-@@ -302,11 +319,8 @@ for i in ${_ldconfig_dirs}; do
+@@ -302,11 +317,8 @@ for i in ${_ldconfig_dirs}; do
      fi
  done
  chroot ${chroot} /sbin/ldconfig ${ldconfig_dirs}
@@ -147,7 +164,7 @@ $NetBSD$
  shift 1
  
  cd ${chroot}/tmp/depends
-@@ -337,7 +351,7 @@ if [ $? -ne 0 ]; then
+@@ -337,7 +349,7 @@ if [ $? -ne 0 ]; then
      exit 1
  fi
  
@@ -156,16 +173,23 @@ $NetBSD$
  if [ -f ${chroot}/tmp/status ]; then
      error=$(cat ${chroot}/tmp/status)
  else
-@@ -358,7 +372,7 @@ if [ "${error}" = "0" ]; then
- 	    -cf - . | tar --unlink -C ${chroot}${DISTCACHE} -xvf -
-     fi
+@@ -351,14 +363,7 @@ errorsDir=$(tinderLoc builderrors ${buil
  
+ if [ "${error}" = "0" ]; then
+     ln -sf ${pkgname}.log2 ${chroot}/tmp/make.log
+-    # Cache the distfiles if requested.  We will wait a maximum of
+-    # ten minutes before giving up on the lock.
+-    if [ -n "${DISTFILE_CACHE}" ]; then
+-	lockf -t 600 ${chroot}${DISTCACHE}/.lock tar -C ${chroot}/${DISTDIR} \
+-	    -cf - . | tar --unlink -C ${chroot}${DISTCACHE} -xvf -
+-    fi
+-
 -    chroot ${chroot} /usr/bin/nice -n $nice /buildscript ${dirname} 2  "$ED" "$PD" "$FD" "$BD" "$RD" "$TD" "${plistcheck}" > ${chroot}/tmp/${pkgname}.log2 2>&1
 +    chroot ${chroot} /usr/bin/nice -n $nice /buildscript ${dirname} 2  "$ED" "$PD" "$FD" "$BD" "$RD" "$TD" "$SD" "${plistcheck}" > ${chroot}/tmp/${pkgname}.log2 2>&1
  
      grep pnohang ${chroot}/tmp/${pkgname}.log2
      cat ${chroot}/tmp/${pkgname}.log2 >> ${chroot}/tmp/${pkgname}.log
-@@ -372,6 +386,7 @@ if [ "${error}" = "0" ]; then
+@@ -372,6 +377,7 @@ if [ "${error}" = "0" ]; then
          cp ${chroot}/tmp/${pkgname}.log ${logsDir}/${pkgname}.log
      fi
      if [ -n "${logdir}" ]; then
@@ -173,7 +197,7 @@ $NetBSD$
  	if [ ${docopy} -eq 1 ]; then
  	    cp ${logsDir}/${pkgname}.log${lext} ${logdir}/${pkgname}.log${lext}
  	else
-@@ -388,6 +403,7 @@ if [ "${error}" = "0" ]; then
+@@ -388,6 +394,7 @@ if [ "${error}" = "0" ]; then
  	cp ${chroot}/tmp/work.tbz ${workDir}/${pkgname}.tbz
      fi
  
@@ -181,7 +205,7 @@ $NetBSD$
      if [ "${error}" = "0" ]; then
          if [ ! -z "${last_version}" ]; then
  	    oldpkgs=$(find ${packages} -name "${last_version}${PKGSUFFIX}")
-@@ -400,8 +416,8 @@ if [ "${error}" = "0" ]; then
+@@ -400,8 +407,8 @@ if [ "${error}" = "0" ]; then
  		tar --unlink -C ${packages} -xvf -
  	[ -f ${packages}/All/${pkgname}${PKGSUFFIX} ] && \
  		touch ${packages}/All/${pkgname}${PKGSUFFIX}

@@ -36,16 +36,45 @@ $NetBSD$
  }
  
  del_pkg() {
-@@ -91,6 +92,8 @@ del_pkg() {
+@@ -91,6 +92,37 @@ del_pkg() {
      done
    fi
    find /var/db/pkg -type f -empty -delete
 +  # pkgsrc requires PKG_PATH variable be unset
 +  unset PKG_PATH
++}
++
++get_package_options() {
++    # If the option file exists, it's stored in PKG_OPTIONS_FILE env var.
++    # The format is ${DISTNAME}:jobs override:options list
++    # example: gcc-4.6.1::-gcc-fortran
++    #          In this example, there is no makejob override, fortran removed
++    # example: gawk-3.1.8:1:portals
++    #          In the above example, MAKE_JOBS=1, portals option added
++    # Don't include any "nbX" suffixes, that is ${PKGNAME}.
++    # Use the "DISTNAME" definition in the makefile.
++
++    INFO_DISTNAME=$1
++    MAKEJOBS_OVERRIDE=
++    SPECIFIC_OPTIONS=
++    if [ -z "${PKG_OPTIONS_FILE}" ]; then
++	return
++    fi
++
++    instructions=`grep ${INFO_DISTNAME}: ${PKG_OPTIONS_FILE}`
++    if [ -z "${instructions}" ]; then
++	return
++    fi
++
++    test_override=`echo ${instructions} | awk 'BEGIN {FS=":"}; /^.+:[0-9]+:/ {print $2}'`
++    if [ -n "{test_override}" ]; then
++	MAKEJOBS_OVERRIDE="${test_override}"
++    fi
++    SPECIFIC_OPTIONS="`echo ${instructions} | awk 'BEGIN {FS=":"}; /^.+:[0-9]*:/ {print $3}'`"
  }
  
  dir=$1
-@@ -102,37 +105,41 @@ FD=$5
+@@ -102,37 +134,46 @@ FD=$5
  BD=$6
  RD=$7
  TD=$8
@@ -58,9 +87,15 @@ $NetBSD$
 +export NO_PKGTOOLS_REQD_CHECK=1
 +export WRKOBJDIR=/work
 +
++cd $dir || exit 1
++
++pkgname=`bmake -V '\${PKGNAME}'`
++INFO_OPTVAR=`bmake -V '\${PKG_OPTIONS_VAR}'`
++get_package_options `bmake -V '\${DISTNAME}'`
++
  if [ $phase = 1 ]; then
  
-   cd $dir || exit 1
+-  cd $dir || exit 1
 +  INFO_MAINTAINER=`bmake -V '\${MAINTAINER}'`
 +  INFO_PREFIX=`bmake -V '\${PREFIX}'`
    echo "build started at $(date)"
@@ -79,12 +114,12 @@ $NetBSD$
    echo ""
    echo "---Begin OPTIONS List---"
 -  make showconfig
-+  bmake show-options
++  if [ -n "${INFO_OPTVAR}" -a -n "${SPECIFIC_OPTIONS}" ]; then
++      bmake show-options ${INFO_OPTVAR}="${SPECIFIC_OPTIONS}"
++  else
++      bmake show-options
++  fi
    echo "---End OPTIONS List---"
-+  setoptions=`bmake -V '\${PKG_OPTIONS}'`
-+  echo "---Begin OPTIONS configuration---"
-+  echo ${setoptions}
-+  echo "---End OPTIONS configuration---"
    echo ""
 -  optionsfile=$(make -V OPTIONSFILE)
 -  if [ -f "${optionsfile}" ]; then
@@ -99,7 +134,13 @@ $NetBSD$
    echo "FETCH_DEPENDS=${FD}"
    echo "PATCH_DEPENDS=${PD}"
    echo "EXTRACT_DEPENDS=${ED}"
-@@ -170,14 +177,14 @@ EOF
+@@ -165,19 +206,20 @@ if [ $phase = 1 ]; then
+ ./${L}/share/xml
+ ./${L}/etc/gconf
+ ./var/db/fontconfig
++./distcache
+ EOF
+ 
    # Record a "pristine" mtree.
    mtree -X /tmp/mtree.preexclude -xcn -k uid,gid,mode -p / > /tmp/mtree.pristine
  
@@ -108,7 +149,7 @@ $NetBSD$
  
    cd $dir || exit 1
 -  pkgname=$(make package-name)
-+  pkgname=`bmake -V '\${PKGNAME}'`
++
    echo "================================================================"
    echo "====================<phase 1: make checksum>===================="
  
@@ -117,13 +158,13 @@ $NetBSD$
      cat /tmp/make.log1
      echo "0" > /tmp/status
    else
-@@ -187,14 +194,23 @@ EOF
+@@ -186,15 +228,27 @@ EOF
+ 
  else
  
-   cd $dir || exit 1
+-  cd $dir || exit 1
 -  pkgname=$(make package-name)
-+  pkgname=`bmake -V '\${PKGNAME}'`
- 
+-
    echo "================================================================"
    echo "====================<phase 2: make extract>===================="
  
@@ -139,11 +180,17 @@ $NetBSD$
 +
    cd $dir
 -  /pnohang $TIMEOUT /tmp/make.log2 ${pkgname} make extract || cleanup 2
-+  /pnohang $TIMEOUT /tmp/make.log2 ${pkgname} bmake extract || cleanup 2
++  # The config options need to come here because make extract pulls in 
++  # make configure first, which is where this input is needed.
++  if [ -n "${INFO_OPTVAR}" -a -n "${SPECIFIC_OPTIONS}" ]; then
++      /pnohang $TIMEOUT /tmp/make.log2 ${pkgname} bmake extract ${INFO_OPTVAR}="${SPECIFIC_OPTIONS}" || cleanup 2
++  else
++      /pnohang $TIMEOUT /tmp/make.log2 ${pkgname} bmake extract || cleanup 2
++  fi
    cat /tmp/make.log2
    del_pkg ${ED}
  
-@@ -207,15 +223,13 @@ else
+@@ -207,15 +261,13 @@ else
    echo "====================<phase 3: make patch>===================="
    add_pkg ${PD}
    cd $dir
@@ -160,7 +207,7 @@ $NetBSD$
    # Files we do not care about changing between pre-build and post-cleanup
    cat > /tmp/mtree.buildexclude <<EOF
  ./var/log/*
-@@ -247,7 +261,7 @@ EOF
+@@ -247,7 +299,7 @@ EOF
    fi
  
    cd $dir
@@ -169,12 +216,31 @@ $NetBSD$
  
    if [ -f .sleepme ]; then
        set > /tmp/.set_${portdir}
-@@ -259,32 +273,13 @@ EOF
+@@ -259,32 +311,32 @@ EOF
        rm -f /tmp/.set_${portdir}
    fi
  
 -  /pnohang $TIMEOUT /tmp/make.log4 ${pkgname} make build || cleanup 4
-+  /pnohang $TIMEOUT /tmp/make.log4 ${pkgname} bmake build || cleanup 4
++  # MAKE_JOBS normally defined in $LOCALBASE/etc/mk.conf, but it's
++  # inside the tarball.  By default it's not set, so we override it here.
++  # We can use the options file to specify exactly the number of jobs we want
++
++  if [ -n "${MAKEJOBS_OVERRIDE}" ]; then
++	echo "=> Number jobs set to ${MAKEJOBS_OVERRIDE} in options file"
++	PORT_JOBS="MAKE_JOBS=${MAKEJOBS_OVERRIDE}"
++  else
++	ncpus=$(/sbin/sysctl hw.ncpu | awk '{print $2}')
++	if [ "${npcus}" = "1" ]; then
++		echo "=> Single job, only 1 CPU"
++		PORT_JOBS="MAKE_JOBS=1"
++	else
++		factor=$(echo "$ncpus*2+1" | /usr/bin/bc)
++		echo "=> Multiple CPUs: ${factor} jobs set"
++		PORT_JOBS="MAKE_JOBS=${factor}"
++	fi
++  fi
++
++  /pnohang $TIMEOUT /tmp/make.log4 ${pkgname} bmake build ${PORT_JOBS} || cleanup 4
    cat /tmp/make.log4
  
    echo "================================================================"
@@ -204,7 +270,7 @@ $NetBSD$
  
    echo "================================================================"
    echo "====================<phase 6: make install>===================="
-@@ -306,7 +301,7 @@ EOF
+@@ -306,7 +358,7 @@ EOF
    mtree -X /tmp/mtree.exclude -xcn -k uid,gid,mode -p / > /tmp/mtree
  
    cd $dir
@@ -213,7 +279,7 @@ $NetBSD$
      cat /tmp/make.log6
      echo "0" > /tmp/status
    else
-@@ -316,14 +311,14 @@ EOF
+@@ -316,14 +368,14 @@ EOF
    echo "================================================================"
    echo "====================<phase 7: make package>===================="
    cd $dir
@@ -230,7 +296,7 @@ $NetBSD$
    du -skx / | awk '{print $1}' > /tmp/size
    del_pkg ${pkgname}
  
-@@ -349,8 +344,10 @@ EOF
+@@ -349,8 +401,10 @@ EOF
        echo "================================================================"
    fi
  
@@ -242,7 +308,7 @@ $NetBSD$
    echo "=== Checking filesystem state"
  
    if [ -s /tmp/list4 ]; then
-@@ -374,8 +371,8 @@ EOF
+@@ -374,8 +428,8 @@ EOF
  
    # BUILD_DEPENDS need to be present at install-time, e.g. gmake
    # Concatenate and remove duplicates
@@ -253,7 +319,7 @@ $NetBSD$
    cd /var/db/pkg
    if [ $(echo $(echo * | wc -c)) != 2 ]; then
      echo "leftover packages:" *
-@@ -430,7 +427,7 @@ EOF
+@@ -430,7 +484,7 @@ EOF
  
    if [ -e ${dir}/.keep ]; then
      cd ${dir}

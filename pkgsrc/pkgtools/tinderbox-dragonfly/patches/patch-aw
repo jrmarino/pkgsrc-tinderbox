@@ -34,7 +34,7 @@ $NetBSD$
  
          foreach $tmp (@makeTargets) {
                  $self->{CACHE}->{$port}{$tmp} = shift @ret;
-@@ -90,16 +94,27 @@ sub _getList {
+@@ -90,16 +94,28 @@ sub _getList {
          my $port = shift;
          my $item = shift;
          my @deps;
@@ -42,6 +42,8 @@ $NetBSD$
  
          $self->_execMake($port);
          foreach my $dep (split(/\s+/, $self->{CACHE}->{$port}{$item})) {
++                $dep =~ s/^\s+//;
++                $dep =~ s/\s+$//;
                  my ($d, $ddir) = split(/:/, $dep);
 -                if (!defined($ddir) || $item eq 'DEPENDS') {
 +                if (!defined($ddir)) {
@@ -52,10 +54,9 @@ $NetBSD$
                  if ($ddir) {
 -                        push @deps, $ddir;
 +                        $found = 0;
-+                        foreach (@deps) {
-+                                if ($_ == $ddir) {
++                        foreach my $storedep (@deps) {
++                                if ($storedep eq $ddir) {
 +                                        $found = 1;
-+                                        last;
 +                                }
 +                        }
 +                        if (!$found) {
@@ -64,7 +65,7 @@ $NetBSD$
                  }
          }
          return @deps;
-@@ -109,7 +124,7 @@ sub _getList {
+@@ -109,7 +125,7 @@ sub _getList {
  sub Name {
          my $self = shift;
          my $port = shift;
@@ -73,7 +74,7 @@ $NetBSD$
  }
  
  # Package name
-@@ -133,6 +148,20 @@ sub Maintainer {
+@@ -133,6 +149,20 @@ sub Maintainer {
          return $self->_getVariable($port, 'MAINTAINER');
  }
  
@@ -94,7 +95,7 @@ $NetBSD$
  # Extract dependencies
  sub ExtractDepends {
          my $self = shift;
-@@ -206,6 +235,28 @@ sub FetchDependsList {
+@@ -206,6 +236,28 @@ sub FetchDependsList {
          return grep { !$uniq{$_}++ } @deps;
  }
  
@@ -123,10 +124,18 @@ $NetBSD$
  sub ExtractDependsList {
          my $self = shift;
          my $port = shift;
-@@ -250,6 +301,7 @@ sub BuildDependsList {
+@@ -250,6 +302,7 @@ sub BuildDependsList {
          push(@deps, $self->FetchDepends($port));
          push(@deps, $self->BuildDepends($port));
          push(@deps, $self->LibDepends($port));
++        push(@deps, $self->Buildlink3Depends($port));
+ 
+         my %uniq;
+         return grep { !$uniq{$_}++ } @deps;
+@@ -263,6 +316,7 @@ sub RunDependsList {
+         my @deps;
+         push(@deps, $self->LibDepends($port));
+         push(@deps, $self->RunDepends($port));
 +        push(@deps, $self->Buildlink3Depends($port));
  
          my %uniq;

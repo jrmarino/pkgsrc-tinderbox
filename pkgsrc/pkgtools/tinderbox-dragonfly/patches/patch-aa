@@ -516,17 +516,57 @@ $NetBSD$
      if [ -z "${portDir}" ]; then
  	${tc} addPortToOneBuild -b ${build} ${norecurse}
      else
-@@ -1902,7 +1953,8 @@ addPortToBuild () {
+@@ -1902,36 +1953,7 @@ addPortToBuild () {
          fi
          ${tc} addPortToOneBuild -b ${build} -d ${portDir} ${norecurse}
      fi
 -    if [ ${options} -eq 1 -a ${OPTIONS_ENABLED} -eq 1 ]; then
-+    # disable options for now, this is completely wrong for pkgsrc
-+    if [ 0 -a ${options} -eq 1 -a ${OPTIONS_ENABLED} -eq 1 ]; then
- 	pdirs=""
- 	if [ -z "${portDir}" ]; then
- 	    pdirs=$(${tc} getPortsForBuild -b ${build} 2>/dev/null)
-@@ -2237,13 +2289,13 @@ tbcleanup () {
+-	pdirs=""
+-	if [ -z "${portDir}" ]; then
+-	    pdirs=$(${tc} getPortsForBuild -b ${build} 2>/dev/null)
+-	else
+-	    pdirs="${PORTSDIR}/${portDir}"
+-	fi
+-	rmconfig=true
+-	if [ ${cleanOptions} -eq 1 ]; then
+-	    if [ -z "${norecurse}" ]; then
+-		rmconfig="make rmconfig-recursive"
+-	    else
+-		rmconfig="make rmconfig"
+-	    fi
+-	fi
+-	for pdir in ${pdirs}; do
+-	    if [ -d ${pdir} ]; then
+-	        export TERM=${save_TERM}
+-	        read -p "Generating options for ${build}; hit Enter to continue..." key
+-	        echo ""
+-	        if [ -z "${norecurse}" ]; then
+-		    ( cd ${pdir} && ${rmconfig} \
+-		      && make -k config-recursive )
+-	        else
+-		    ( cd ${pdir} && ${rmconfig} \
+-		      && make config )
+-	        fi
+-	    fi
+-	done
+-    fi
++    # FreeBSD-style interactive option entering not supported yet
+ 
+     if [ -n "${save_SRCBASE}" ]; then
+ 	export SRCBASE=${save_SRCBASE}
+@@ -2118,10 +2140,7 @@ copyBuild () {
+ 		if [ ! -d ${destOptionsDir} ]; then
+ 		    mkdir -p ${destOptionsDir}
+ 		fi
+-		(
+-		  cd ${srcOptionsDir}
+-		  tar -cpf - . | tar -C ${destOptionsDir} -xpf -
+-		)
++		cp ${srcOptionsDir}/pkg_options ${destOptionsDir}
+ 	    else
+ 		echo "copyBuild: not copying OPTIONS to ${dest} since it has no OPTIONS directory"
+ 	    fi
+@@ -2237,13 +2256,13 @@ tbcleanup () {
  	pathFound=0
          for portstree in ${portstrees} ; do
  	    path=$(tinderLoc portstree ${portstree})
@@ -543,7 +583,7 @@ $NetBSD$
  		    if [ -f "${distinfo}" ]; then
  			for df in $(grep '^MD5' ${distinfo} | awk -F '[\(\)]' '{print $2}'); do
  			    if ! grep -q "^${df}\$" ${disttmp}; then
-@@ -2327,7 +2379,7 @@ tbcleanup () {
+@@ -2327,7 +2346,7 @@ tbcleanup () {
  	    fi
  
  	    path=$(tinderLoc portstree ${portstree})
@@ -552,7 +592,7 @@ $NetBSD$
  
  	    if [ ! -e ${path} ]; then
  		echo "Removing build port database entry for nonexistent port ${build}/${port}"
-@@ -2404,7 +2456,7 @@ tbkill () {
+@@ -2404,7 +2423,7 @@ tbkill () {
  	return 0
      fi
  
