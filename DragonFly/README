@@ -637,7 +637,7 @@ STRIP=
    Tinderbox, and specify the path to the OPTIONS directory
    structure:
 # ./tc configOptions -e
-# ./tc configOptions -o /options
+# ./tc configOptions -o options
 
    The configOptions command takes the arguments described in
    Table 8-1.
