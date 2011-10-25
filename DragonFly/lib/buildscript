@@ -274,7 +274,25 @@ EOF
       rm -f /tmp/.set_${portdir}
   fi
 
-  /pnohang $TIMEOUT /tmp/make.log4 ${pkgname} bmake build || cleanup 4
+  # MAKE_JOBS normally defined in $LOCALBASE/etc/mk.conf, but it's
+  # inside the tarball.  By default it's not set, so we override it here.
+  # We'll use the same NO_JAIL_JOBS global env var that make world uses
+  # to disable this.
+  PORT_JOBS=
+  if [ -n "${NO_JAIL_JOBS}" ]; then
+  	echo "=> Multiple jobs disabled by NO_JAIL_JOBS env var"
+  else
+  	ncpus=$(/sbin/sysctl hw.ncpu | awk '{print $2}')
+  	if [ "${npcus}" = "1" ]; then
+  		echo "=> Single job, only 1 CPU"
+  	else
+  		factor=$(echo "$ncpus*2+1" | /usr/bin/bc)
+  		PORT_JOBS=MAKE_JOBS=${factor}
+  		echo "=> Multiple CPUs: ${factor} jobs set"
+  	fi
+  fi
+
+  /pnohang $TIMEOUT /tmp/make.log4 ${pkgname} bmake build ${PORT_JOBS} || cleanup 4
   cat /tmp/make.log4
 
   echo "================================================================"
