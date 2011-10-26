@@ -1506,12 +1506,6 @@ tinderbuild_setup () {
 	tinderbuild_cleanup 1
     fi
 
-    # Hack to fix some recent pkg_add problems in some releases
-    pitar=$(tinderLoc jail ${jail})/pkg_install.tar
-    if [ -f ${pitar} ]; then
-	tar -C ${buildRoot} -xf ${pitar}
-    fi
-
     # Handle the distfile cache
     if [ -n "${DISTFILE_CACHE}" ]; then
 	if ! requestMount -t builddistcache -b ${build} \
