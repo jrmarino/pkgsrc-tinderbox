@@ -216,6 +216,25 @@ cp    ${chroot}/usr/4bootstrap/pkg_*   ${chroot}${LOCALBASE}/sbin/
 cp    ${chroot}/usr/4bootstrap/mk.conf ${chroot}${LOCALBASE}/etc/
 cp -R ${chroot}/usr/4bootstrap/mk      ${chroot}${LOCALBASE}/share/
 
+# By default, Tinderbox/pkgsrc will build all vulnerable software and
+# accept all licenses. The next file will add these directives to the mk.conf.
+# If this is unwanted on a per-build bases, use the more_make.conf file
+# to override it.
+
+cat ${pb}/scripts/lib/boilerplate_mk.conf >> ${chroot}${LOCALBASE}/etc/mk.conf
+
+# Add per-build custom make options to etc/mk.conf
+# Intended to default versions e.g. PYTHON_VERSION_DEFAULT
+# During catenation, comments, blank lines, MAKE_JOBS= and PKG_OPTIONS.xxxx 
+# variables are stripped out. The latter is handled by pkg_options, and it's
+# better not to have two sources.
+
+more_mkconf=$(tinderLoc options ${build})/more_mk.conf
+if [ -f ${more_mkconf} ]; then
+    cat ${more_mkconf} | awk "!/^[ \t]*($|#|PKG_OPTIONS\.|MAKE_JOBS=)/" \
+    >> ${chroot}${LOCALBASE}/etc/mk.conf
+fi
+
 # mount linprocfs if available
 if [ ${ARCH} = "i386" ]; then 
     mkdir -p ${chroot}/compat/linux/proc
