@@ -31,8 +31,7 @@ use strict;
 
 # a list of variables that we pull from the port Makefile
 our @makeTargets = (
-        'PKGNAME',         'IGNORE',
-        'NO_PACKAGE',      'FORBIDDEN',
+        'PKGNAME',         '_CBBH',
         'EXTRACT_DEPENDS', 'PATCH_DEPENDS',
         'FETCH_DEPENDS',   'BUILD_DEPENDS',
         'LIB_DEPENDS',     'RUN_DEPENDS',
@@ -243,8 +242,8 @@ sub IgnoreList {
 
         my $n = 0;
         $self->_execMake($port);
-        foreach my $var ('NO_PACKAGE', 'IGNORE', 'FORBIDDEN') {
-                $n++ if ($self->{CACHE}->{$port}{$var} ne "");
+        foreach my $var ('_CBBH') {
+                $n++ if ($self->{CACHE}->{$port}{$var} ne "no");
         }
         return $n eq 0 ? "" : $self->PkgName($port);
 }
