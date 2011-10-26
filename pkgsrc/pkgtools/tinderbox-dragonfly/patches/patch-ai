@@ -81,7 +81,7 @@ $NetBSD$
  
  # reset mtrees for plist checking
  mtree -deU -f ${chroot}/etc/mtree/BSD.root.dist \
-@@ -190,17 +195,29 @@ mtree -deU -f ${chroot}/etc/mtree/BSD.va
+@@ -190,17 +195,48 @@ mtree -deU -f ${chroot}/etc/mtree/BSD.va
  mtree -deU -f ${chroot}/etc/mtree/BSD.usr.dist \
        -p ${chroot}/usr >/dev/null 2>&1
  
@@ -111,12 +111,31 @@ $NetBSD$
 +cp    ${chroot}/usr/4bootstrap/mk.conf ${chroot}${LOCALBASE}/etc/
 +cp -R ${chroot}/usr/4bootstrap/mk      ${chroot}${LOCALBASE}/share/
 +
++# By default, Tinderbox/pkgsrc will build all vulnerable software and
++# accept all licenses. The next file will add these directives to the mk.conf.
++# If this is unwanted on a per-build bases, use the more_make.conf file
++# to override it.
++
++cat ${pb}/scripts/lib/boilerplate_mk.conf >> ${chroot}${LOCALBASE}/etc/mk.conf
++
++# Add per-build custom make options to etc/mk.conf
++# Intended to default versions e.g. PYTHON_VERSION_DEFAULT
++# During catenation, comments, blank lines, MAKE_JOBS= and PKG_OPTIONS.xxxx 
++# variables are stripped out. The latter is handled by pkg_options, and it's
++# better not to have two sources.
++
++more_mkconf=$(tinderLoc options ${build})/more_mk.conf
++if [ -f ${more_mkconf} ]; then
++    cat ${more_mkconf} | awk "!/^[ \t]*($|#|PKG_OPTIONS\.|MAKE_JOBS=)/" \
++    >> ${chroot}${LOCALBASE}/etc/mk.conf
++fi
++
 +# mount linprocfs if available
 +if [ ${ARCH} = "i386" ]; then 
      mkdir -p ${chroot}/compat/linux/proc
      mount -t linprocfs linprocfs ${chroot}/compat/linux/proc
  fi
-@@ -251,8 +268,10 @@ if [ x"${CCACHE_ENABLED}" = x"1" ]; then
+@@ -251,8 +287,10 @@ if [ x"${CCACHE_ENABLED}" = x"1" ]; then
      export PATH=/opt:${PATH}
  fi
  
@@ -129,7 +148,7 @@ $NetBSD$
  fi
  
  echo "building $pkgname in $chroot"
-@@ -264,11 +283,7 @@ packages=$(tinderLoc packages ${build})
+@@ -264,11 +302,7 @@ packages=$(tinderLoc packages ${build})
  major_version=$(echo ${jail} | sed -E -e 's|(^[[:digit:]]+).*$|\1|')
  
  if [ -n "${DISTFILE_CACHE}" ]; then
@@ -142,7 +161,7 @@ $NetBSD$
  fi
  
  if [ -n "${DISTFILE_URI}" ]; then
-@@ -294,7 +309,7 @@ if [ x"${CCACHE_ENABLED}" ]; then
+@@ -294,7 +328,7 @@ if [ x"${CCACHE_ENABLED}" ]; then
      unset CCACHE_DISABLE
  fi
  
@@ -151,7 +170,7 @@ $NetBSD$
  ldconfig_dirs=""
  for i in ${_ldconfig_dirs}; do
      if [ -d ${chroot}/${i} ]; then
-@@ -302,11 +317,8 @@ for i in ${_ldconfig_dirs}; do
+@@ -302,11 +336,8 @@ for i in ${_ldconfig_dirs}; do
      fi
  done
  chroot ${chroot} /sbin/ldconfig ${ldconfig_dirs}
@@ -164,7 +183,7 @@ $NetBSD$
  shift 1
  
  cd ${chroot}/tmp/depends
-@@ -337,7 +349,7 @@ if [ $? -ne 0 ]; then
+@@ -337,7 +368,7 @@ if [ $? -ne 0 ]; then
      exit 1
  fi
  
@@ -173,7 +192,7 @@ $NetBSD$
  if [ -f ${chroot}/tmp/status ]; then
      error=$(cat ${chroot}/tmp/status)
  else
-@@ -351,14 +363,7 @@ errorsDir=$(tinderLoc builderrors ${buil
+@@ -351,14 +382,7 @@ errorsDir=$(tinderLoc builderrors ${buil
  
  if [ "${error}" = "0" ]; then
      ln -sf ${pkgname}.log2 ${chroot}/tmp/make.log
@@ -189,7 +208,7 @@ $NetBSD$
  
      grep pnohang ${chroot}/tmp/${pkgname}.log2
      cat ${chroot}/tmp/${pkgname}.log2 >> ${chroot}/tmp/${pkgname}.log
-@@ -372,6 +377,7 @@ if [ "${error}" = "0" ]; then
+@@ -372,6 +396,7 @@ if [ "${error}" = "0" ]; then
          cp ${chroot}/tmp/${pkgname}.log ${logsDir}/${pkgname}.log
      fi
      if [ -n "${logdir}" ]; then
@@ -197,7 +216,7 @@ $NetBSD$
  	if [ ${docopy} -eq 1 ]; then
  	    cp ${logsDir}/${pkgname}.log${lext} ${logdir}/${pkgname}.log${lext}
  	else
-@@ -388,6 +394,7 @@ if [ "${error}" = "0" ]; then
+@@ -388,6 +413,7 @@ if [ "${error}" = "0" ]; then
  	cp ${chroot}/tmp/work.tbz ${workDir}/${pkgname}.tbz
      fi
  
@@ -205,7 +224,7 @@ $NetBSD$
      if [ "${error}" = "0" ]; then
          if [ ! -z "${last_version}" ]; then
  	    oldpkgs=$(find ${packages} -name "${last_version}${PKGSUFFIX}")
-@@ -400,8 +407,8 @@ if [ "${error}" = "0" ]; then
+@@ -400,8 +426,8 @@ if [ "${error}" = "0" ]; then
  		tar --unlink -C ${packages} -xvf -
  	[ -f ${packages}/All/${pkgname}${PKGSUFFIX} ] && \
  		touch ${packages}/All/${pkgname}${PKGSUFFIX}

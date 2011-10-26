@@ -62,14 +62,14 @@ $NetBSD$
     If MySQL is used, the MySQL Perl module must also be installed
 -   (databases/p5-DBD-mysql41). If PostgreSQL is used, the Pg Perl
 -   module must also be installed (databases/p5-DBD-Pg).
-+   (databases/p5-DBD-mysql). If PostgreSQL is used, the Pg Perl
-+   module must also be installed (databases/p5-DBD-postgresql).
- 
+-
 -   Please note, however, that is is recommended that either MySQL
 -   5.0 or PostgreSQL 8.1 (or later) be used. There are currently
 -   no plans to make this a requirement, but it may happen in the
 -   future.
--
++   (databases/p5-DBD-mysql). If PostgreSQL is used, the Pg Perl
++   module must also be installed (databases/p5-DBD-postgresql).
+ 
 -   PHP 4.x is now EOL, so the web front-end (found in the webui/
 -   subdirectory) requires PHP 5 (lang/php5),
 +   The web front-end (found in the webui/ subdirectory) 
@@ -371,7 +371,7 @@ $NetBSD$
  
     The configOptions command takes the arguments described in
     Table 8-1.
-@@ -665,14 +647,33 @@ WITH_PCRE=true
+@@ -665,14 +647,49 @@ WITH_PCRE=true
     -d disable OPTIONS support
     -o set an OPTIONS source directory tree
  
@@ -410,10 +410,26 @@ $NetBSD$
 +
 +   Note that heirloom doesn't use the options framework, but we
 +   still need to have an entry for it to override the MAKE_JOBS.
++
++   Unique to Tinderbox/pkgsrc is a file named 
++   ${pb}/scripts/lib/boilerplate_mk.conf, and it contains settings
++   for mk.conf that aren't found in the standard ISO/snapshot make.conf
++   files.  For example, it sets all licenses to be skipped and to
++   build vulnerable ports.  It should not be modified since the digest
++   hash won't match when it's time to deinstall tinderbox-dragonfly.
++
++   There is another way to add settings, but on a per-build basis.  In the
++   same directory as the pkg_options file (${optionsDir}/${build}),
++   one may add a file named "more_mk.conf".  This file gets appended
++   to the standard + boilerplate make.conf.  It actively filters out
++   MAKE_JOBS and PKG_OPTIONS* settings.  Remember, pkg_options takes care
++   of those.  The file more_mk.conf should contain settings like: 
++      PYTHON_VERSION_DEFAULT= 27
++      PGSQL_VERSION_DEFAULT=  90
       __________________________________________________________
  
  8.8. Using Hooks
-@@ -784,19 +785,22 @@ WITH_PCRE=true
+@@ -784,19 +801,22 @@ WITH_PCRE=true
  
  8.11. Running Tinderbox in a Jail
  
