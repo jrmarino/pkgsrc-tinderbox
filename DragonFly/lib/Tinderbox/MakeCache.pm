@@ -243,7 +243,7 @@ sub IgnoreList {
         my $n = 0;
         $self->_execMake($port);
         foreach my $var ('_CBBH') {
-                $n++ if ($self->{CACHE}->{$port}{$var} ne "no");
+                $n++ if ($self->{CACHE}->{$port}{$var} ne "yes");
         }
         return $n eq 0 ? "" : $self->PkgName($port);
 }
