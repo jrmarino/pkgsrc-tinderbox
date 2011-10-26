@@ -2,7 +2,14 @@ $NetBSD$
 
 --- ../FreeBSD/lib/Tinderbox/MakeCache.pm	2011-10-16 00:52:55.000000000 +0000
 +++ lib/Tinderbox/MakeCache.pm
-@@ -37,8 +37,9 @@ our @makeTargets = (
+@@ -31,14 +31,14 @@ use strict;
+ 
+ # a list of variables that we pull from the port Makefile
+ our @makeTargets = (
+-        'PKGNAME',         'IGNORE',
+-        'NO_PACKAGE',      'FORBIDDEN',
++        'PKGNAME',         '_CBBH',
+         'EXTRACT_DEPENDS', 'PATCH_DEPENDS',
          'FETCH_DEPENDS',   'BUILD_DEPENDS',
          'LIB_DEPENDS',     'RUN_DEPENDS',
          'TEST_DEPENDS',    'MAINTAINER',
@@ -14,7 +21,7 @@ $NetBSD$
  );
  
  # Create a new cache object
-@@ -48,6 +49,7 @@ sub new {
+@@ -48,6 +48,7 @@ sub new {
                  CACHE   => undef,
                  SEEN    => undef,
                  BASEDIR => shift,
@@ -22,7 +29,7 @@ $NetBSD$
          }, $name;
  
          $self;
-@@ -60,13 +62,17 @@ sub _execMake {
+@@ -60,13 +61,17 @@ sub _execMake {
          my $self = shift;
          my $port = shift;
          my @ret;
@@ -43,7 +50,7 @@ $NetBSD$
  
          foreach $tmp (@makeTargets) {
                  $self->{CACHE}->{$port}{$tmp} = shift @ret;
-@@ -74,6 +80,28 @@ sub _execMake {
+@@ -74,6 +79,28 @@ sub _execMake {
          $self->{SEEN}->{$port} = 1;
  }
  
@@ -72,7 +79,7 @@ $NetBSD$
  # Internal function for returning a port variable
  sub _getVariable {
          my $self = shift;
-@@ -90,16 +118,28 @@ sub _getList {
+@@ -90,16 +117,28 @@ sub _getList {
          my $port = shift;
          my $item = shift;
          my @deps;
@@ -103,7 +110,7 @@ $NetBSD$
                  }
          }
          return @deps;
-@@ -109,7 +149,7 @@ sub _getList {
+@@ -109,7 +148,7 @@ sub _getList {
  sub Name {
          my $self = shift;
          my $port = shift;
@@ -112,7 +119,7 @@ $NetBSD$
  }
  
  # Package name
-@@ -133,6 +173,20 @@ sub Maintainer {
+@@ -133,6 +172,20 @@ sub Maintainer {
          return $self->_getVariable($port, 'MAINTAINER');
  }
  
@@ -133,7 +140,18 @@ $NetBSD$
  # Extract dependencies
  sub ExtractDepends {
          my $self = shift;
-@@ -206,6 +260,28 @@ sub FetchDependsList {
+@@ -189,8 +242,8 @@ sub IgnoreList {
+ 
+         my $n = 0;
+         $self->_execMake($port);
+-        foreach my $var ('NO_PACKAGE', 'IGNORE', 'FORBIDDEN') {
+-                $n++ if ($self->{CACHE}->{$port}{$var} ne "");
++        foreach my $var ('_CBBH') {
++                $n++ if ($self->{CACHE}->{$port}{$var} ne "yes");
+         }
+         return $n eq 0 ? "" : $self->PkgName($port);
+ }
+@@ -206,6 +259,28 @@ sub FetchDependsList {
          return grep { !$uniq{$_}++ } @deps;
  }
  
@@ -162,7 +180,7 @@ $NetBSD$
  sub ExtractDependsList {
          my $self = shift;
          my $port = shift;
-@@ -250,6 +326,7 @@ sub BuildDependsList {
+@@ -250,6 +325,7 @@ sub BuildDependsList {
          push(@deps, $self->FetchDepends($port));
          push(@deps, $self->BuildDepends($port));
          push(@deps, $self->LibDepends($port));
@@ -170,7 +188,7 @@ $NetBSD$
  
          my %uniq;
          return grep { !$uniq{$_}++ } @deps;
-@@ -263,6 +340,7 @@ sub RunDependsList {
+@@ -263,6 +339,7 @@ sub RunDependsList {
          my @deps;
          push(@deps, $self->LibDepends($port));
          push(@deps, $self->RunDepends($port));

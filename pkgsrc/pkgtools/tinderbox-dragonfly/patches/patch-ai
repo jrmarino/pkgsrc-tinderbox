@@ -67,6 +67,15 @@ $NetBSD$
  
  total_size=$(${tc} getPortTotalSize -d ${portdir} -b ${build})
  execute_hook "prePortBuild" "PACKAGE_NAME=${pkgname} BUILD=${build} JAIL=${jail} PORTSTREE=${portstree} CHROOT=${chroot} PORTDIR=${portdir} PB=${pb} TOTAL_SIZE=${total_size}"
+@@ -167,7 +172,7 @@ if [ -f ${dudsfile} ]; then
+     if grep -qxF ${pkgname} ${dudsfile}; then
+         echo "skipping ${pkgname} (found in duds)"
+ 	${tc} updatePortStatus -d ${portdir} -b ${build} \
+-		-L -s DUD -v ${pkgname}
++		-L -s DUD -v ${pkgname} -r arch
+ 	mark_failed ${tc} ${build} ${pkgname} ${portdir}
+ 	execute_hook "postPortBuild" "PACKAGE_NAME=${pkgname} BUILD=${build} JAIL=${jail} PORTSTREE=${portstree} CHROOT=${chroot} STATUS=DUD PORTDIR=${portdir} PB=${pb} FAIL_REASON=dud TOTAL_SIZE=0"
+         exit 1
 @@ -175,12 +180,12 @@ if [ -f ${dudsfile} ]; then
  fi
  

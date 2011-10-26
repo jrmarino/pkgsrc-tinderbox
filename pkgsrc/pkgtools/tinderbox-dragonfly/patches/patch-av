@@ -22,7 +22,14 @@ $NetBSD$
  
  while (scalar(@PORTS)) {
          my $port    = shift @PORTS;
-@@ -168,8 +168,9 @@ while (scalar(@PORTS)) {
+@@ -162,14 +162,15 @@ while (scalar(@PORTS)) {
+         $pkgname = $makecache->PkgName($portdir);
+ 
+         # Create a list of duds (ports that will not be attempted because they
+-        # are marked IGNORE or FORBIDDEN).
++        # are marked _CBBH (aka not for this platform) ).
+         if (!$noduds) {
+                 my $dudpkg = $makecache->IgnoreList($portdir);
                  push @duds, $dudpkg if ($dudpkg);
          }
  
