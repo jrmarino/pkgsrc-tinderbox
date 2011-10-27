@@ -106,6 +106,11 @@ generateUpdateCode () {
 		fi
 
 		( echo "#!/bin/sh"
+		  echo "if [ -d ${treeDir}/obj ]; then"
+		  echo "  echo Jail ${2} cannot be updated!"
+		  echo "  echo It was created from an official release ISO"
+		  echo "  exit 1"
+		  echo "fi"
 		  echo "mkdir -p ${treeDir}/sets"
 		  echo "cd ${treeDir}/sets"
 		  echo "echo \"SERVER: ${iso_server}/iso-images\""
@@ -141,6 +146,11 @@ generateUpdateCode () {
 		fi
 
 		( echo "#!/bin/sh"
+		  echo "if [ -d ${treeDir}/obj ]; then"
+		  echo "  echo Jail ${2} cannot be updated!"
+		  echo "  echo It was created from a daily snapshot ISO"
+		  echo "  exit 1"
+		  echo "fi"
 		  echo "mkdir -p ${treeDir}/sets"
 		  echo "cd ${treeDir}/sets"
 		  echo "echo \"SERVER: ${iso_server}/snapshots/${updateArch}\""
@@ -279,16 +289,21 @@ updateTree () {
 
     echo "${name}: updating ${what} with ${updateCmd}"
 
+    logpipe=/tmp/tbox_logpipe
+    mkfifo ${logpipe}
+    tee ${dir}/update.log < ${logpipe} &
     if [ "${updateCmd}" = "USER" ]; then
-        ${dir}/update.sh ${name} | tee ${dir}/update.log
+        ${dir}/update.sh ${name} > ${logpipe}
     else
-	${dir}/update.sh | tee ${dir}/update.log
+	${dir}/update.sh > ${logpipe}
     fi
     if [ $? -ne 0 ]; then
+        rm ${logpipe}
 	echo "updateTree: ${what} ${name}: update failed"
 	echo "    see ${dir}/update.log for more details"
 	return 1
     fi
+    rm ${logpipe}
 }
 
 #---------------------------------------------------------------------------
