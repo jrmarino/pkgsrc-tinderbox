@@ -96,7 +96,7 @@ generateUpdateCode () {
 		    exit 1
 		fi
 
-		updateCmd="/usr/pkg/bin/lftp"
+		updateCmd="/usr/bin/fetch"
 		iso_image="dfly-${updateArch}-${5}_REL.iso.bz2"
 		iso_server=${4}
 
@@ -108,8 +108,11 @@ generateUpdateCode () {
 		( echo "#!/bin/sh"
 		  echo "mkdir -p ${treeDir}/sets"
 		  echo "cd ${treeDir}/sets"
-		  echo "${updateCmd} -c \"open ${iso_server}/iso-images/; get ${iso_image}\""
+		  echo "echo \"SERVER: ${iso_server}/iso-images\""
+		  echo "echo \" IMAGE: ${iso_image}\""
+		  echo "${updateCmd} ${iso_server}/iso-images/${iso_image}"
 		  echo "mkdir -p ../tmp ../obj"
+		  echo "echo \"Initial physical jail setup complete.\""
 		) > ${treeDir}/update.sh
 		chmod +x ${treeDir}/update.sh
 		;;
@@ -129,7 +132,7 @@ generateUpdateCode () {
 		    fi
 		fi
 
-		updateCmd="/usr/pkg/bin/lftp"
+		updateCmd="/usr/bin/fetch"
 		iso_server=${4}
 
 		commandTreeChecks ${updateCmd} ${2} ${3}
@@ -140,8 +143,11 @@ generateUpdateCode () {
 		( echo "#!/bin/sh"
 		  echo "mkdir -p ${treeDir}/sets"
 		  echo "cd ${treeDir}/sets"
-		  echo "${updateCmd} -c \"open ${iso_server}/snapshots/${updateArch}/; get ${iso_image}\""
+		  echo "echo \"SERVER: ${iso_server}/snapshots/${updateArch}\""
+		  echo "echo \" IMAGE: ${iso_image}\""
+		  echo "${updateCmd} ${iso_server}/snapshots/${updateArch}/${iso_image}"
 		  echo "mkdir -p ../tmp ../obj"
+		  echo "echo \"Initial physical jail setup complete.\""
 		) > ${treeDir}/update.sh
 		chmod +x ${treeDir}/update.sh
 		;;
@@ -269,9 +275,9 @@ updateTree () {
     echo "${name}: updating ${what} with ${updateCmd}"
 
     if [ "${updateCmd}" = "USER" ]; then
-        eval ${dir}/update.sh ${name} > ${dir}/update.log 2>&1
+        ${dir}/update.sh ${name} | tee ${dir}/update.log
     else
-	eval ${dir}/update.sh > ${dir}/update.log 2>&1
+	${dir}/update.sh | tee ${dir}/update.log
     fi
     if [ $? -ne 0 ]; then
 	echo "updateTree: ${what} ${name}: update failed"

@@ -206,10 +206,9 @@ nfs_reserved_port_only="YES"
        The first method will download source via git and use
        make world to compile a complete DragonFly installation.
        The next method will download binary release and snapshot ISO
-       images and install them, making the process much shorter. The
-       latter method requires lftp (ftp/lftp) to be installed.  Also
-       note that you can provide an alternative to the default FTP
-       server to download the sets from (with the -H option).
+       images and install them, making the process much shorter. You
+       can provide an alternative to the default FTP server to download
+       the sets from (with the -H option).
 
        Note: all Jail names MUST begin with their major version number.
        The following is an illegal jail name: "DragonFly-2.12".
@@ -493,7 +492,7 @@ Chapter 8. Advanced Topics
 8.1. Alternative Means of Creating Jail Sources and PortsTrees
 
    PortsTrees are updated using csup (/usr/pkg/bin/csup) and Jails
-   are updated by LFTP or GIT.  Variables controlling how these 
+   are updated by fetch or git.  Variables controlling how these
    are updated are stored at ${pb}/scripts/etc/env/GLOBAL:
    defaultUpdateHost: The host name of the cvsup server that
                       creates and updates the NetBSD pkgsrc tree
@@ -504,7 +503,8 @@ Chapter 8. Advanced Topics
                       and the path-to-iso-images (which does not
                       include "/iso-images") can be omitted if the
                       it's a top level directory.
-   defaultDragonType: LFTP (for ISO)
+   defaultDragonType: RELEASE (for Release ISO)
+                      SNAPSHOT (for daily build ISOs)
                       GIT  (to build world from source)
    defaultGitSrcHost: The host name of the DragonFly Git mirror
 
