@@ -96,7 +96,7 @@ generateUpdateCode () {
 		    exit 1
 		fi
 
-		updateCmd="/usr/bin/fetch"
+		updateCmd=/usr/bin/fetch
 		iso_image="dfly-${updateArch}-${5}_REL.iso.bz2"
 		iso_server=${4}
 
@@ -117,7 +117,7 @@ generateUpdateCode () {
 		chmod +x ${treeDir}/update.sh
 		;;
 
-    "SNAPSHOT")  # ONLY USED FOR DRAGONFLY SNAPSHOT RETRIEVAL (JAILS)
+    "SNAPSHOT") # ONLY USED FOR DRAGONFLY SNAPSHOT RETRIEVAL (JAILS)
 		updateArch=$(uname -p)
 		if [ "${5}" = "LATEST" ]; then
 		    iso_image="DragonFly-${updateArch}-LATEST-ISO.iso.bz2"
@@ -132,7 +132,7 @@ generateUpdateCode () {
 		    fi
 		fi
 
-		updateCmd="/usr/bin/fetch"
+		updateCmd=/usr/bin/fetch
 		iso_server=${4}
 
 		commandTreeChecks ${updateCmd} ${2} ${3}
@@ -158,7 +158,7 @@ generateUpdateCode () {
 		    exit 1
 		fi
 
-		updateCmd="/usr/pkg/bin/csup"
+		updateCmd=/usr/pkg/bin/csup
 		commandTreeChecks ${updateCmd} ${2} ${3}
 		if [ "$?" -eq "1" ]; then
 		    exit 1
@@ -186,33 +186,38 @@ generateUpdateCode () {
 		    exit 1
 		fi
 
-		updateCmd="/usr/pkg/bin/git"
+		updateCmd=/usr/pkg/bin/git
 		commandTreeChecks ${updateCmd} ${2} ${3}
 		if [ "$?" -eq "1" ]; then
 		    exit 1
 		fi
 
 		( echo "#!/bin/sh"
-		  echo "if [ -d ${treedir}/src ]; then"
-		  echo "  cd ${treedir}/src"
+		  echo "echo 'SERVER: ${4}'"
+		  echo "echo 'BRANCH: ${5}'"
+		  echo "if [ -d ${treeDir}/src ]; then"
+		  echo "  cd ${treeDir}/src"
 		  echo "else"
-		  echo "  mkdir ${treedir}/src"
-		  echo "  cd ${treedir}/src"
+		  echo "  echo 'Creating shallow source repository.'"
+		  echo "  mkdir ${treeDir}/src"
+		  echo "  cd ${treeDir}/src"
 		  echo "  mkdir ../tmp ../obj"
 		  echo "  ${updateCmd} init"
 		  echo "  ${updateCmd} remote add origin git://${4}/dragonfly.git"
 		  echo "  ${updateCmd} fetch --depth=1 origin"
 		  echo "  ${updateCmd} branch master origin/master"
+		  echo "  echo 'Repository creation complete.'"
 		  echo "fi"
-		  echo "BRANCH=`${updateCmd} branch | /usr/bin/grep -w ${5}`"
-		  echo "if [ "\${BRANCH}" = "" ]; then"
+		  echo "BRANCH=\`${updateCmd} branch | /usr/bin/grep -w ${5}\`"
+		  echo "if [ \"\${BRANCH}\" = \"\" ]; then"
 		  echo "  ${updateCmd} branch ${5} origin/${5}"
 		  echo "fi"
+		  echo "echo 'Ready to pull updates from branch.'"
 		  echo "${updateCmd} checkout ${5}"
 		  echo "${updateCmd} pull"
-		) > ${treedir}/update.sh
+		) > ${treeDir}/update.sh
 		chmod +x ${treeDir}/update.sh
-    		;;	
+		;;
 
     *)		echo "ERROR: ${1} ${2}: unknown update type: ${3}"
 		exit 1;;
@@ -948,7 +953,8 @@ createJail () {
     init=1
 
     setupDefaults
-    updateHost=${defaultDragonHost}
+    updateHostISO=${defaultDragonHost}
+    updateHostSRC=${defaultGitSrcHost}
     updateType=${defaultDragonType}
 
     # argument handling
@@ -961,7 +967,8 @@ createJail () {
 	m)	mountSrc="${OPTARG}";;
 	t)	updateTag="${OPTARG}";;
 	u)	updateType="${OPTARG}";;
-	H)	updateHost="${OPTARG}";;
+	H)	updateHostISO="${OPTARG}"
+		updateHostSRC="${OPTTAG}";;
 	I)	init=0;;
 	?)	return 1;;
 
@@ -993,7 +1000,13 @@ createJail () {
     if [ "${updateType}" = "CSUP" ]; then
     	echo "createJail: CSUP type cannot be used for DragonFly sources"
 	return 1
-    fi    
+    fi
+
+    updateHost=${updateHostISO}
+    if [ "${updateType}" = "GIT" ]; then
+	updateHost=${updateHostSRC}
+    fi
+
 
     echo "${jailName}: initializing tree"
     generateUpdateCode jail ${jailName} ${updateType} ${updateHost} \
