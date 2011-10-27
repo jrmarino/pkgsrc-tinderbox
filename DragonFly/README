@@ -190,25 +190,29 @@ nfs_reserved_port_only="YES"
         -t DragonFly_RELEASE_2_12 -u GIT
        or
 # cd ${pb}/scripts && ./tc createJail -j 2.12 -d "DragonFly 2.12-RELEASE" \
-        -t 2.12.1 -u LFTP -H http://ftp.dragonflybsd.org/dragonflybsd
+        -t 2.12.1 -u RELEASE -H http://ftp.dragonflybsd.org/dragonflybsd
        Note:The protocol for DragonFly host servers can be either
-       http or ftp.  The protocol and the path to the directory
-       "iso-images" must be provided, which is different from other
-       update types.  Also the "tag" must be the release represented
-       by three numbers in <major.minor.point> format.
+       http or ftp.  The protocol and the path up but not including the
+       repository directory must be provided.  For the RELEASE type, the
+       directory is called "iso-images" and for the SNAPSHOT type the
+       directory is called "snapshots".  For the RELEASE type, the <tag>
+       must be the release represented by three numbers in
+       <major.minor.point> format, and for the SNAPSHOT type, the <tag>
+       must either be the value "LATEST" for the latest snapshot or
+       in the pattern "YYYYMMDD-DEV-va.b.c.d.gxxxxxx" (YYYYMMDD is the
+       calendar date, a.b.c is major.minor.point release, d is an
+       index, and xxxxxx is the first 5 characters of the git commit hash.
+
        The first method will download source via git and use
        make world to compile a complete DragonFly installation.
-       The second method will instead download binary release CD ISOs
-       and install them, making the process much
-       shorter. As the command suggests, the second method
-       requires lftp (ftp/lftp) to be installed. You need to
-       specify what release (not the GIT branch name, as opposed to the
-       first method) you want to download with the -t option. Also
-       note that you can provide an alternative FTP server to download
-       the sets from (with the -H option).
-       Note: all Jail names MUST begin with their DragonFly major
-       version number. That is, the following is an illegal jail
-       name: "DragonFly-2.12".
+       The next method will download binary release and snapshot ISO
+       images and install them, making the process much shorter. The
+       latter method requires lftp (ftp/lftp) to be installed.  Also
+       note that you can provide an alternative to the default FTP
+       server to download the sets from (with the -H option).
+
+       Note: all Jail names MUST begin with their major version number.
+       The following is an illegal jail name: "DragonFly-2.12".
        Hint: It is recommended that the Jail begin with the
        DragonFly major.minor version (i.e. "2.12-DragonFly" instead of
        just "2-DragonFly") as this may prove useful when using

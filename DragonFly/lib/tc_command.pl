@@ -188,8 +188,8 @@ my $ds = new Tinderbox::TinderboxDS();
                 help =>
                     "Add a jail to the datastore (do NOT call this directly; use createJail instead)",
                 usage =>
-                    "-j <jail name> -u GIT|LFTP|USER|NONE -t <jail tag> [-d <jail description>] [-m <src mount source>]",
-                optstr => 'm:j:t:u:d:',
+                    "-j <jail name> -u GIT|RELEASE|SNAPSHOT|USER|NONE -t <jail tag> [-d <jail description>] [-m <src mount source>] [-a <arch>]",
+                optstr => 'm:j:t:u:d:a:',
         },
         "addPortsTree" => {
                 func => \&addPortsTree,
@@ -567,7 +567,7 @@ my $ds = new Tinderbox::TinderboxDS();
         "createJail" => {
                 help => "Create a new jail",
                 usage =>
-                    "-j <jailname> -u GIT|LFTP|USER|NONE -t <tag> [-d <description>] [-H <updatehost>] [-m <mountsrc>] [-I]",
+                    "-j <jailname> -u GIT|RELEASE|SNAPSHOT|USER|NONE -t <tag> [-d <description>] [-H <updatehost>] [-m <mountsrc>] [-I]",
                 optstr => 'j:t:d:H:m:u:I:',
         },
 
@@ -1412,10 +1412,11 @@ sub addBuild {
 
 sub addJail {
         my $name = $opts->{'j'};
+        my $arch = $opts->{'a'};
         my $ucmd = $opts->{'u'};
         my $tag  = $opts->{'t'};
 
-        if (!$name || !$ucmd || !$tag) {
+        if (!$name || !$arch || !$ucmd || !$tag) {
                 usage("addJail");
         }
 
@@ -1433,6 +1434,7 @@ sub addJail {
         my $jail = new Tinderbox::Jail();
 
         $jail->setName($name);
+        $jail->setArch($arch);
         $jail->setTag($tag);
         $jail->setUpdateCmd($ucmd);
         if ($opts->{'d'}) {

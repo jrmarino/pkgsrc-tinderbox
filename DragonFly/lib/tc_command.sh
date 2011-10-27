@@ -29,13 +29,35 @@
 
 export _defaultUpdateHost="cvsup.netbsd.se"
 export _defaultUpdateType="CSUP"
-export _defaultDragonHost="ftp://mirror.pavlovmedia.net/dragonflybsd"
-export _defaultDragonType="LFTP"
+export _defaultDragonHost="http://mirror.physik-pool.tu-berlin.de/DragonFlyBSD/dflysnap"
+export _defaultDragonType="RELEASE"
 export _defaultGitSrcHost="koan.bondconsult.net"
 
 #---------------------------------------------------------------------------
 # Generic routines
 #---------------------------------------------------------------------------
+commandTreeChecks () {
+    JT_updateCmd=${1}
+    JT_name=${2}
+    JT_mechanism=${3}
+
+    if [ ! -x "${JT_updateCmd}" ]; then
+	echo "ERROR: ${JT_name} ${JT_mechanism}: ${JT_updateCmd} missing"
+	return 1
+    fi
+
+    if [ -d ${treeDir} ]; then
+	echo "${JT_name}: cleaning out old directories"
+	cleanDirs ${JT_name} ${treeDir}
+    fi
+
+    if [ ! -d ${treeDir} ]; then
+	echo "${JT_name}: creating top-level directory"
+	mkdir -p ${treeDir} >/dev/null 2>&1
+    fi
+    return 0
+}
+
 generateUpdateCode () {
     case ${1} in
 
@@ -67,67 +89,73 @@ generateUpdateCode () {
 		fi
 		;;
 
-    "LFTP")	# ONLY USED FOR DRAGONFLY ISO RETRIEVAL (JAILS)
-    		if [ -z "${5}" -o "${5}" = "UNUSED" ]; then
-		    echo "ERROR: ${1} ${2}: no release number specified for ${3}"
+    "RELEASE")  # ONLY USED FOR DRAGONFLY ISO RETRIEVAL (JAILS)
+		updateArch=$(uname -p)
+		if [ -z "${5}" -o "${5}" = "UNUSED" ]; then
+		    echo "ERROR: ${1} ${2}: no release number specified for ${3} (e.g. 2.10.1)"
 		    exit 1
-		fi
-
-		updateArch="${7}"
-		if [ -z "${updateArch}" ]; then
-		    updateArch=$(uname -p)
 		fi
 
 		updateCmd="/usr/pkg/bin/lftp"
 		iso_image="dfly-${updateArch}-${5}_REL.iso.bz2"
 		iso_server=${4}
-		rev_number=`echo ${5} | awk 'BEGIN {FS="."}; {printf("%s_%s", $1, $2)}'`
-		fakebranch="BRANCH=\"RELEASE_${rev_number}\""
 
-		if [ ! -x "${updateCmd}" ]; then
-		    echo "ERROR: ${2} ${3}: ${updateCmd} missing"
+		commandTreeChecks ${updateCmd} ${2} ${3}
+		if [ "$?" -eq "1" ]; then
 		    exit 1
-		fi
-
-		if [ -d ${treeDir} ]; then
-		    echo "${2}: cleaning out old directories"
-		    cleanDirs ${2} ${treeDir}
-		fi
-		if [ ! -d ${treeDir} ]; then
-		    echo "${2}: creating top-level directory"
-		    mkdir -p ${treeDir} >/dev/null 2>&1
 		fi
 
 		( echo "#!/bin/sh"
 		  echo "mkdir -p ${treeDir}/sets"
 		  echo "cd ${treeDir}/sets"
 		  echo "${updateCmd} -c \"open ${iso_server}/iso-images/; get ${iso_image}\""
-		  echo "mkdir -p ../tmp ../obj ../src/sys/conf"
-		  echo "echo '${fakebranch}' > ../src/sys/conf/newvers.sh"
+		  echo "mkdir -p ../tmp ../obj"
+		) > ${treeDir}/update.sh
+		chmod +x ${treeDir}/update.sh
+		;;
+
+    "SNAPSHOT")  # ONLY USED FOR DRAGONFLY SNAPSHOT RETRIEVAL (JAILS)
+		updateArch=$(uname -p)
+		if [ "${5}" = "LATEST" ]; then
+		    iso_image="DragonFly-${updateArch}-LATEST-ISO.iso.bz2"
+		else
+		    namechk=`echo ${5} | awk '/^20[12][0-9][01][0-9][0-3][0-9]-DEV-v[2-9]\.[0-9][0-9]?\.[0-9]\.[0-9][0-9]?[0-9]?[0-9]?\.g[0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f]?$/'`
+		    if [ -n "${namechk}" ]; then
+			iso_image="images/DragonFly-${updateArch}-${5}.iso.bz2"
+		    else
+			echo "ERROR: ${1} ${2}: tag for ${3} must either equal 'LATEST' or "
+			echo "it must be in the format YYYYMMDD-DEV-va.b.c.d.gxxxxxx"
+			exit 1
+		    fi
+		fi
+
+		updateCmd="/usr/pkg/bin/lftp"
+		iso_server=${4}
+
+		commandTreeChecks ${updateCmd} ${2} ${3}
+		if [ "$?" -eq "1" ]; then
+		    exit 1
+		fi
+
+		( echo "#!/bin/sh"
+		  echo "mkdir -p ${treeDir}/sets"
+		  echo "cd ${treeDir}/sets"
+		  echo "${updateCmd} -c \"open ${iso_server}/snapshots/${updateArch}/; get ${iso_image}\""
+		  echo "mkdir -p ../tmp ../obj"
 		) > ${treeDir}/update.sh
 		chmod +x ${treeDir}/update.sh
 		;;
 
     "CSUP")	# ONLY USED FOR PKGSRC UPDATES FROM NETBSD (PORTSTREES)
-    		if [ -z "${5}" -o "${5}" = "UNUSED" ]; then
+		if [ -z "${5}" -o "${5}" = "UNUSED" ]; then
 		    echo "ERROR: ${1} ${2}: no tag specified for ${3}"
 		    exit 1
 		fi
 
 		updateCmd="/usr/pkg/bin/csup"
-
-		if [ ! -x "${updateCmd}" ]; then
-		    echo "ERROR: ${2} ${3}: ${updateCmd} missing"
+		commandTreeChecks ${updateCmd} ${2} ${3}
+		if [ "$?" -eq "1" ]; then
 		    exit 1
-		fi
-
-		if [ -d ${treeDir} ]; then
-		    echo "${2}: cleaning out old directories"
-		    cleanDirs ${2} ${treeDir}
-		fi
-		if [ ! -d ${treeDir} ]; then
-		    echo "${2}: creating top-level directory"
-		    mkdir -p ${treeDir} >/dev/null 2>&1
 		fi
 
 		( echo "*default host=${4}"
@@ -147,25 +175,15 @@ generateUpdateCode () {
 		;;
 
     "GIT")	# ONLY USED FOR RETREIVING DRAGONFLY SOURCE FOR BUILDING JAIL
-    		if [ -z "${5}" -o "${5}" = "UNUSED" ]; then
+		if [ -z "${5}" -o "${5}" = "UNUSED" ]; then
 		    echo "ERROR: ${1} ${2}: no git branch specified for ${3}"
 		    exit 1
 		fi
 
 		updateCmd="/usr/pkg/bin/git"
-
-		if [ ! -x "${updateCmd}" ]; then
-		    echo "ERROR: ${2} ${3}: ${updateCmd} missing"
+		commandTreeChecks ${updateCmd} ${2} ${3}
+		if [ "$?" -eq "1" ]; then
 		    exit 1
-		fi
-
-		if [ -d ${treeDir} ]; then
-		    echo "${2}: cleaning out old directories"
-		    cleanDirs ${2} ${treeDir}
-		fi
-		if [ ! -d ${treeDir} ]; then
-		    echo "${2}: creating top-level directory"
-		    mkdir -p ${treeDir} >/dev/null 2>&1
 		fi
 
 		( echo "#!/bin/sh"
@@ -774,15 +792,26 @@ buildJail () {
 	return 1
     fi
 
-    if [ "${updateCmd}" = "LFTP" ]; then
-    	iso_image=`ls ${jailBase}/sets`
+    if [ "${updateCmd}" = "RELEASE" -o "${updateCmd}" = "SNAPSHOT" ]; then
+	iso_image=`ls ${jailBase}/sets`
 	/usr/bin/tar -xf ${jailBase}/sets/${iso_image} -C ${J_TMPDIR} > ${jailBase}/world.tmp 2>&1
 	rc=$?
 	if [ ${rc} -ne 0 ]; then
 	    echo "ERROR: extract world failed - see ${jailBase}/world.tmp"
+	    buildJailCleanup 1 ${jailName} ${J_SRCDIR}
+	    return 1
 	fi
-	mkdir -p ${jailBase}/src/sys/sys
-	cp ${J_TMPDIR}/usr/include/sys/param.h ${jailBase}/src/sys/sys	
+	DFVERS=`awk '/^#define __DragonFly_version/ {print $3}' < ${J_TMPDIR}/usr/include/sys/param.h`
+	MAJOR=`echo $DFVERS | awk '{print substr($0,1,1)}'`
+	MINOR=`echo $DFVERS | awk '{print substr($0,2,3)}' | sed 's/0*//'`
+	if [ `expr $MINOR % 2` -eq 0 ]; then
+	    fakebranch="BRANCH=\"RELEASE_${MAJOR}_${MINOR}\""
+	else
+	    fakebranch="BRANCH=\"DEVELOPMENT_${MAJOR}_${MINOR}\""
+	fi
+	mkdir -p ${jailBase}/src/sys/sys ${jailBase}/src/sys/conf
+	echo ${fakebranch} > ${jailBase}/src/sys/conf/newvers.sh
+	cp ${J_TMPDIR}/usr/include/sys/param.h ${jailBase}/src/sys/sys
 	rm -rf ${J_TMPDIR}/usr/src
 	cp -R ${jailBase}/src ${J_TMPDIR}/usr
 	mkdir ${J_TMPDIR}/usr/4bootstrap
@@ -795,6 +824,7 @@ buildJail () {
 	execute_hook "postJailBuild" "JAIL=${jailName} DESTDIR=${J_TMPDIR} JAIL_ARCH=${jailArch} MY_ARCH=${myArch} JAIL_OBJDIR=${JAIL_OBJDIR} SRCBASE=${SRCBASE} PB=${pb} RC=${rc}"
 	if [ $? -ne 0 ]; then
 	    echo "buildJail: Terminating Jail build since hook postJailBuild failed."
+	    buildJailCleanup 1 ${jailName} ${J_SRCDIR}
 	    return 1
 	fi
     else
@@ -825,6 +855,7 @@ buildJail () {
         if [ $? -ne 0 ]; then
 	    echo "ERROR: distribution failed - see ${jailBase}/distribution.tmp"
 	    buildJailCleanup 1 ${jailName} ${J_SRCDIR}
+	    return 1
 	fi
     fi
 
@@ -915,11 +946,10 @@ createJail () {
     updateType=${defaultDragonType}
 
     # argument handling
-    while getopts a:d:j:m:t:u:H:I arg >/dev/null 2>&1
+    while getopts d:j:m:t:u:H:I arg >/dev/null 2>&1
     do
 	case "${arg}" in
 
-	a)	jailArch="${OPTARG}";;
 	d)	descr="${OPTARG}";;
 	j)	jailName="${OPTARG}";;
 	m)	mountSrc="${OPTARG}";;
@@ -1866,14 +1896,24 @@ init () {
     fi
 
     # Update type is not optional, it's CSUP only, so we won't ask.
-    
-    echo "Server format: (http|ftp)://(host)/path_to_iso-images_directory"
+
+    defaultDragonType="n"
+    while [ "${defaultDragonType}" != "RELEASE" -a "${defaultDragonType}" != "SNAPSHOT" ]; do
+	read -p "Enter a DragonFly branch type [${_defaultDragonType}]: " defaultDragonType
+	if [ -z "${defaultDragonType}" ]; then
+	    defaultDragonType=${_defaultDragonType}
+	fi
+    done
+
+    if [ "${defaultDragonType}" = "RELEASE" ]; then
+	echo "Server format: (http|ftp)://(host)/path_to_iso-images_directory"
+    else
+	echo "Server format: (http|ftp)://(host)/path_to_snapshots_directory"
+    fi
     read -p "Enter a default ISO server for DragonFly [${_defaultDragonHost}]: " dragonhost
     if [ -z "${dragonhost}" ]; then
 	dragonhost=${_defaultDragonHost}
     fi
-
-    # ISO Update type is not optional, it's LFTP, so we won't ask
 
     read -p "Enter a default Git server for DragonFly [${_defaultGitSrcHost}]: " gitsrchost
     if [ -z "${gitsrchost}" ]; then
