@@ -2493,7 +2493,7 @@ tbkill () {
 	return 0
     fi
 
-    makepid=$(pgrep -f -f -P ${tbpid} "bmake")
+    makepid=$(pgrep -f -f -P ${tbpid} "make")
     makechild=$(pgrep -P ${makepid})
     pbpid=$(pgrep -f -f "/bin/sh.*/portbuild")
 
