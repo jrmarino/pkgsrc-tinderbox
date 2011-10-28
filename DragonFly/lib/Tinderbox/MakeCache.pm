@@ -71,7 +71,8 @@ sub _execMake {
         }
         my $dir = $self->{BASEDIR} . '/' . $port;
         my $customOptions = $self->_package_options ($dir);
-        @ret = split("\n", `cd $dir && bmake $customOptions $tmp`);
+        my $nativeOptions = $self->_native_preferences ();
+        @ret = split("\n", `cd $dir && bmake $customOptions $nativeOptions $tmp`);
 
         foreach $tmp (@makeTargets) {
                 $self->{CACHE}->{$port}{$tmp} = shift @ret;
@@ -99,6 +100,43 @@ sub _package_options {
                 return "";
         }
         return $optvar . '="' . $customSet[2] . '"';
+}
+
+# Recreate a trim function
+sub _trim {
+        my $self = shift;
+        my $string = shift;
+        $string =~ s/^\s+//;
+        $string =~ s/\s+$//;
+        return $string;
+}
+
+# Figure out if we want to avoid built-in dependencies or not
+sub _native_preferences {
+        my $self = shift;
+        my $moremk = $self->{OPTFILE};
+        $moremk =~ s!/?[^/]*/*$!!;
+        $moremk .= '/more_mk.conf';
+        unless (-e $moremk) {
+                return "";
+        }
+        my @worker;
+        my $result = "";
+        my $ppkgsrc=`grep PREFER_PKGSRC $moremk`;
+        my $pnative=`grep PREFER_NATIVE $moremk`;
+        if ($ppkgsrc) {
+            @worker = split(/=/, $ppkgsrc);
+            if (scalar (@worker) >= 2) {
+                    $result = 'PREFER_PKGSRC="' . $self->_trim($worker[1]) . '" ';
+            }
+        }
+        if ($pnative) {
+            @worker = split(/=/, $pnative);
+            if (scalar (@worker) >= 2) {
+                $result .= 'PREFER_NATIVE="' . $self->_trim($worker[1]) . '"';
+            }
+        }
+        return $result;
 }
 
 # Internal function for returning a port variable
