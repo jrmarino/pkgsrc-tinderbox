@@ -29,7 +29,7 @@ $NetBSD$
          }, $name;
  
          $self;
-@@ -60,13 +61,17 @@ sub _execMake {
+@@ -60,13 +61,18 @@ sub _execMake {
          my $self = shift;
          my $port = shift;
          my @ret;
@@ -46,11 +46,12 @@ $NetBSD$
          my $dir = $self->{BASEDIR} . '/' . $port;
 -        @ret = split("\n", `cd $dir && make $tmp`);
 +        my $customOptions = $self->_package_options ($dir);
-+        @ret = split("\n", `cd $dir && bmake $customOptions $tmp`);
++        my $nativeOptions = $self->_native_preferences ();
++        @ret = split("\n", `cd $dir && bmake $customOptions $nativeOptions $tmp`);
  
          foreach $tmp (@makeTargets) {
                  $self->{CACHE}->{$port}{$tmp} = shift @ret;
-@@ -74,6 +79,28 @@ sub _execMake {
+@@ -74,6 +80,65 @@ sub _execMake {
          $self->{SEEN}->{$port} = 1;
  }
  
@@ -76,10 +77,47 @@ $NetBSD$
 +        return $optvar . '="' . $customSet[2] . '"';
 +}
 +
++# Recreate a trim function
++sub _trim {
++        my $self = shift;
++        my $string = shift;
++        $string =~ s/^\s+//;
++        $string =~ s/\s+$//;
++        return $string;
++}
++
++# Figure out if we want to avoid built-in dependencies or not
++sub _native_preferences {
++        my $self = shift;
++        my $moremk = $self->{OPTFILE};
++        $moremk =~ s!/?[^/]*/*$!!;
++        $moremk .= '/more_mk.conf';
++        unless (-e $moremk) {
++                return "";
++        }
++        my @worker;
++        my $result = "";
++        my $ppkgsrc=`grep PREFER_PKGSRC $moremk`;
++        my $pnative=`grep PREFER_NATIVE $moremk`;
++        if ($ppkgsrc) {
++            @worker = split(/=/, $ppkgsrc);
++            if (scalar (@worker) >= 2) {
++                    $result = 'PREFER_PKGSRC="' . $self->_trim($worker[1]) . '" ';
++            }
++        }
++        if ($pnative) {
++            @worker = split(/=/, $pnative);
++            if (scalar (@worker) >= 2) {
++                $result .= 'PREFER_NATIVE="' . $self->_trim($worker[1]) . '"';
++            }
++        }
++        return $result;
++}
++
  # Internal function for returning a port variable
  sub _getVariable {
          my $self = shift;
-@@ -90,16 +117,28 @@ sub _getList {
+@@ -90,16 +155,28 @@ sub _getList {
          my $port = shift;
          my $item = shift;
          my @deps;
@@ -110,7 +148,7 @@ $NetBSD$
                  }
          }
          return @deps;
-@@ -109,7 +148,7 @@ sub _getList {
+@@ -109,7 +186,7 @@ sub _getList {
  sub Name {
          my $self = shift;
          my $port = shift;
@@ -119,7 +157,7 @@ $NetBSD$
  }
  
  # Package name
-@@ -133,6 +172,20 @@ sub Maintainer {
+@@ -133,6 +210,20 @@ sub Maintainer {
          return $self->_getVariable($port, 'MAINTAINER');
  }
  
@@ -140,7 +178,7 @@ $NetBSD$
  # Extract dependencies
  sub ExtractDepends {
          my $self = shift;
-@@ -189,8 +242,8 @@ sub IgnoreList {
+@@ -189,8 +280,8 @@ sub IgnoreList {
  
          my $n = 0;
          $self->_execMake($port);
@@ -151,7 +189,7 @@ $NetBSD$
          }
          return $n eq 0 ? "" : $self->PkgName($port);
  }
-@@ -206,6 +259,28 @@ sub FetchDependsList {
+@@ -206,6 +297,28 @@ sub FetchDependsList {
          return grep { !$uniq{$_}++ } @deps;
  }
  
@@ -180,7 +218,7 @@ $NetBSD$
  sub ExtractDependsList {
          my $self = shift;
          my $port = shift;
-@@ -250,6 +325,7 @@ sub BuildDependsList {
+@@ -250,6 +363,7 @@ sub BuildDependsList {
          push(@deps, $self->FetchDepends($port));
          push(@deps, $self->BuildDepends($port));
          push(@deps, $self->LibDepends($port));
@@ -188,7 +226,7 @@ $NetBSD$
  
          my %uniq;
          return grep { !$uniq{$_}++ } @deps;
-@@ -263,6 +339,7 @@ sub RunDependsList {
+@@ -263,6 +377,7 @@ sub RunDependsList {
          my @deps;
          push(@deps, $self->LibDepends($port));
          push(@deps, $self->RunDepends($port));

@@ -2,20 +2,43 @@ $NetBSD$
 
 --- ../FreeBSD/lib/tc_command.sh	2011-10-16 00:52:55.000000000 +0000
 +++ lib/tc_command.sh
-@@ -27,8 +27,11 @@
+@@ -27,21 +27,46 @@
  # $MCom: portstools/tinderbox/lib/tc_command.sh,v 1.101.2.45 2011/10/17 01:01:23 marcus Exp $
  #
  
 -export _defaultUpdateHost="cvsup18.FreeBSD.org"
 +export _defaultUpdateHost="cvsup.netbsd.se"
  export _defaultUpdateType="CSUP"
-+export _defaultDragonHost="ftp://mirror.pavlovmedia.net/dragonflybsd"
-+export _defaultDragonType="LFTP"
++export _defaultDragonHost="http://mirror.physik-pool.tu-berlin.de/DragonFlyBSD/dflysnap"
++export _defaultDragonType="RELEASE"
 +export _defaultGitSrcHost="koan.bondconsult.net"
  
  #---------------------------------------------------------------------------
  # Generic routines
-@@ -37,11 +40,11 @@ generateUpdateCode () {
+ #---------------------------------------------------------------------------
++commandTreeChecks () {
++    JT_updateCmd=${1}
++    JT_name=${2}
++    JT_mechanism=${3}
++
++    if [ ! -x "${JT_updateCmd}" ]; then
++	echo "ERROR: ${JT_name} ${JT_mechanism}: ${JT_updateCmd} missing"
++	return 1
++    fi
++
++    if [ -d ${treeDir} ]; then
++	echo "${JT_name}: cleaning out old directories"
++	cleanDirs ${JT_name} ${treeDir}
++    fi
++
++    if [ ! -d ${treeDir} ]; then
++	echo "${JT_name}: creating top-level directory"
++	mkdir -p ${treeDir} >/dev/null 2>&1
++    fi
++    return 0
++}
++
+ generateUpdateCode () {
      case ${1} in
  
      "jail")	  treeDir=$(tinderLoc jail ${2})
@@ -29,33 +52,52 @@ $NetBSD$
  		  ;;
  
      *)		  echo "ERROR: ${1} ${2}: unknown tree type"
-@@ -64,9 +67,9 @@ generateUpdateCode () {
+@@ -64,84 +89,89 @@ generateUpdateCode () {
  		fi
  		;;
  
 -    "LFTP")
-+    "LFTP")	# ONLY USED FOR DRAGONFLY ISO RETRIEVAL (JAILS)
-     		if [ -z "${5}" -o "${5}" = "UNUSED" ]; then
+-    		if [ -z "${5}" -o "${5}" = "UNUSED" ]; then
 -		    echo "ERROR: ${1} ${2}: no tag specified for ${3}"
-+		    echo "ERROR: ${1} ${2}: no release number specified for ${3}"
++    "RELEASE")  # ONLY USED FOR DRAGONFLY ISO RETRIEVAL (JAILS)
++		updateArch=$(uname -p)
++		if [ -z "${5}" -o "${5}" = "UNUSED" ]; then
++		    echo "ERROR: ${1} ${2}: no release number specified for ${3} (e.g. 2.10.1)"
  		    exit 1
  		fi
  
-@@ -75,7 +78,11 @@ generateUpdateCode () {
- 		    updateArch=$(uname -p)
- 		fi
- 
+-		updateArch="${7}"
+-		if [ -z "${updateArch}" ]; then
+-		    updateArch=$(uname -p)
+-		fi
+-
 -		updateCmd="/usr/local/bin/lftp"
-+		updateCmd="/usr/pkg/bin/lftp"
++		updateCmd=/usr/bin/fetch
 +		iso_image="dfly-${updateArch}-${5}_REL.iso.bz2"
 +		iso_server=${4}
-+		rev_number=`echo ${5} | awk 'BEGIN {FS="."}; {printf("%s_%s", $1, $2)}'`
-+		fakebranch="BRANCH=\"RELEASE_${rev_number}\""
  
- 		if [ ! -x "${updateCmd}" ]; then
- 		    echo "ERROR: ${2} ${3}: ${updateCmd} missing"
-@@ -94,42 +101,21 @@ generateUpdateCode () {
+-		if [ ! -x "${updateCmd}" ]; then
+-		    echo "ERROR: ${2} ${3}: ${updateCmd} missing"
++		commandTreeChecks ${updateCmd} ${2} ${3}
++		if [ "$?" -eq "1" ]; then
+ 		    exit 1
+ 		fi
+ 
+-		if [ -d ${treeDir} ]; then
+-		    echo "${2}: cleaning out old directories"
+-		    cleanDirs ${2} ${treeDir}
+-		fi
+-		if [ ! -d ${treeDir} ]; then
+-		    echo "${2}: creating top-level directory"
+-		    mkdir -p ${treeDir} >/dev/null 2>&1
+-		fi
+-
  		( echo "#!/bin/sh"
++		  echo "if [ -d ${treeDir}/obj ]; then"
++		  echo "  echo Jail ${2} cannot be updated!"
++		  echo "  echo It was created from an official release ISO"
++		  echo "  exit 1"
++		  echo "fi"
  		  echo "mkdir -p ${treeDir}/sets"
  		  echo "cd ${treeDir}/sets"
 -		  echo "${updateCmd} -c \"open ftp://${4}/pub/FreeBSD/releases/${updateArch}/${5}/; mirror base\""
@@ -70,91 +112,139 @@ $NetBSD$
 -		  echo "export DESTDIR=${treeDir}"
 -		  echo "mkdir ${treeDir}/src"
 -		  echo "yes | sh ./install.sh all"
-+		  echo "${updateCmd} -c \"open ${iso_server}/iso-images/; get ${iso_image}\""
-+		  echo "mkdir -p ../tmp ../obj ../src/sys/conf"
-+		  echo "echo '${fakebranch}' > ../src/sys/conf/newvers.sh"
++		  echo "echo \"SERVER: ${iso_server}/iso-images\""
++		  echo "echo \" IMAGE: ${iso_image}\""
++		  echo "${updateCmd} ${iso_server}/iso-images/${iso_image}"
++		  echo "mkdir -p ../tmp ../obj"
++		  echo "echo \"Initial physical jail setup complete.\""
  		) > ${treeDir}/update.sh
  		chmod +x ${treeDir}/update.sh
  		;;
  
 -    "CVSUP"|"CSUP")
-+    "CSUP")	# ONLY USED FOR PKGSRC UPDATES FROM NETBSD (PORTSTREES)
-     		if [ -z "${5}" -o "${5}" = "UNUSED" ]; then
- 		    echo "ERROR: ${1} ${2}: no tag specified for ${3}"
- 		    exit 1
- 		fi
- 
+-    		if [ -z "${5}" -o "${5}" = "UNUSED" ]; then
+-		    echo "ERROR: ${1} ${2}: no tag specified for ${3}"
+-		    exit 1
+-		fi
+-
 -		updateCmd=""
 -		if [ "${3}" = "CVSUP" ]; then
 -		    updateCmd="/usr/local/bin/cvsup"
 -		elif [ "${3}" = "CSUP" ]; then
 -		    if [ -x /usr/bin/csup ]; then
 -			updateCmd="/usr/bin/csup"
--		    else
++    "SNAPSHOT") # ONLY USED FOR DRAGONFLY SNAPSHOT RETRIEVAL (JAILS)
++		updateArch=$(uname -p)
++		if [ "${5}" = "LATEST" ]; then
++		    iso_image="DragonFly-${updateArch}-LATEST-ISO.iso.bz2"
++		else
++		    namechk=`echo ${5} | awk '/^20[12][0-9][01][0-9][0-3][0-9]-DEV-v[2-9]\.[0-9][0-9]?\.[0-9]\.[0-9][0-9]?[0-9]?[0-9]?\.g[0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f]?$/'`
++		    if [ -n "${namechk}" ]; then
++			iso_image="images/DragonFly-${updateArch}-${5}.iso.bz2"
+ 		    else
 -			updateCmd="/usr/local/bin/csup"
--		    fi
--		fi
++			echo "ERROR: ${1} ${2}: tag for ${3} must either equal 'LATEST' or "
++			echo "it must be in the format YYYYMMDD-DEV-va.b.c.d.gxxxxxx"
++			exit 1
+ 		    fi
+ 		fi
 -		if [ -z "${updateCmd}" ]; then
 -		    echo "ERROR: ${2}: unable to determine updateCmd for ${3}"
--		    exit 1
--		fi
-+		updateCmd="/usr/pkg/bin/csup"
 +
- 		if [ ! -x "${updateCmd}" ]; then
- 		    echo "ERROR: ${2} ${3}: ${updateCmd} missing"
++		updateCmd=/usr/bin/fetch
++		iso_server=${4}
++
++		commandTreeChecks ${updateCmd} ${2} ${3}
++		if [ "$?" -eq "1" ]; then
  		    exit 1
-@@ -160,6 +146,50 @@ generateUpdateCode () {
+ 		fi
+-		if [ ! -x "${updateCmd}" ]; then
+-		    echo "ERROR: ${2} ${3}: ${updateCmd} missing"
++
++		( echo "#!/bin/sh"
++		  echo "if [ -d ${treeDir}/obj ]; then"
++		  echo "  echo Jail ${2} cannot be updated!"
++		  echo "  echo It was created from a daily snapshot ISO"
++		  echo "  exit 1"
++		  echo "fi"
++		  echo "mkdir -p ${treeDir}/sets"
++		  echo "cd ${treeDir}/sets"
++		  echo "echo \"SERVER: ${iso_server}/snapshots/${updateArch}\""
++		  echo "echo \" IMAGE: ${iso_image}\""
++		  echo "${updateCmd} ${iso_server}/snapshots/${updateArch}/${iso_image}"
++		  echo "mkdir -p ../tmp ../obj"
++		  echo "echo \"Initial physical jail setup complete.\""
++		) > ${treeDir}/update.sh
++		chmod +x ${treeDir}/update.sh
++		;;
++
++    "CSUP")	# ONLY USED FOR PKGSRC UPDATES FROM NETBSD (PORTSTREES)
++		if [ -z "${5}" -o "${5}" = "UNUSED" ]; then
++		    echo "ERROR: ${1} ${2}: no tag specified for ${3}"
+ 		    exit 1
+ 		fi
+ 
+-		if [ -d ${treeDir} ]; then
+-		    echo "${2}: cleaning out old directories"
+-		    cleanDirs ${2} ${treeDir}
+-		fi
+-		if [ ! -d ${treeDir} ]; then
+-		    echo "${2}: creating top-level directory"
+-		    mkdir -p ${treeDir} >/dev/null 2>&1
++		updateCmd=/usr/pkg/bin/csup
++		commandTreeChecks ${updateCmd} ${2} ${3}
++		if [ "$?" -eq "1" ]; then
++		    exit 1
+ 		fi
+ 
+ 		( echo "*default host=${4}"
+@@ -160,6 +190,45 @@ generateUpdateCode () {
  		chmod +x ${treeDir}/update.sh
  		;;
  
 +    "GIT")	# ONLY USED FOR RETREIVING DRAGONFLY SOURCE FOR BUILDING JAIL
-+    		if [ -z "${5}" -o "${5}" = "UNUSED" ]; then
++		if [ -z "${5}" -o "${5}" = "UNUSED" ]; then
 +		    echo "ERROR: ${1} ${2}: no git branch specified for ${3}"
 +		    exit 1
 +		fi
 +
-+		updateCmd="/usr/pkg/bin/git"
-+
-+		if [ ! -x "${updateCmd}" ]; then
-+		    echo "ERROR: ${2} ${3}: ${updateCmd} missing"
++		updateCmd=/usr/pkg/bin/git
++		commandTreeChecks ${updateCmd} ${2} ${3}
++		if [ "$?" -eq "1" ]; then
 +		    exit 1
 +		fi
 +
-+		if [ -d ${treeDir} ]; then
-+		    echo "${2}: cleaning out old directories"
-+		    cleanDirs ${2} ${treeDir}
-+		fi
-+		if [ ! -d ${treeDir} ]; then
-+		    echo "${2}: creating top-level directory"
-+		    mkdir -p ${treeDir} >/dev/null 2>&1
-+		fi
-+
 +		( echo "#!/bin/sh"
-+		  echo "if [ -d ${treedir}/src ]; then"
-+		  echo "  cd ${treedir}/src"
++		  echo "echo 'SERVER: ${4}'"
++		  echo "echo 'BRANCH: ${5}'"
++		  echo "if [ -d ${treeDir}/src ]; then"
++		  echo "  cd ${treeDir}/src"
 +		  echo "else"
-+		  echo "  mkdir ${treedir}/src"
-+		  echo "  cd ${treedir}/src"
++		  echo "  echo 'Creating shallow source repository.'"
++		  echo "  mkdir ${treeDir}/src"
++		  echo "  cd ${treeDir}/src"
 +		  echo "  mkdir ../tmp ../obj"
 +		  echo "  ${updateCmd} init"
 +		  echo "  ${updateCmd} remote add origin git://${4}/dragonfly.git"
 +		  echo "  ${updateCmd} fetch --depth=1 origin"
 +		  echo "  ${updateCmd} branch master origin/master"
++		  echo "  echo 'Repository creation complete.'"
 +		  echo "fi"
-+		  echo "BRANCH=`${updateCmd} branch | /usr/bin/grep -w ${5}`"
-+		  echo "if [ "\${BRANCH}" = "" ]; then"
++		  echo "BRANCH=\`${updateCmd} branch | /usr/bin/grep -w ${5}\`"
++		  echo "if [ \"\${BRANCH}\" = \"\" ]; then"
 +		  echo "  ${updateCmd} branch ${5} origin/${5}"
 +		  echo "fi"
++		  echo "echo 'Ready to pull updates from branch.'"
 +		  echo "${updateCmd} checkout ${5}"
 +		  echo "${updateCmd} pull"
-+		) > ${treedir}/update.sh
++		) > ${treeDir}/update.sh
 +		chmod +x ${treeDir}/update.sh
-+    		;;	
++		;;
 +
      *)		echo "ERROR: ${1} ${2}: unknown update type: ${3}"
  		exit 1;;
  
-@@ -177,6 +207,15 @@ setupDefaults () {
+@@ -177,6 +246,15 @@ setupDefaults () {
      if [ -z "${defaultUpdateType}" ]; then
          export defaultUpdateType=${_defaultUpdateType}
      fi
@@ -170,7 +260,31 @@ $NetBSD$
  }
  
  tcExists () {
-@@ -228,8 +267,8 @@ updateTree () {
+@@ -211,16 +289,21 @@ updateTree () {
+ 
+     echo "${name}: updating ${what} with ${updateCmd}"
+ 
++    logpipe=/tmp/tbox_logpipe
++    mkfifo ${logpipe}
++    tee ${dir}/update.log < ${logpipe} &
+     if [ "${updateCmd}" = "USER" ]; then
+-        eval ${dir}/update.sh ${name} > ${dir}/update.log 2>&1
++        ${dir}/update.sh ${name} > ${logpipe}
+     else
+-	eval ${dir}/update.sh > ${dir}/update.log 2>&1
++	${dir}/update.sh > ${logpipe}
+     fi
+     if [ $? -ne 0 ]; then
++        rm ${logpipe}
+ 	echo "updateTree: ${what} ${name}: update failed"
+ 	echo "    see ${dir}/update.log for more details"
+ 	return 1
+     fi
++    rm ${logpipe}
+ }
+ 
+ #---------------------------------------------------------------------------
+@@ -228,8 +311,8 @@ updateTree () {
  #---------------------------------------------------------------------------
  
  Setup () {
@@ -181,7 +295,7 @@ $NetBSD$
      PREF_FILES="tinderbox.ph"
      README="$(tinderLoc scripts README)"
      TINDERBOX_URL="http://tinderbox.marcuscom.com/"
-@@ -509,7 +548,7 @@ Upgrade () {
+@@ -509,7 +592,7 @@ Upgrade () {
      for jail in ${jails}; do
  	f=$(tinderLoc jail ${jail})
  	ucmd=$(${tc} getUpdateCmd -j ${jail} 2>/dev/null)
@@ -190,7 +304,7 @@ $NetBSD$
  	    if [ -f "${ucmd}" ]; then
  		mv -f "${ucmd}" "${f}/update.sh"
  		chmod +x "${f}/update.sh"
-@@ -524,11 +563,8 @@ Upgrade () {
+@@ -524,11 +607,8 @@ Upgrade () {
  		    tinderEcho "WARN: You must manually set the update command for ${jail} to \"USER\" using the query ${query}."
  		fi
  	    fi
@@ -204,7 +318,7 @@ $NetBSD$
  	    ( echo "#!/bin/sh"
  	      echo "${updateCmd} ${f}/supfile"
  	    ) > ${f}/update.sh
-@@ -542,7 +578,7 @@ Upgrade () {
+@@ -542,7 +622,7 @@ Upgrade () {
      for portstree in ${portstrees}; do
  	f=$(tinderLoc portstree ${portstree})
  	ucmd=$(${tc} getUpdateCmd -p ${portstree} 2>/dev/null)
@@ -213,7 +327,7 @@ $NetBSD$
  	    if [ -f "${ucmd}" ]; then
  		mv -f "${ucmd}" "${f}/update.sh"
  		chmod +x "${f}/update.sh"
-@@ -557,17 +593,14 @@ Upgrade () {
+@@ -557,17 +637,14 @@ Upgrade () {
  		    tinderEcho "WARN: You must manually set the update command for ${portstree} to \"USER\" using the query ${query}."
  		fi
  	    fi
@@ -235,13 +349,15 @@ $NetBSD$
  	    fi
  	fi
      done
-@@ -742,37 +775,41 @@ buildJail () {
+@@ -741,38 +818,54 @@ buildJail () {
+ 	return 1
      fi
  
-     if [ "${updateCmd}" = "LFTP" ]; then
+-    if [ "${updateCmd}" = "LFTP" ]; then
 -	export DESTDIR=${J_TMPDIR}
 -	cd ${jailBase}/sets/base && yes | sh ./install.sh > ${jailBase}/world.tmp 2>&1
-+    	iso_image=`ls ${jailBase}/sets`
++    if [ "${updateCmd}" = "RELEASE" -o "${updateCmd}" = "SNAPSHOT" ]; then
++	iso_image=`ls ${jailBase}/sets`
 +	/usr/bin/tar -xf ${jailBase}/sets/${iso_image} -C ${J_TMPDIR} > ${jailBase}/world.tmp 2>&1
  	rc=$?
 -	if [ ${rc} -eq 0 -a -d "${jailBase}/sets/lib32" ]; then
@@ -249,9 +365,20 @@ $NetBSD$
 -	    rc=$?
 +	if [ ${rc} -ne 0 ]; then
 +	    echo "ERROR: extract world failed - see ${jailBase}/world.tmp"
++	    buildJailCleanup 1 ${jailName} ${J_SRCDIR}
++	    return 1
  	fi
-+	mkdir -p ${jailBase}/src/sys/sys
-+	cp ${J_TMPDIR}/usr/include/sys/param.h ${jailBase}/src/sys/sys	
++	DFVERS=`awk '/^#define __DragonFly_version/ {print $3}' < ${J_TMPDIR}/usr/include/sys/param.h`
++	MAJOR=`echo $DFVERS | awk '{print substr($0,1,1)}'`
++	MINOR=`echo $DFVERS | awk '{print substr($0,2,3)}' | sed 's/0*//'`
++	if [ `expr $MINOR % 2` -eq 0 ]; then
++	    fakebranch="BRANCH=\"RELEASE_${MAJOR}_${MINOR}\""
++	else
++	    fakebranch="BRANCH=\"DEVELOPMENT_${MAJOR}_${MINOR}\""
++	fi
++	mkdir -p ${jailBase}/src/sys/sys ${jailBase}/src/sys/conf
++	echo ${fakebranch} > ${jailBase}/src/sys/conf/newvers.sh
++	cp ${J_TMPDIR}/usr/include/sys/param.h ${jailBase}/src/sys/sys
 +	rm -rf ${J_TMPDIR}/usr/src
 +	cp -R ${jailBase}/src ${J_TMPDIR}/usr
 +	mkdir ${J_TMPDIR}/usr/4bootstrap
@@ -264,9 +391,9 @@ $NetBSD$
  	execute_hook "postJailBuild" "JAIL=${jailName} DESTDIR=${J_TMPDIR} JAIL_ARCH=${jailArch} MY_ARCH=${myArch} JAIL_OBJDIR=${JAIL_OBJDIR} SRCBASE=${SRCBASE} PB=${pb} RC=${rc}"
 -	if [ ${rc} -ne 0 ]; then
 -	    echo "ERROR: world failed - see ${jailBase}/world.tmp"
--	    buildJailCleanup 1 ${jailName} ${J_SRCDIR}
 +	if [ $? -ne 0 ]; then
 +	    echo "buildJail: Terminating Jail build since hook postJailBuild failed."
+ 	    buildJailCleanup 1 ${jailName} ${J_SRCDIR}
 +	    return 1
  	fi
      else
@@ -294,7 +421,7 @@ $NetBSD$
          rc=$?
          execute_hook "postJailBuild" "JAIL=${jailName} DESTDIR=${J_TMPDIR} JAIL_ARCH=${jailArch} MY_ARCH=${myArch} JAIL_OBJDIR=${JAIL_OBJDIR} SRCBASE=${SRCBASE} PB=${pb} RC=${rc}"
          if [ ${rc} -ne 0 ]; then
-@@ -783,12 +820,7 @@ buildJail () {
+@@ -783,21 +876,16 @@ buildJail () {
          # Make a complete distribution
          echo "${jailName}: making distribution"
  
@@ -308,7 +435,9 @@ $NetBSD$
  	    make -m ${J_TMPDIR}/usr/share/mk distribution > ${jailBase}/distribution.tmp 2>&1
          if [ $? -ne 0 ]; then
  	    echo "ERROR: distribution failed - see ${jailBase}/distribution.tmp"
-@@ -797,7 +829,6 @@ buildJail () {
+ 	    buildJailCleanup 1 ${jailName} ${J_SRCDIR}
++	    return 1
+ 	fi
      fi
  
      # Various hacks to keep the ports building environment happy
@@ -316,7 +445,7 @@ $NetBSD$
  
      MTREE_DIR=${SRCBASE}/etc/mtree
      mtree -deU -f ${MTREE_DIR}/BSD.root.dist \
-@@ -809,11 +840,8 @@ buildJail () {
+@@ -809,11 +897,8 @@ buildJail () {
      mtree -deU -f ${MTREE_DIR}/BSD.local.dist \
  	  -p ${J_TMPDIR}/usr/local >/dev/null 2>&1
  
@@ -328,30 +457,36 @@ $NetBSD$
      # Create the jail tarball
      echo "${jailName}: creating tarball"
      jailDir=$(tinderLoc jail ${jailName})
-@@ -883,11 +911,11 @@ createJail () {
+@@ -883,22 +968,22 @@ createJail () {
      init=1
  
      setupDefaults
 -    updateHost=${defaultUpdateHost}
 -    updateType=${defaultUpdateType}
-+    updateHost=${defaultDragonHost}
++    updateHostISO=${defaultDragonHost}
++    updateHostSRC=${defaultGitSrcHost}
 +    updateType=${defaultDragonType}
  
      # argument handling
 -    while getopts a:d:j:m:t:u:CH:I arg >/dev/null 2>&1
-+    while getopts a:d:j:m:t:u:H:I arg >/dev/null 2>&1
++    while getopts d:j:m:t:u:H:I arg >/dev/null 2>&1
      do
  	case "${arg}" in
  
-@@ -897,7 +925,6 @@ createJail () {
+-	a)	jailArch="${OPTARG}";;
+ 	d)	descr="${OPTARG}";;
+ 	j)	jailName="${OPTARG}";;
  	m)	mountSrc="${OPTARG}";;
  	t)	updateTag="${OPTARG}";;
  	u)	updateType="${OPTARG}";;
 -	C)	updateCompress=1;;
- 	H)	updateHost="${OPTARG}";;
+-	H)	updateHost="${OPTARG}";;
++	H)	updateHostISO="${OPTARG}"
++		updateHostSRC="${OPTTAG}";;
  	I)	init=0;;
  	?)	return 1;;
-@@ -913,7 +940,7 @@ createJail () {
+ 
+@@ -913,7 +998,7 @@ createJail () {
  
      valid=$(echo ${jailName} | awk '{if (/^[[:digit:]]/) {print;}}')
      if [ -z "${valid}" ]; then
@@ -360,7 +495,7 @@ $NetBSD$
  	return 1
      fi
  
-@@ -926,6 +953,11 @@ createJail () {
+@@ -926,6 +1011,17 @@ createJail () {
  	echo "createJail: no update type specified"
  	return 1
      fi
@@ -368,11 +503,17 @@ $NetBSD$
 +    if [ "${updateType}" = "CSUP" ]; then
 +    	echo "createJail: CSUP type cannot be used for DragonFly sources"
 +	return 1
-+    fi    
++    fi
++
++    updateHost=${updateHostISO}
++    if [ "${updateType}" = "GIT" ]; then
++	updateHost=${updateHostSRC}
++    fi
++
  
      echo "${jailName}: initializing tree"
      generateUpdateCode jail ${jailName} ${updateType} ${updateHost} \
-@@ -1040,20 +1072,21 @@ createPortsTree () {
+@@ -1040,20 +1136,21 @@ createPortsTree () {
      init=1
      mountSrc=""
      portsTreeName=""
@@ -396,7 +537,7 @@ $NetBSD$
  	w)	cvswebUrl="${OPTARG}";;
  	C)	updateCompress=1;;
  	H)	updateHost="${OPTARG}";;
-@@ -1078,10 +1111,16 @@ createPortsTree () {
+@@ -1078,10 +1175,16 @@ createPortsTree () {
  	echo "createPortsTree: no update type specified"
  	return 1
      fi
@@ -414,7 +555,7 @@ $NetBSD$
  
      # add portstree to datastore
      echo -n "${portsTreeName}: adding to datastore... "
-@@ -1158,7 +1197,7 @@ enterBuild () {
+@@ -1158,7 +1261,7 @@ enterBuild () {
      fi
  
      sleepName=$(echo ${portDir} | sed -e 'y/\//_/')
@@ -423,7 +564,7 @@ $NetBSD$
  
      if [ ! -d ${portFullDir} ]; then
  	echo "enterBuild: Build environment does not exist yet, sleeping."
-@@ -1438,7 +1477,8 @@ tinderbuild_setup () {
+@@ -1438,7 +1541,8 @@ tinderbuild_setup () {
  	echo "tinderbuild: cannot mount ports source"
  	tinderbuild_cleanup 1
      fi
@@ -433,7 +574,7 @@ $NetBSD$
  
      # Mount src/
      if ! requestMount -t buildsrc -b ${build} -r ${nullfs}; then
-@@ -1448,8 +1488,8 @@ tinderbuild_setup () {
+@@ -1448,8 +1552,8 @@ tinderbuild_setup () {
  
      # For use by pnohang
      # XXX: though killall may not work since it's a dynamic executable
@@ -444,7 +585,7 @@ $NetBSD$
  
      # Mount /dev, since we're going to be chrooting shortly
      mount -t devfs devfs ${buildRoot}/dev >/dev/null 2>&1
-@@ -1466,12 +1506,6 @@ tinderbuild_setup () {
+@@ -1466,12 +1570,6 @@ tinderbuild_setup () {
  	tinderbuild_cleanup 1
      fi
  
@@ -457,7 +598,7 @@ $NetBSD$
      # Handle the distfile cache
      if [ -n "${DISTFILE_CACHE}" ]; then
  	if ! requestMount -t builddistcache -b ${build} \
-@@ -1780,7 +1814,8 @@ tinderbuild () {
+@@ -1780,7 +1878,8 @@ tinderbuild () {
  		echo "tinderbuild: cannot mount portstree: ${portstree}"
  		exit 1
  	    fi
@@ -467,7 +608,7 @@ $NetBSD$
  		$(tinderLoc scripts lib/makemake) ${noduds} ${build} ${ports}
  	)
  	if [ $? -ne 0 ]; then
-@@ -1799,10 +1834,6 @@ tinderbuild () {
+@@ -1799,10 +1898,6 @@ tinderbuild () {
  
      # Set up the chrooted environment
      osmajor=$(echo ${jail} | sed -E -e 's|(^[[:digit:]]+).*$|\1|')
@@ -478,7 +619,7 @@ $NetBSD$
  
      tinderbuild_setup
  
-@@ -1829,21 +1860,36 @@ init () {
+@@ -1829,21 +1924,46 @@ init () {
  	mkdir -p ${pb}/${dir}
      done
  
@@ -492,14 +633,24 @@ $NetBSD$
 -    if [ -z "${type}" ]; then
 -	type=${_defaultUpdateType}
 +    # Update type is not optional, it's CSUP only, so we won't ask.
-+    
-+    echo "Server format: (http|ftp)://(host)/path_to_iso-images_directory"
++
++    defaultDragonType="n"
++    while [ "${defaultDragonType}" != "RELEASE" -a "${defaultDragonType}" != "SNAPSHOT" ]; do
++	read -p "Enter a DragonFly branch type [${_defaultDragonType}]: " defaultDragonType
++	if [ -z "${defaultDragonType}" ]; then
++	    defaultDragonType=${_defaultDragonType}
++	fi
++    done
++
++    if [ "${defaultDragonType}" = "RELEASE" ]; then
++	echo "Server format: (http|ftp)://(host)/path_to_iso-images_directory"
++    else
++	echo "Server format: (http|ftp)://(host)/path_to_snapshots_directory"
++    fi
 +    read -p "Enter a default ISO server for DragonFly [${_defaultDragonHost}]: " dragonhost
 +    if [ -z "${dragonhost}" ]; then
 +	dragonhost=${_defaultDragonHost}
 +    fi
-+
-+    # ISO Update type is not optional, it's LFTP, so we won't ask
 +
 +    read -p "Enter a default Git server for DragonFly [${_defaultGitSrcHost}]: " gitsrchost
 +    if [ -z "${gitsrchost}" ]; then
@@ -521,7 +672,7 @@ $NetBSD$
  
      return 0
  }
-@@ -1892,7 +1938,8 @@ addPortToBuild () {
+@@ -1892,7 +2012,8 @@ addPortToBuild () {
      buildenv ${jail} ${portsTree} ${build}
      buildenvNoHost ${build}
  
@@ -531,7 +682,7 @@ $NetBSD$
      if [ -z "${portDir}" ]; then
  	${tc} addPortToOneBuild -b ${build} ${norecurse}
      else
-@@ -1902,36 +1949,7 @@ addPortToBuild () {
+@@ -1902,36 +2023,7 @@ addPortToBuild () {
          fi
          ${tc} addPortToOneBuild -b ${build} -d ${portDir} ${norecurse}
      fi
@@ -569,7 +720,7 @@ $NetBSD$
  
      if [ -n "${save_SRCBASE}" ]; then
  	export SRCBASE=${save_SRCBASE}
-@@ -2118,10 +2136,7 @@ copyBuild () {
+@@ -2118,10 +2210,7 @@ copyBuild () {
  		if [ ! -d ${destOptionsDir} ]; then
  		    mkdir -p ${destOptionsDir}
  		fi
@@ -581,7 +732,7 @@ $NetBSD$
  	    else
  		echo "copyBuild: not copying OPTIONS to ${dest} since it has no OPTIONS directory"
  	    fi
-@@ -2237,13 +2252,13 @@ tbcleanup () {
+@@ -2237,13 +2326,13 @@ tbcleanup () {
  	pathFound=0
          for portstree in ${portstrees} ; do
  	    path=$(tinderLoc portstree ${portstree})
@@ -598,7 +749,7 @@ $NetBSD$
  		    if [ -f "${distinfo}" ]; then
  			for df in $(grep '^MD5' ${distinfo} | awk -F '[\(\)]' '{print $2}'); do
  			    if ! grep -q "^${df}\$" ${disttmp}; then
-@@ -2327,7 +2342,7 @@ tbcleanup () {
+@@ -2327,7 +2416,7 @@ tbcleanup () {
  	    fi
  
  	    path=$(tinderLoc portstree ${portstree})
@@ -607,12 +758,3 @@ $NetBSD$
  
  	    if [ ! -e ${path} ]; then
  		echo "Removing build port database entry for nonexistent port ${build}/${port}"
-@@ -2404,7 +2419,7 @@ tbkill () {
- 	return 0
-     fi
- 
--    makepid=$(pgrep -f -f -P ${tbpid} "make")
-+    makepid=$(pgrep -f -f -P ${tbpid} "bmake")
-     makechild=$(pgrep -P ${makepid})
-     pbpid=$(pgrep -f -f "/bin/sh.*/portbuild")
- 

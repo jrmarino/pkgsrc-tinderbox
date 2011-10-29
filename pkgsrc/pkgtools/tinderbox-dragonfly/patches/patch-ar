@@ -62,14 +62,14 @@ $NetBSD$
     If MySQL is used, the MySQL Perl module must also be installed
 -   (databases/p5-DBD-mysql41). If PostgreSQL is used, the Pg Perl
 -   module must also be installed (databases/p5-DBD-Pg).
--
++   (databases/p5-DBD-mysql). If PostgreSQL is used, the Pg Perl
++   module must also be installed (databases/p5-DBD-postgresql).
+ 
 -   Please note, however, that is is recommended that either MySQL
 -   5.0 or PostgreSQL 8.1 (or later) be used. There are currently
 -   no plans to make this a requirement, but it may happen in the
 -   future.
-+   (databases/p5-DBD-mysql). If PostgreSQL is used, the Pg Perl
-+   module must also be installed (databases/p5-DBD-postgresql).
- 
+-
 -   PHP 4.x is now EOL, so the web front-end (found in the webui/
 -   subdirectory) requires PHP 5 (lang/php5),
 +   The web front-end (found in the webui/ subdirectory) 
@@ -86,7 +86,7 @@ $NetBSD$
  
     If you will be sending emails from Tinderbox (e.g. build
     failure or build completion emails) you must install net/p5-Net
-@@ -184,68 +184,56 @@ rpcbind_enable="YES"
+@@ -184,68 +184,59 @@ rpcbind_enable="YES"
  nfs_server_enable="YES"
  nfs_reserved_port_only="YES"
     12. Create the required Jails using the tc command. A Jail is
@@ -105,31 +105,38 @@ $NetBSD$
 -       make world to compile a complete FreeBSD installation.
 -       The second method will instead download binary release sets
 -       (used on CDs) and install them, making the process much
-+# cd ${pb}/scripts && ./tc createJail -j 2.12 -d "DragonFly 2.12-RELEASE" \
-+        -t 2.12.1 -u LFTP -H http://ftp.dragonflybsd.org/dragonflybsd
-+       Note:The protocol for DragonFly host servers can be either
-+       http or ftp.  The protocol and the path to the directory
-+       "iso-images" must be provided, which is different from other
-+       update types.  Also the "tag" must be the release represented
-+       by three numbers in <major.minor.point> format.
-+       The first method will download source via git and use
-+       make world to compile a complete DragonFly installation.
-+       The second method will instead download binary release CD ISOs
-+       and install them, making the process much
-        shorter. As the command suggests, the second method
-        requires lftp (ftp/lftp) to be installed. You need to
+-       shorter. As the command suggests, the second method
+-       requires lftp (ftp/lftp) to be installed. You need to
 -       specify what release (not the CVS tag, as opposed to the
-+       specify what release (not the GIT branch name, as opposed to the
-        first method) you want to download with the -t option. Also
+-       first method) you want to download with the -t option. Also
 -       note that you need to provide an FTP server to download the
 -       sets from (with the -H option).
 -       Note: all Jail names MUST begin with their FreeBSD major
-+       note that you can provide an alternative FTP server to download
-+       the sets from (with the -H option).
-+       Note: all Jail names MUST begin with their DragonFly major
-        version number. That is, the following is an illegal jail
+-       version number. That is, the following is an illegal jail
 -       name: "FreeBSD-8.2".
-+       name: "DragonFly-2.12".
++# cd ${pb}/scripts && ./tc createJail -j 2.12 -d "DragonFly 2.12-RELEASE" \
++        -t 2.12.1 -u RELEASE -H http://ftp.dragonflybsd.org/dragonflybsd
++       Note:The protocol for DragonFly host servers can be either
++       http or ftp.  The protocol and the path up but not including the
++       repository directory must be provided.  For the RELEASE type, the
++       directory is called "iso-images" and for the SNAPSHOT type the
++       directory is called "snapshots".  For the RELEASE type, the <tag>
++       must be the release represented by three numbers in
++       <major.minor.point> format, and for the SNAPSHOT type, the <tag>
++       must either be the value "LATEST" for the latest snapshot or
++       in the pattern "YYYYMMDD-DEV-va.b.c.d.gxxxxxx" (YYYYMMDD is the
++       calendar date, a.b.c is major.minor.point release, d is an
++       index, and xxxxxx is the first 5 characters of the git commit hash.
++
++       The first method will download source via git and use
++       make world to compile a complete DragonFly installation.
++       The next method will download binary release and snapshot ISO
++       images and install them, making the process much shorter. You
++       can provide an alternative to the default FTP server to download
++       the sets from (with the -H option).
++
++       Note: all Jail names MUST begin with their major version number.
++       The following is an illegal jail name: "DragonFly-2.12".
         Hint: It is recommended that the Jail begin with the
 -       FreeBSD major.minor version (i.e. "8.2-FreeBSD" instead of
 -       just "8-FreeBSD") as this may prove useful when using
@@ -191,7 +198,7 @@ $NetBSD$
       __________________________________________________________
  
  Chapter 4. Upgrading
-@@ -287,8 +275,8 @@ Chapter 5. Using Tinderbox
+@@ -287,8 +278,8 @@ Chapter 5. Using Tinderbox
     Where {BUILD} is the name of the Build for which this port
     should be built and {PORT DIRECTORY} is the directory within
     the PortsTree where this port can be found. For example, to
@@ -202,7 +209,7 @@ $NetBSD$
  
     Note: a port does not have to be added to the database for
     Tinderbox to build it. If you just want to do a quick ad hoc
-@@ -302,9 +290,8 @@ Chapter 5. Using Tinderbox
+@@ -302,9 +293,8 @@ Chapter 5. Using Tinderbox
     To start a Tinderbox build, use the tc command:
  # cd ${pb}/scripts && ./tc tinderbuild -b {BUILD} {PORT DIRECTORY}
  
@@ -214,7 +221,7 @@ $NetBSD$
  
     TIP: The example above will run the build in the foreground
     with all messages and errors echoing to the terminal. To
-@@ -312,11 +299,11 @@ Chapter 5. Using Tinderbox
+@@ -312,11 +302,11 @@ Chapter 5. Using Tinderbox
     output to a log file. For example:
  
       * Bourne shell equivalents:
@@ -230,7 +237,7 @@ $NetBSD$
  
     More advanced logging options are also available. All log files
     including tinderbuild output, make logs, and individual port
-@@ -326,7 +313,7 @@ Chapter 5. Using Tinderbox
+@@ -326,7 +316,7 @@ Chapter 5. Using Tinderbox
     centralized. If set to a directory, a subdirectory will be
     created in the format of {BUILD}-{DATE} where {BUILD} is the
     Build name, and {DATE} is the date in the format YYYYMMDDHHMMSS
@@ -239,7 +246,7 @@ $NetBSD$
     will be the tinderbuild log, and symlinks to the make logs and
     individual port build logs. If you would rather have the log
     files copied to this location (instead of using symlinks), set
-@@ -394,14 +381,14 @@ Chapter 6. Maintenance
+@@ -394,14 +384,14 @@ Chapter 6. Maintenance
     To update existing PortsTrees, use the tc (Tinderbox
     Controller) application with the updatePortsTree command. For
     example:
@@ -258,7 +265,7 @@ $NetBSD$
     default, copyBuild will copy the environment file, OPTIONS, and
     ports from the source Build to the destination Build. It can
     also optionally copy ccache data and packages. The options
-@@ -501,29 +488,35 @@ Chapter 8. Advanced Topics
+@@ -501,29 +491,36 @@ Chapter 8. Advanced Topics
  
  8.1. Alternative Means of Creating Jail Sources and PortsTrees
  
@@ -270,7 +277,7 @@ $NetBSD$
 -   CVSUP and CSUP there is also a defaultUpdateHost. This can also
 -   be changed in ${pb}/scripts/etc/env/GLOBAL.
 +   PortsTrees are updated using csup (/usr/pkg/bin/csup) and Jails
-+   are updated by LFTP or GIT.  Variables controlling how these 
++   are updated by fetch or git.  Variables controlling how these
 +   are updated are stored at ${pb}/scripts/etc/env/GLOBAL:
 +   defaultUpdateHost: The host name of the cvsup server that
 +                      creates and updates the NetBSD pkgsrc tree
@@ -281,7 +288,8 @@ $NetBSD$
 +                      and the path-to-iso-images (which does not
 +                      include "/iso-images") can be omitted if the
 +                      it's a top level directory.
-+   defaultDragonType: LFTP (for ISO)
++   defaultDragonType: RELEASE (for Release ISO)
++                      SNAPSHOT (for daily build ISOs)
 +                      GIT  (to build world from source)
 +   defaultGitSrcHost: The host name of the DragonFly Git mirror
  
@@ -310,7 +318,7 @@ $NetBSD$
       __________________________________________________________
  
  8.2. Alternative Mounting
-@@ -533,12 +526,12 @@ Chapter 8. Advanced Topics
+@@ -533,12 +530,12 @@ Chapter 8. Advanced Topics
     -m switch to create.
  
     Examples for NFS:
@@ -327,7 +335,7 @@ $NetBSD$
  
     Tinderbuild will ensure that these file systems are correctly
     mounted so you do not need to mount them by your own before
-@@ -613,8 +606,8 @@ PERL_VER=5.6.2
+@@ -613,8 +610,8 @@ PERL_VER=5.6.2
  PERL_VERSION=5.6.2
  
     Likewise, if you want to enable debugging for a particular
@@ -338,7 +346,7 @@ $NetBSD$
  CFLAGS="-O -g -pipe"
  STRIP=
       __________________________________________________________
-@@ -635,27 +628,16 @@ STRIP=
+@@ -635,27 +632,16 @@ STRIP=
     To do this, create a directory under which all build OPTIONS
     sub-directories will go (e.g. ${pb}/options/). For each Build
     that you wish to use to use OPTIONS, create a subdirectory
@@ -371,7 +379,7 @@ $NetBSD$
  
     The configOptions command takes the arguments described in
     Table 8-1.
-@@ -665,14 +647,49 @@ WITH_PCRE=true
+@@ -665,14 +651,49 @@ WITH_PCRE=true
     -d disable OPTIONS support
     -o set an OPTIONS source directory tree
  
@@ -429,7 +437,7 @@ $NetBSD$
       __________________________________________________________
  
  8.8. Using Hooks
-@@ -784,19 +801,22 @@ WITH_PCRE=true
+@@ -784,19 +805,22 @@ WITH_PCRE=true
  
  8.11. Running Tinderbox in a Jail
  

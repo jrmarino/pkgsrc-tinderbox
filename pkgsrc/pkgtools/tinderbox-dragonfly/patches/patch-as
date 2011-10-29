@@ -13,9 +13,8 @@ $NetBSD$
                      "Add a jail to the datastore (do NOT call this directly; use createJail instead)",
                  usage =>
 -                    "-j <jail name> -u CSUP|CVSUP|LFTP|USER|NONE -t <jail tag> [-d <jail description>] [-m <src mount source>] [-a <arch>]",
--                optstr => 'm:j:t:u:d:a:',
-+                    "-j <jail name> -u GIT|LFTP|USER|NONE -t <jail tag> [-d <jail description>] [-m <src mount source>]",
-+                optstr => 'm:j:t:u:d:',
++                    "-j <jail name> -u GIT|RELEASE|SNAPSHOT|USER|NONE -t <jail tag> [-d <jail description>] [-m <src mount source>] [-a <arch>]",
+                 optstr => 'm:j:t:u:d:a:',
          },
          "addPortsTree" => {
                  func => \&addPortsTree,
@@ -52,7 +51,7 @@ $NetBSD$
                  usage =>
 -                    "-j <jailname> -u CSUP|CVSUP|LFTP|USER|NONE [-t <tag>] [-d <description>] [-C] [-H <updatehost>] [-m <mountsrc>] [-I] [-a <arch>]",
 -                optstr => 'j:t:d:CH:m:u:Ia:',
-+                    "-j <jailname> -u GIT|LFTP|USER|NONE -t <tag> [-d <description>] [-H <updatehost>] [-m <mountsrc>] [-I]",
++                    "-j <jailname> -u GIT|RELEASE|SNAPSHOT|USER|NONE -t <tag> [-d <description>] [-H <updatehost>] [-m <mountsrc>] [-I]",
 +                optstr => 'j:t:d:H:m:u:I:',
          },
  
@@ -66,28 +65,7 @@ $NetBSD$
          },
  
          "createBuild" => {
-@@ -1405,11 +1412,10 @@ sub addBuild {
- 
- sub addJail {
-         my $name = $opts->{'j'};
--        my $arch = $opts->{'a'};
-         my $ucmd = $opts->{'u'};
-         my $tag  = $opts->{'t'};
- 
--        if (!$name || !$arch || !$ucmd || !$tag) {
-+        if (!$name || !$ucmd || !$tag) {
-                 usage("addJail");
-         }
- 
-@@ -1427,7 +1433,6 @@ sub addJail {
-         my $jail = new Tinderbox::Jail();
- 
-         $jail->setName($name);
--        $jail->setArch($arch);
-         $jail->setTag($tag);
-         $jail->setUpdateCmd($ucmd);
-         if ($opts->{'d'}) {
-@@ -1489,7 +1494,7 @@ sub addPortsTree {
+@@ -1489,7 +1496,7 @@ sub addPortsTree {
  sub addPortToOneBuild {
          my $build = $ds->getBuildByName($opts->{'b'});
          my $makecache =
@@ -96,7 +74,7 @@ $NetBSD$
          my @bports = ();
  
          if (!$opts->{'d'}) {
-@@ -1524,6 +1529,8 @@ sub addPortToOneBuild {
+@@ -1524,6 +1531,8 @@ sub addPortToOneBuild {
                                  LIB_DEPENDS     => 'LibDepends',
                                  RUN_DEPENDS     => 'RunDepends',
                                  TEST_DEPENDS    => 'TestDepends',
@@ -105,7 +83,7 @@ $NetBSD$
                          );
  
                          $ds->clearDependenciesForPort($pCls, $build, undef);
-@@ -1548,7 +1555,6 @@ sub addPortToOneBuild {
+@@ -1548,7 +1557,6 @@ sub addPortToOneBuild {
                                  }
                          }
                  }
@@ -113,7 +91,7 @@ $NetBSD$
          }
  }
  
-@@ -1720,6 +1726,8 @@ sub getDependenciesForPort {
+@@ -1720,6 +1728,8 @@ sub getDependenciesForPort {
                  LIB_DEPENDS     => 4,
                  RUN_DEPENDS     => 5,
                  TEST_DEPEND     => 6,
@@ -122,7 +100,7 @@ $NetBSD$
          );
  
          if (!$opts->{'b'} || !$opts->{'d'}) {
-@@ -1773,6 +1781,50 @@ sub getDependenciesForPort {
+@@ -1773,6 +1783,50 @@ sub getDependenciesForPort {
                  );
          }
  }

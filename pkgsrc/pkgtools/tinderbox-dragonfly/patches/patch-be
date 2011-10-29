@@ -1,6 +1,6 @@
 $NetBSD$
 
---- /dev/null	2011-10-26 21:24:54.492893538 +0000
+--- /dev/null	2011-10-29 08:04:58.664358608 +0000
 +++ lib/boilerplate_mk.conf
 @@ -0,0 +1,6 @@
 +### HEAD: BOILERPLATE MK.CONF SETTINGS ###
