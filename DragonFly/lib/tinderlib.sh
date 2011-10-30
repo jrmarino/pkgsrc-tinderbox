@@ -519,6 +519,14 @@ buildenvNoHost () {
     eval "export PKG_DBDIR=/nonexistentdb" >/dev/null 2>&1
     eval "export LINUXBASE=/nonexistentlinux" >/dev/null 2>&1
     eval "unset DISPLAY" >/dev/null 2>&1
+
+    # When the tinderd is launched by the rc system at boot time (normal)
+    # it doesn't have the /usr/pkg/bin path set.  FreeBSD has their make
+    # in the path that rc scripts can access, but this is not true for
+    # pkgsrc bmake on any system other than NetBSD.  Let's add it to
+    # path while we're in the subshell.
+
+    eval "export PATH=${PATH}:/usr/pkg/bin" >/dev/null 2>&1
 }
 
 getDbDriver () {
