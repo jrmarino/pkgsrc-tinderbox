@@ -1,11 +1,10 @@
 #!/bin/sh
 #
-# $FreeBSD$
-#   $MCom: portstools/tinderbox/etc/rc.d/tinderd,v 1.7.2.2 2011/05/23 15:05:31 marcus Exp $
+# $MCom: portstools/tinderbox/etc/rc.d/tinderd,v 1.7.2.2 2011/05/23 15:05:31 marcus Exp $
 #
 
 # PROVIDE: tinderd
-# REQUIRE: LOGIN nfsd mysql pgsql
+# REQUIRE: LOGIN mysql pgsql
 # KEYWORD: shutdown
 
 # Add the following line to /etc/rc.conf to enable `tinderd':
