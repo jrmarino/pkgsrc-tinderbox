@@ -18,9 +18,11 @@ while read mapline; do
 	if [ -f ${target} ]; then
 	   freebsd_target=../FreeBSD/${target}
 	   if [ ! -f ${freebsd_target} ]; then
-	      freebsd_target=/dev/null
+	      /usr/pkg/bin/pkgdiff /dev/null ${target} | \
+	        sed 's/^--- \/dev\/null[^I].*/--- \/dev\/null/' > ${PATCHDIR}/patch-${patch_id}
+	   else
+	      /usr/pkg/bin/pkgdiff ${freebsd_target} ${target} > ${PATCHDIR}/patch-${patch_id}
 	   fi
-	   /usr/pkg/bin/pkgdiff ${freebsd_target} ${target} > ${PATCHDIR}/patch-${patch_id}
 	   DOUBLECHK=`head ${PATCHDIR}/patch-${patch_id}`
 	   if [ "${DOUBLECHK}" = "" ]; then
 	   	echo "patch-${patch_id} is empty, so remove DragonFly/${target}"; \
@@ -34,5 +36,3 @@ cp ${PATCHDIR}/* ${REALPKGLOC}/patches
 cd ${REALPKGLOC}
 /usr/pkg/bin/bmake distinfo
 cp ${REALPKGLOC}/distinfo ${HEADDIR}/${PKGSRC}
-
-
