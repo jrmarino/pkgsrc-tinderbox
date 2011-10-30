@@ -24,7 +24,7 @@
 # OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 # SUCH DAMAGE.
 #
-# $MCom: portstools/tinderbox/webui/core/Port.php,v 1.5 2007/06/09 22:09:12 marcus Exp $
+# $MCom: portstools/tinderbox/webui/core/Port.php,v 1.5.2.1 2011/10/26 00:31:34 beat Exp $
 #
 
     require_once 'TinderObject.php';
@@ -109,7 +109,8 @@
 	}
 
 	function getLogfileName() {
-	    return $this->getLastBuiltVersion() . ".log";
+	    return array($this->getLastBuiltVersion() . '.log',
+		$this->getLastBuiltVersion() . '.log.bz2');
 	}
 
 	function setName($name) {

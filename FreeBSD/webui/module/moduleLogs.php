@@ -24,7 +24,7 @@
 # OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 # SUCH DAMAGE.
 #
-# $MCom: portstools/tinderbox/webui/module/moduleLogs.php,v 1.5.2.3 2009/02/01 13:32:16 beat Exp $
+# $MCom: portstools/tinderbox/webui/module/moduleLogs.php,v 1.5.2.5 2011/10/26 08:42:44 beat Exp $
 #
 
 require_once 'module/module.php';
@@ -103,11 +103,28 @@ class moduleLogs extends module {
 		$colors = array();
 		$counts = array();
 		$displaystats = array();
+		$is_compressed = false;
+		$fh = NULL;
 
-		$fh = fopen( $file_name, 'r' );
+		if ( preg_match( "/\.bz2$/", $file_name ) ) {
+			$fh = bzopen( $file_name, 'r' );
+			$is_compressed = true;
+		} else {
+			$fh = fopen( $file_name, 'r' );
+		}
 
 		for ( $lnr = 1; ! feof( $fh ); $lnr++ ) {
-			$line = fgets( $fh );
+			if ( ! $is_compressed ) {
+				$line = fgets( $fh );
+			} else {
+				$line = '';
+				while( ! feof( $fh ) ) {
+					$b = bzread( $fh, 1 );
+					if ( $b === FALSE ) break;
+					$line .= $b;
+					if ( $b == "\n" ) break;
+				}
+			}
 
 			$lines[$lnr] = htmlentities( rtrim( $line ) );
 			$colors[$lnr] = '';
@@ -132,6 +149,12 @@ class moduleLogs extends module {
 				$stats[$pattern['severity']][$pattern['tag']][] = $lnr;
 				$counts[$pattern['severity']]++;
 			}
+		}
+
+		if ( ! $is_compressed ) {
+			fclose( $fh );
+		} else {
+			bzclose( $fh );
 		}
 
 		$displaystats['linenumber'] = true;

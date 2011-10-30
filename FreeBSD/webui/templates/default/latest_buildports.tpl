@@ -1,7 +1,7 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
-<!-- $MCom: portstools/tinderbox/webui/templates/default/latest_buildports.tpl,v 1.10.2.8 2011/08/11 13:26:30 beat Exp $ //-->
+<!-- $MCom: portstools/tinderbox/webui/templates/default/latest_buildports.tpl,v 1.10.2.9 2011/10/26 00:06:15 beat Exp $ //-->
 <script language="JavaScript">
 	function reloadpage() {
 	    document.location.reload();
@@ -58,7 +58,11 @@
 						<a href="index.php?action=display_markup_log&amp;build=<?php echo $row['build_name']?>&amp;id=<?php echo $row['port_id']?>">markup</a>
 					<?php }?>
 					<?php if($row['port_link_package']){?>
-						<a href="<?php echo $row['port_link_package']?>">package</a>
+						<?php if($row['port_link_wrksrc']){?>
+							<a href="<?php echo $row['port_link_package']?>">wrksrc</a>
+						<?php }else{?>
+							<a href="<?php echo $row['port_link_package']?>">package</a>
+						<?php }?>
 					<?php }?>
 					<?php if($is_logged_in) {?>
 						<a href="index.php?action=add_tinderd_queue&amp;new_build_id=<?php echo $row['build_id']?>&amp;new_port_directory=<?php echo $row['port_directory']?>&amp;new_priority=10&amp;new_email_on_completion=0&amp;add_tinderd_queue=add&amp;filter_build_id=">requeue</a>
