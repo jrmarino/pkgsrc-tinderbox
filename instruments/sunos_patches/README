@@ -1,0 +1,28 @@
+========================
+ GENERATE SUNOS PATCHES
+========================
+
+gen_patches.sh
+
+This script will compare the SunOS files, which are overlays, to the
+original FreeBSD files and create NetBSD-style patches from them.  If there
+are no differences, which can happen if bugs get fixed upstream and pulled
+in, then the patch will be deleted.  Advice to remove the identical overlay
+will also be given.
+
+After all the patches are created, a new distinfo file will be generated. 
+The /usr/pkgsrc/pkgtools/tinderbox-sunos pkg has to be in a clean state,
+otherwise pkgsrc will ignore the "bmake distinfo" command.  As a bonus, the
+packages patches directory receives the new patches as well.
+
+../dfly_patches/patch.map
+
+There is a permanent coupling between patch ID (e.g. aa, ab, ac) and a
+specific file.  Each line in this data file means that the indicated file
+was different in the past, if not still different.  If there is no longer
+an overlay, then the line will be skipped and no patch made.  Never re-use
+a patch ID, just keep added new lines with unique ids.
+
+Rather than assign different patch IDs to the same files between the
+various platform versions of tinderbox, all versions will share the same
+patch.map which is located under the dfly_patches directory.

@@ -1,0 +1,71 @@
+.\" Copyright (c) 2005 FreeBSD GNOME Team <freebsd-gnome@FreeBSD.org>
+.\" All rights reserved.
+.\"
+.\" Redistribution and use in source and binary forms, with or without
+.\" modification, are permitted provided that the following conditions
+.\" are met:
+.\" 1. Redistributions of source code must retain the above copyright
+.\"    notice, this list of conditions and the following disclaimer.
+.\" 2. Redistributions in binary form must reproduce the above copyright
+.\"    notice, this list of conditions and the following disclaimer in the
+.\"    documentation and/or other materials provided with the distribution.
+.\"
+.\" THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
+.\" IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+.\" OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+.\" IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT,
+.\" INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
+.\" NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+.\" DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+.\" THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+.\" (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+.\" THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+.\"
+.\" $MCom: portstools/tinderbox/man/man1/tc-configJail.1,v 1.2 2007/10/13 02:28:46 ade Exp $
+.\"
+.Dd July 21, 2005
+.Os SunOS
+.Dt TC-CONFIGJAIL 1
+.Sh NAME
+.Nm "tc configJail"
+.Nd Configure Tinderbox Jail parameters
+.Sh SYNOPSIS
+.Nm
+.Op Fl o Ar directory | Fl O
+.Sh DESCRIPTION
+.Nm
+displays and configures
+.Pa Tinderbox
+per-Jail settings.  Without any arguments
+.Nm
+will print the current Jail configuration to
+.Pa stdout .
+.Sh OPTIONS
+The following options are supported by
+.Nm :
+.Bl -tag -width indent
+.It Fl o Ar directory
+Specify the directory in which Jail object files will be stored when running
+.Pa mkjail .
+By default, the system object directory will be used (e.g.
+.Pa /usr/obj ).
+.It Fl O
+Reset the Jail object directory to the system object directory (usually
+.Pa /usr/obj ).
+.El
+.Sh EXAMPLES
+.Pp
+Set the Jail object directory to
+.Pa /space/jails/obj
+.Pp
+.Cm ${pb}/scripts/tc
+.Cm configJail
+-o /space/jails/obj
+.Pp
+Where
+.Cm ${pb}
+is your Tinderbox (or port build) root directory.
+.Sh "SEE ALSO"
+.Xr tc-configGet 1
+.Sh LICENSE AND DISCLAIMER
+BSD License
