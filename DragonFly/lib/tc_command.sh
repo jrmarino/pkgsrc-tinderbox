@@ -865,7 +865,8 @@ buildJail () {
         fi
 
         cd ${SRCBASE} && env DESTDIR=${J_TMPDIR} \
-	    make -j${factor} world > ${jailBase}/world.tmp 2>&1
+           make -DNO_GCC41 -DNO_GAMES -DNOPROFILE -j${factor} world \
+           > ${jailBase}/world.tmp 2>&1
         rc=$?
         execute_hook "postJailBuild" "JAIL=${jailName} DESTDIR=${J_TMPDIR} JAIL_ARCH=${jailArch} MY_ARCH=${myArch} JAIL_OBJDIR=${JAIL_OBJDIR} SRCBASE=${SRCBASE} PB=${pb} RC=${rc}"
         if [ ${rc} -ne 0 ]; then
@@ -883,6 +884,71 @@ buildJail () {
 	    buildJailCleanup 1 ${jailName} ${J_SRCDIR}
 	    return 1
 	fi
+
+        # Bootstrap pkgsrc tools using host machine's pkgsrc for source files
+        echo "${jailName}: bootstrapping pkgsrc basic tools"
+
+        CYCLE="devel/bmake \
+               sysutils/install-sh \
+               pkgtools/bootstrap-mk-files \
+               pkgtools/libnbcompat \
+               pkgtools/pkg_install \
+               archivers/bzip2 \
+               archivers/libarchive \
+               security/openssl \
+               net/libfetch \
+               devel/zlib \
+               bootstrap \
+               mk"
+
+        WKZONE=${J_TMPDIR}/usr/pkgsrcbs
+        mkdir ${WKZONE}
+        for component in ${CYCLE}; do
+          mkdir -p ${WKZONE}/${component}
+          dossiers=`ls -A /usr/pkgsrc/${component} | grep -vE '^(README|work$)'`
+          for dossier in ${dossiers}; do
+            cp -R /usr/pkgsrc/${component}/${dossier} ${WKZONE}/${component}
+          done
+        done
+
+        cd ${WKZONE}/bootstrap
+        ./bootstrap --ignore-user-check \
+                    --pkgdbdir=${J_TMPDIR}/var/db/pkg \
+                    --varbase=${J_TMPDIR}/var \
+                    --prefix=${J_TMPDIR}/usr/pkg \
+                    --sysconfdir=${J_TMPDIR}/usr/pkg/etc \
+            > ${jailBase}/pkgsrc.tmp 2>&1
+
+        if [ $? -ne 0 ]; then
+            echo "ERROR: pkgsrc bootstrap failed - see ${jailBase}/pkgsrc.tmp"
+            buildJailCleanup 1 ${jailName} ${J_SRCDIR}
+            return 1
+        fi
+
+        mkdir ${J_TMPDIR}/usr/4bootstrap
+
+        # Create appropriate mk.conf, same as ISO version
+        ( echo ".ifdef BSD_PKG_MK       # begin pkgsrc settings"
+          echo "PKG_DBDIR=              /var/db/pkg"
+          echo "LOCALBASE=              /usr/pkg"
+          echo "VARBASE=                /var"
+          echo "PKG_TOOLS_BIN=          /usr/pkg/sbin"
+          echo "PKGMANDIR=              man"
+          echo "FETCH_CMD=              /usr/bin/ftp"
+          echo ".endif                  # end pkgsrc settings"
+        ) > ${J_TMPDIR}/usr/4bootstrap/mk.conf
+
+        mv ${J_TMPDIR}/usr/pkg/bin/bmake   ${J_TMPDIR}/usr/4bootstrap
+        mv ${J_TMPDIR}/usr/pkg/share/mk    ${J_TMPDIR}/usr/4bootstrap
+        mv ${J_TMPDIR}/usr/pkg/sbin/pkg_*  ${J_TMPDIR}/usr/4bootstrap
+        rm -rf ${J_TMPDIR}/usr/pkg ${J_TMPDIR}/var/db/pkg ${WKZONE}
+
+        execute_hook "postJailBuild" "JAIL=${jailName} DESTDIR=${J_TMPDIR} JAIL_ARCH=${jailArch} MY_ARCH=${myArch} JAIL_OBJDIR=${JAIL_OBJDIR} SRCBASE=${SRCBASE} PB=${pb} RC=${rc}"
+        if [ $? -ne 0 ]; then
+            echo "buildJail: Terminating Jail build since hook postJailBuild failed."
+            buildJailCleanup 1 ${jailName} ${J_SRCDIR}
+            return 1
+        fi
     fi
 
     # Various hacks to keep the ports building environment happy
@@ -912,7 +978,7 @@ buildJail () {
     fi
 
     # Move new logfiles into place
-    for logfile in world distribution
+    for logfile in world distribution pkgsrc
     do
 	rm -f ${jailBase}/${logfile}.log
 	mv -f ${jailBase}/${logfile}.tmp ${jailBase}/${logfile}.log 2>/dev/null
@@ -1011,7 +1077,7 @@ createJail () {
 	echo "createJail: no update type specified"
 	return 1
     fi
-    
+
     if [ "${updateType}" = "CSUP" ]; then
     	echo "createJail: CSUP type cannot be used for DragonFly sources"
 	return 1
@@ -1175,7 +1241,7 @@ createPortsTree () {
 	echo "createPortsTree: no update type specified"
 	return 1
     fi
-    
+
     if [ "${updateType}" != "CSUP" ]; then
     	echo "createPortsTree: The defaultUpdateType variable in env was changed to ${updateType}"
     	echo "Please change it back to 'CSUP', which is the only method supported to get pkgsrc"
@@ -1953,8 +2019,8 @@ init () {
     if [ -z "${gitsrchost}" ]; then
 	gitsrchost=${_defaultGitSrcHost}
     fi
-    
-    # Git Update type for Git is limited to git://, so we won't ask 
+
+    # Git Update type for Git is limited to git://, so we won't ask
 
     globalenv=$(tinderLoc scripts etc/env)/GLOBAL
     echo "export defaultUpdateHost=${host}" >> ${globalenv}
