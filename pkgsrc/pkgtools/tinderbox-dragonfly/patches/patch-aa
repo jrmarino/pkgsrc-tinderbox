@@ -70,12 +70,12 @@ $NetBSD$
 -		if [ -z "${updateArch}" ]; then
 -		    updateArch=$(uname -p)
 -		fi
--
--		updateCmd="/usr/local/bin/lftp"
 +		updateCmd=/usr/bin/fetch
 +		iso_image="dfly-${updateArch}-${5}_REL.iso.bz2"
 +		iso_server=${4}
  
+-		updateCmd="/usr/local/bin/lftp"
+-
 -		if [ ! -x "${updateCmd}" ]; then
 -		    echo "ERROR: ${2} ${3}: ${updateCmd} missing"
 +		commandTreeChecks ${updateCmd} ${2} ${3}
@@ -349,7 +349,7 @@ $NetBSD$
  	    fi
  	fi
      done
-@@ -741,38 +818,54 @@ buildJail () {
+@@ -741,38 +818,55 @@ buildJail () {
  	return 1
      fi
  
@@ -417,11 +417,12 @@ $NetBSD$
 -        cd ${SRCBASE} && env DESTDIR=${J_TMPDIR} ${crossEnv} \
 -	    make -j${factor} -DNO_CLEAN world > ${jailBase}/world.tmp 2>&1
 +        cd ${SRCBASE} && env DESTDIR=${J_TMPDIR} \
-+	    make -j${factor} world > ${jailBase}/world.tmp 2>&1
++           make -DNO_GCC41 -DNO_GAMES -DNOPROFILE -j${factor} world \
++           > ${jailBase}/world.tmp 2>&1
          rc=$?
          execute_hook "postJailBuild" "JAIL=${jailName} DESTDIR=${J_TMPDIR} JAIL_ARCH=${jailArch} MY_ARCH=${myArch} JAIL_OBJDIR=${JAIL_OBJDIR} SRCBASE=${SRCBASE} PB=${pb} RC=${rc}"
          if [ ${rc} -ne 0 ]; then
-@@ -783,21 +876,16 @@ buildJail () {
+@@ -783,21 +877,80 @@ buildJail () {
          # Make a complete distribution
          echo "${jailName}: making distribution"
  
@@ -438,6 +439,70 @@ $NetBSD$
  	    buildJailCleanup 1 ${jailName} ${J_SRCDIR}
 +	    return 1
  	fi
++
++        # Bootstrap pkgsrc tools using host machine's pkgsrc for source files
++        echo "${jailName}: bootstrapping pkgsrc basic tools"
++
++        CYCLE="devel/bmake \
++               sysutils/install-sh \
++               pkgtools/bootstrap-mk-files \
++               pkgtools/libnbcompat \
++               pkgtools/pkg_install \
++               archivers/bzip2 \
++               archivers/libarchive \
++               security/openssl \
++               net/libfetch \
++               devel/zlib \
++               bootstrap \
++               mk"
++
++        PBS=/usr/pkgsrcbs
++        WKZONE=${J_TMPDIR}${PBS}
++        mkdir ${WKZONE}
++        for component in ${CYCLE}; do
++          mkdir -p ${WKZONE}/${component}
++          dossiers=`ls -A /usr/pkgsrc/${component} | grep -vE '^(README|work$)'`
++          for dossier in ${dossiers}; do
++            cp -R /usr/pkgsrc/${component}/${dossier} ${WKZONE}/${component}
++          done
++        done
++
++        mount_devfs ${J_TMPDIR}/dev
++        chroot ${J_TMPDIR} ${PBS}/bootstrap/bootstrap --prefix=/usr/pkg \
++            --workdir=${PBS}/work > ${jailBase}/pkgsrc.tmp 2>&1
++
++        if [ $? -ne 0 ]; then
++            umount ${J_TMPDIR}/dev
++            echo "ERROR: pkgsrc bootstrap failed - see ${jailBase}/pkgsrc.tmp"
++            buildJailCleanup 1 ${jailName} ${J_SRCDIR}
++            return 1
++        fi
++        umount ${J_TMPDIR}/dev
++
++        mkdir ${J_TMPDIR}/usr/4bootstrap
++
++        # Create appropriate mk.conf, same as ISO version
++        ( echo ".ifdef BSD_PKG_MK       # begin pkgsrc settings"
++          echo "PKG_DBDIR=              /var/db/pkg"
++          echo "LOCALBASE=              /usr/pkg"
++          echo "VARBASE=                /var"
++          echo "PKG_TOOLS_BIN=          /usr/pkg/sbin"
++          echo "PKGMANDIR=              man"
++          echo "FETCH_CMD=              /usr/bin/ftp"
++          echo ".endif                  # end pkgsrc settings"
++        ) > ${J_TMPDIR}/usr/4bootstrap/mk.conf
++
++        mv ${J_TMPDIR}/usr/pkg/bin/bmake   ${J_TMPDIR}/usr/4bootstrap
++        mv ${J_TMPDIR}/usr/pkg/share/mk    ${J_TMPDIR}/usr/4bootstrap
++        mv ${J_TMPDIR}/usr/pkg/sbin/pkg_*  ${J_TMPDIR}/usr/4bootstrap
++        rm -rf ${J_TMPDIR}/usr/pkg ${J_TMPDIR}/var/db/pkg ${WKZONE}
++
++        execute_hook "postJailBuild" "JAIL=${jailName} DESTDIR=${J_TMPDIR} JAIL_ARCH=${jailArch} MY_ARCH=${myArch} JAIL_OBJDIR=${JAIL_OBJDIR} SRCBASE=${SRCBASE} PB=${pb} RC=${rc}"
++        if [ $? -ne 0 ]; then
++            echo "buildJail: Terminating Jail build since hook postJailBuild failed."
++            buildJailCleanup 1 ${jailName} ${J_SRCDIR}
++            return 1
++        fi
      fi
  
      # Various hacks to keep the ports building environment happy
@@ -445,7 +510,7 @@ $NetBSD$
  
      MTREE_DIR=${SRCBASE}/etc/mtree
      mtree -deU -f ${MTREE_DIR}/BSD.root.dist \
-@@ -809,11 +897,8 @@ buildJail () {
+@@ -809,11 +962,8 @@ buildJail () {
      mtree -deU -f ${MTREE_DIR}/BSD.local.dist \
  	  -p ${J_TMPDIR}/usr/local >/dev/null 2>&1
  
@@ -457,7 +522,16 @@ $NetBSD$
      # Create the jail tarball
      echo "${jailName}: creating tarball"
      jailDir=$(tinderLoc jail ${jailName})
-@@ -883,22 +968,22 @@ createJail () {
+@@ -827,7 +977,7 @@ buildJail () {
+     fi
+ 
+     # Move new logfiles into place
+-    for logfile in world distribution
++    for logfile in world distribution pkgsrc
+     do
+ 	rm -f ${jailBase}/${logfile}.log
+ 	mv -f ${jailBase}/${logfile}.tmp ${jailBase}/${logfile}.log 2>/dev/null
+@@ -883,22 +1033,22 @@ createJail () {
      init=1
  
      setupDefaults
@@ -486,7 +560,7 @@ $NetBSD$
  	I)	init=0;;
  	?)	return 1;;
  
-@@ -913,7 +998,7 @@ createJail () {
+@@ -913,7 +1063,7 @@ createJail () {
  
      valid=$(echo ${jailName} | awk '{if (/^[[:digit:]]/) {print;}}')
      if [ -z "${valid}" ]; then
@@ -495,11 +569,10 @@ $NetBSD$
  	return 1
      fi
  
-@@ -926,6 +1011,17 @@ createJail () {
- 	echo "createJail: no update type specified"
+@@ -927,6 +1077,17 @@ createJail () {
  	return 1
      fi
-+    
+ 
 +    if [ "${updateType}" = "CSUP" ]; then
 +    	echo "createJail: CSUP type cannot be used for DragonFly sources"
 +	return 1
@@ -510,10 +583,11 @@ $NetBSD$
 +	updateHost=${updateHostSRC}
 +    fi
 +
- 
++
      echo "${jailName}: initializing tree"
      generateUpdateCode jail ${jailName} ${updateType} ${updateHost} \
-@@ -1040,20 +1136,21 @@ createPortsTree () {
+ 		       ${updateTag} ${updateCompress} ${jailArch}
+@@ -1040,20 +1201,21 @@ createPortsTree () {
      init=1
      mountSrc=""
      portsTreeName=""
@@ -537,17 +611,16 @@ $NetBSD$
  	w)	cvswebUrl="${OPTARG}";;
  	C)	updateCompress=1;;
  	H)	updateHost="${OPTARG}";;
-@@ -1078,10 +1175,16 @@ createPortsTree () {
- 	echo "createPortsTree: no update type specified"
+@@ -1079,9 +1241,15 @@ createPortsTree () {
  	return 1
      fi
-+    
+ 
 +    if [ "${updateType}" != "CSUP" ]; then
 +    	echo "createPortsTree: The defaultUpdateType variable in env was changed to ${updateType}"
 +    	echo "Please change it back to 'CSUP', which is the only method supported to get pkgsrc"
 +    	return 1
 +    fi
- 
++
      echo "${portsTreeName}: initializing tree"
      generateUpdateCode portstree ${portsTreeName} ${updateType} \
 -		       ${updateHost} "." ${updateCompress}
@@ -555,7 +628,7 @@ $NetBSD$
  
      # add portstree to datastore
      echo -n "${portsTreeName}: adding to datastore... "
-@@ -1158,7 +1261,7 @@ enterBuild () {
+@@ -1158,7 +1326,7 @@ enterBuild () {
      fi
  
      sleepName=$(echo ${portDir} | sed -e 'y/\//_/')
@@ -564,7 +637,16 @@ $NetBSD$
  
      if [ ! -d ${portFullDir} ]; then
  	echo "enterBuild: Build environment does not exist yet, sleeping."
-@@ -1438,7 +1541,8 @@ tinderbuild_setup () {
+@@ -1182,7 +1350,7 @@ enterBuild () {
+ 	sleep 15
+     done
+ 
+-    echo 
++    echo
+     cp $(tinderLoc scripts lib/enterbuild) ${buildRoot}/root
+     chroot ${buildRoot} /root/enterbuild ${portDir}
+     rm -f ${buildRoot}/tmp/.sleep_${sleepName}
+@@ -1438,7 +1606,8 @@ tinderbuild_setup () {
  	echo "tinderbuild: cannot mount ports source"
  	tinderbuild_cleanup 1
      fi
@@ -574,7 +656,7 @@ $NetBSD$
  
      # Mount src/
      if ! requestMount -t buildsrc -b ${build} -r ${nullfs}; then
-@@ -1448,8 +1552,8 @@ tinderbuild_setup () {
+@@ -1448,8 +1617,8 @@ tinderbuild_setup () {
  
      # For use by pnohang
      # XXX: though killall may not work since it's a dynamic executable
@@ -585,7 +667,7 @@ $NetBSD$
  
      # Mount /dev, since we're going to be chrooting shortly
      mount -t devfs devfs ${buildRoot}/dev >/dev/null 2>&1
-@@ -1466,12 +1570,6 @@ tinderbuild_setup () {
+@@ -1466,12 +1635,6 @@ tinderbuild_setup () {
  	tinderbuild_cleanup 1
      fi
  
@@ -598,7 +680,7 @@ $NetBSD$
      # Handle the distfile cache
      if [ -n "${DISTFILE_CACHE}" ]; then
  	if ! requestMount -t builddistcache -b ${build} \
-@@ -1780,7 +1878,8 @@ tinderbuild () {
+@@ -1780,7 +1943,8 @@ tinderbuild () {
  		echo "tinderbuild: cannot mount portstree: ${portstree}"
  		exit 1
  	    fi
@@ -608,7 +690,7 @@ $NetBSD$
  		$(tinderLoc scripts lib/makemake) ${noduds} ${build} ${ports}
  	)
  	if [ $? -ne 0 ]; then
-@@ -1799,10 +1898,6 @@ tinderbuild () {
+@@ -1799,10 +1963,6 @@ tinderbuild () {
  
      # Set up the chrooted environment
      osmajor=$(echo ${jail} | sed -E -e 's|(^[[:digit:]]+).*$|\1|')
@@ -619,7 +701,7 @@ $NetBSD$
  
      tinderbuild_setup
  
-@@ -1829,21 +1924,46 @@ init () {
+@@ -1829,21 +1989,46 @@ init () {
  	mkdir -p ${pb}/${dir}
      done
  
@@ -650,15 +732,15 @@ $NetBSD$
 +    read -p "Enter a default ISO server for DragonFly [${_defaultDragonHost}]: " dragonhost
 +    if [ -z "${dragonhost}" ]; then
 +	dragonhost=${_defaultDragonHost}
-+    fi
-+
+     fi
+ 
 +    read -p "Enter a default Git server for DragonFly [${_defaultGitSrcHost}]: " gitsrchost
 +    if [ -z "${gitsrchost}" ]; then
 +	gitsrchost=${_defaultGitSrcHost}
-     fi
-+    
-+    # Git Update type for Git is limited to git://, so we won't ask 
- 
++    fi
++
++    # Git Update type for Git is limited to git://, so we won't ask
++
      globalenv=$(tinderLoc scripts etc/env)/GLOBAL
      echo "export defaultUpdateHost=${host}" >> ${globalenv}
 -    echo "export defaultUpdateType=${type}" >> ${globalenv}
@@ -672,7 +754,7 @@ $NetBSD$
  
      return 0
  }
-@@ -1892,7 +2012,8 @@ addPortToBuild () {
+@@ -1892,7 +2077,8 @@ addPortToBuild () {
      buildenv ${jail} ${portsTree} ${build}
      buildenvNoHost ${build}
  
@@ -682,7 +764,7 @@ $NetBSD$
      if [ -z "${portDir}" ]; then
  	${tc} addPortToOneBuild -b ${build} ${norecurse}
      else
-@@ -1902,36 +2023,7 @@ addPortToBuild () {
+@@ -1902,36 +2088,7 @@ addPortToBuild () {
          fi
          ${tc} addPortToOneBuild -b ${build} -d ${portDir} ${norecurse}
      fi
@@ -720,7 +802,7 @@ $NetBSD$
  
      if [ -n "${save_SRCBASE}" ]; then
  	export SRCBASE=${save_SRCBASE}
-@@ -2118,10 +2210,7 @@ copyBuild () {
+@@ -2118,10 +2275,7 @@ copyBuild () {
  		if [ ! -d ${destOptionsDir} ]; then
  		    mkdir -p ${destOptionsDir}
  		fi
@@ -732,7 +814,7 @@ $NetBSD$
  	    else
  		echo "copyBuild: not copying OPTIONS to ${dest} since it has no OPTIONS directory"
  	    fi
-@@ -2237,13 +2326,13 @@ tbcleanup () {
+@@ -2237,13 +2391,13 @@ tbcleanup () {
  	pathFound=0
          for portstree in ${portstrees} ; do
  	    path=$(tinderLoc portstree ${portstree})
@@ -749,7 +831,7 @@ $NetBSD$
  		    if [ -f "${distinfo}" ]; then
  			for df in $(grep '^MD5' ${distinfo} | awk -F '[\(\)]' '{print $2}'); do
  			    if ! grep -q "^${df}\$" ${disttmp}; then
-@@ -2327,7 +2416,7 @@ tbcleanup () {
+@@ -2327,7 +2481,7 @@ tbcleanup () {
  	    fi
  
  	    path=$(tinderLoc portstree ${portstree})

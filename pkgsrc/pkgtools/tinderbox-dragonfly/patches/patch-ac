@@ -142,7 +142,7 @@ $NetBSD$
      mount ${_options} ${_srcloc} ${_dstloc}
      return ${?}
  }
-@@ -506,13 +517,6 @@ buildenvNoHost () {
+@@ -506,15 +517,16 @@ buildenvNoHost () {
      eval "export __MAKE_CONF=${jailBase}/make.conf" >/dev/null 2>&1
      eval "export LOCALBASE=/nonexistentlocal" >/dev/null 2>&1
      eval "export PKG_DBDIR=/nonexistentdb" >/dev/null 2>&1
@@ -155,8 +155,18 @@ $NetBSD$
 -    fi
      eval "export LINUXBASE=/nonexistentlinux" >/dev/null 2>&1
      eval "unset DISPLAY" >/dev/null 2>&1
++
++    # When the tinderd is launched by the rc system at boot time (normal)
++    # it doesn't have the /usr/pkg/bin path set.  FreeBSD has their make
++    # in the path that rc scripts can access, but this is not true for
++    # pkgsrc bmake on any system other than NetBSD.  Let's add it to
++    # path while we're in the subshell.
++
++    eval "export PATH=${PATH}:/usr/pkg/bin" >/dev/null 2>&1
  }
-@@ -629,7 +633,7 @@ checkPreReqs () {
+ 
+ getDbDriver () {
+@@ -629,7 +641,7 @@ checkPreReqs () {
      missing=""
  
      for r in ${reqs} ; do

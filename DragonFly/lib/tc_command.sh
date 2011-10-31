@@ -901,7 +901,8 @@ buildJail () {
                bootstrap \
                mk"
 
-        WKZONE=${J_TMPDIR}/usr/pkgsrcbs
+        PBS=/usr/pkgsrcbs
+        WKZONE=${J_TMPDIR}${PBS}
         mkdir ${WKZONE}
         for component in ${CYCLE}; do
           mkdir -p ${WKZONE}/${component}
@@ -911,19 +912,17 @@ buildJail () {
           done
         done
 
-        cd ${WKZONE}/bootstrap
-        ./bootstrap --ignore-user-check \
-                    --pkgdbdir=${J_TMPDIR}/var/db/pkg \
-                    --varbase=${J_TMPDIR}/var \
-                    --prefix=${J_TMPDIR}/usr/pkg \
-                    --sysconfdir=${J_TMPDIR}/usr/pkg/etc \
-            > ${jailBase}/pkgsrc.tmp 2>&1
+        mount_devfs ${J_TMPDIR}/dev
+        chroot ${J_TMPDIR} ${PBS}/bootstrap/bootstrap --prefix=/usr/pkg \
+            --workdir=${PBS}/work > ${jailBase}/pkgsrc.tmp 2>&1
 
         if [ $? -ne 0 ]; then
+            umount ${J_TMPDIR}/dev
             echo "ERROR: pkgsrc bootstrap failed - see ${jailBase}/pkgsrc.tmp"
             buildJailCleanup 1 ${jailName} ${J_SRCDIR}
             return 1
         fi
+        umount ${J_TMPDIR}/dev
 
         mkdir ${J_TMPDIR}/usr/4bootstrap
 
@@ -1351,7 +1350,7 @@ enterBuild () {
 	sleep 15
     done
 
-    echo 
+    echo
     cp $(tinderLoc scripts lib/enterbuild) ${buildRoot}/root
     chroot ${buildRoot} /root/enterbuild ${portDir}
     rm -f ${buildRoot}/tmp/.sleep_${sleepName}
