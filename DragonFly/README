@@ -768,10 +768,11 @@
    entry for net/wget-1.13.4 when it's time to upgrade that port.
 
    Each line reports a port, and the line format is as follows:
-   <DISTNAME>:<JOB OVERRIDE>:<PKGSRC OPTIONS>
+   <PKGNAME>:<JOB OVERRIDE>:<PKGSRC OPTIONS>
 
-   The <DISTNAME> would be wget-1.13.4 in this example, not
-   wget-1.13.4nb2.  Leave off the nbX suffixes.
+   The <PKGNAME> would be wget-1.13.4 in this example, not
+   wget-1.13.4nb2.  Leave off the nbX suffixes, otherwise the entry
+   will be ignored.
 
    The <JOB OVERRIDE> is normally empty.  For single CPU systems,
    there is no point to set this.  SMP systems will assume a job

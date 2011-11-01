@@ -88,10 +88,11 @@ sub _package_options {
                 return "";
         }
         my @data = split("\n", 
-           `cd $dir && bmake -V '\${DISTNAME}' -V '\${PKG_OPTIONS_VAR}'`);
-        my $distname = $data[0];
-        my $optvar   = $data[1];
-        my $instruction = `grep $distname $self->{OPTFILE}`;
+           `cd $dir && bmake -V '\${PKGNAME}' -V '\${PKG_OPTIONS_VAR}'`);
+        my $pkname = $data[0];
+        my $optvar = $data[1];
+        $pkname =~ s/nb[0-9]+$//;
+        my $instruction = `grep ^$pkname: $self->{OPTFILE}`;
         unless ($instruction) {
                 return "";
         }

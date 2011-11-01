@@ -51,7 +51,7 @@ $NetBSD$
  
          foreach $tmp (@makeTargets) {
                  $self->{CACHE}->{$port}{$tmp} = shift @ret;
-@@ -74,6 +80,65 @@ sub _execMake {
+@@ -74,6 +80,66 @@ sub _execMake {
          $self->{SEEN}->{$port} = 1;
  }
  
@@ -63,10 +63,11 @@ $NetBSD$
 +                return "";
 +        }
 +        my @data = split("\n", 
-+           `cd $dir && bmake -V '\${DISTNAME}' -V '\${PKG_OPTIONS_VAR}'`);
-+        my $distname = $data[0];
-+        my $optvar   = $data[1];
-+        my $instruction = `grep $distname $self->{OPTFILE}`;
++           `cd $dir && bmake -V '\${PKGNAME}' -V '\${PKG_OPTIONS_VAR}'`);
++        my $pkname = $data[0];
++        my $optvar = $data[1];
++        $pkname =~ s/nb[0-9]+$//;
++        my $instruction = `grep ^$pkname: $self->{OPTFILE}`;
 +        unless ($instruction) {
 +                return "";
 +        }
@@ -117,7 +118,7 @@ $NetBSD$
  # Internal function for returning a port variable
  sub _getVariable {
          my $self = shift;
-@@ -90,16 +155,28 @@ sub _getList {
+@@ -90,16 +156,28 @@ sub _getList {
          my $port = shift;
          my $item = shift;
          my @deps;
@@ -148,7 +149,7 @@ $NetBSD$
                  }
          }
          return @deps;
-@@ -109,7 +186,7 @@ sub _getList {
+@@ -109,7 +187,7 @@ sub _getList {
  sub Name {
          my $self = shift;
          my $port = shift;
@@ -157,7 +158,7 @@ $NetBSD$
  }
  
  # Package name
-@@ -133,6 +210,20 @@ sub Maintainer {
+@@ -133,6 +211,20 @@ sub Maintainer {
          return $self->_getVariable($port, 'MAINTAINER');
  }
  
@@ -178,7 +179,7 @@ $NetBSD$
  # Extract dependencies
  sub ExtractDepends {
          my $self = shift;
-@@ -189,8 +280,8 @@ sub IgnoreList {
+@@ -189,8 +281,8 @@ sub IgnoreList {
  
          my $n = 0;
          $self->_execMake($port);
@@ -189,7 +190,7 @@ $NetBSD$
          }
          return $n eq 0 ? "" : $self->PkgName($port);
  }
-@@ -206,6 +297,28 @@ sub FetchDependsList {
+@@ -206,6 +298,28 @@ sub FetchDependsList {
          return grep { !$uniq{$_}++ } @deps;
  }
  
@@ -218,7 +219,7 @@ $NetBSD$
  sub ExtractDependsList {
          my $self = shift;
          my $port = shift;
-@@ -250,6 +363,7 @@ sub BuildDependsList {
+@@ -250,6 +364,7 @@ sub BuildDependsList {
          push(@deps, $self->FetchDepends($port));
          push(@deps, $self->BuildDepends($port));
          push(@deps, $self->LibDepends($port));
@@ -226,7 +227,7 @@ $NetBSD$
  
          my %uniq;
          return grep { !$uniq{$_}++ } @deps;
-@@ -263,6 +377,7 @@ sub RunDependsList {
+@@ -263,6 +378,7 @@ sub RunDependsList {
          my @deps;
          push(@deps, $self->LibDepends($port));
          push(@deps, $self->RunDepends($port));
