@@ -160,7 +160,7 @@ if [ $phase = 1 ]; then
   echo "prefixes: LOCALBASE=${L} PREFIX=${INFO_PREFIX}"
   echo "Begin Configuration:"
   echo "---Begin Environment---"
-  printenv
+  printenv | sort
   echo "---End Environment---"
   echo ""
   echo "---Begin OPTIONS List---"
