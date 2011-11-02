@@ -5,7 +5,7 @@
 . ${pb}/scripts/lib/tinderlib.sh
 
 usage () {
-    echo "usage: $0 <build name> <jail name> <portstree name> [-noclean] [-plistcheck] [-nullfs] [-fetch-original] [-nolog] ED PD FD BD RD TD SD pkgname dirname"
+    echo "usage: $0 <build name> <jail name> <portstree name> [-noclean] [-plistcheck] [-fetch-original] [-nolog] ED PD FD BD RD TD SD pkgname dirname"
     exit 1
 }
 
@@ -17,9 +17,8 @@ cleanup()
     cleandirs=$4
     pkgname=$5
     build=$6
-    nullfs=$7
 
-    if [ ${ARCH} = "i386" ]; then 
+    if [ ${ARCH} = "i386" ]; then
 	umount ${chroot}/compat/linux/proc >/dev/null
     fi
     umount ${chroot}/proc >/dev/null
@@ -34,7 +33,7 @@ cleanup()
 
 	    chroot ${chroot} /sbin/ldconfig -R
 	else
-	    ${tc} resetBuild -b ${build} ${nullfs}
+	    ${tc} resetBuild -b ${build}
 	fi
     fi
 
@@ -75,7 +74,6 @@ mark_failed() {
 error=0
 init=0
 noclean=0
-nullfs=""
 fetchorig=0
 nolog=0
 plistcheck=""
@@ -109,9 +107,6 @@ while [ $# -gt 0 -a ${doneargs} -eq 0 ]; do
 			shift;;
 
     x-plistcheck)	plistcheck="plistcheck"
-			shift;;
-
-    x-nullfs)		nullfs="-n"
 			shift;;
 
     x-fetch-original)	fetchorig=1
@@ -225,7 +220,7 @@ cat ${pb}/scripts/lib/boilerplate_mk.conf >> ${chroot}${LOCALBASE}/etc/mk.conf
 
 # Add per-build custom make options to etc/mk.conf
 # Intended to default versions e.g. PYTHON_VERSION_DEFAULT
-# During catenation, comments, blank lines, MAKE_JOBS= and PKG_OPTIONS.xxxx 
+# During catenation, comments, blank lines, MAKE_JOBS= and PKG_OPTIONS.xxxx
 # variables are stripped out. The latter is handled by pkg_options, and it's
 # better not to have two sources.
 
@@ -236,7 +231,7 @@ if [ -f ${more_mkconf} ]; then
 fi
 
 # mount linprocfs if available
-if [ ${ARCH} = "i386" ]; then 
+if [ ${ARCH} = "i386" ]; then
     mkdir -p ${chroot}/compat/linux/proc
     mount -t linprocfs linprocfs ${chroot}/compat/linux/proc
 fi
@@ -316,7 +311,7 @@ mkdir -p ${chroot}/tmp/depends ${chroot}/tmp/distfiles ${chroot}/tmp/packages
 echo "building ${pkgname} in directory ${chroot}" | \
     tee ${chroot}/tmp/${pkgname}.log
 
-trap  "cleanup ${chroot} ${noclean} ${error} \"${cleandirs}\" ${pkgname} ${build} ${nullfs}" 1 2 3 9 10 11 15
+trap  "cleanup ${chroot} ${noclean} ${error} \"${cleandirs}\" ${pkgname} ${build}" 1 2 3 9 10 11 15
 
 # Don't build in a world-writable standard directory because some ports
 # hardcode this path and try to load things from it at runtime, which is
@@ -502,5 +497,5 @@ else
     execute_hook "postPortBuild" "PACKAGE_NAME=${pkgname} BUILD=${build} JAIL=${jail} PORTSTREE=${portstree} CHROOT=${chroot} STATUS=FAIL PORTDIR=${portdir} PB=${pb} ${reasonenv} TOTAL_SIZE=${total_size}"
 fi
 
-cleanup ${chroot} ${noclean} ${error} "${cleandirs}" ${pkgname} ${build} ${nullfs}
+cleanup ${chroot} ${noclean} ${error} "${cleandirs}" ${pkgname} ${build}
 exit ${error}

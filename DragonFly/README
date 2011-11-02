@@ -219,12 +219,12 @@
 
     9. Tinderbox can use either NFS or nullfs to mount the required
        file systems within the build chroots (called Builds in
-       Tinderbox). If you wish to use nullfs, skip to step 12.
+       Tinderbox). If you wish to use nullfs (default), skip to step 12.
 
    10. Setup the Tinderbox server as an NFS server by adding the
        following to /etc/exports:
 
- ${pb} -alldirs -maproot=0:0 localhost
+ ${pb} -alldirs -maproot=root localhost
 
          Important: ${pb} CANNOT be a symlink. It should be a real,
          fully qualified path (hint: use realpath on your desired
@@ -238,6 +238,9 @@
  rpcbind_enable="YES"
  nfs_server_enable="YES"
  nfs_reserved_port_only="YES"
+
+       NullFS will still be used unless the mount point is defined, and
+       it's defined in the format server:directory.
 
    12. Create the required Jails using the tc command. A Jail is
        nothing more than a version of DragonFly. For example, to create
@@ -423,8 +426,6 @@
    Table 5-2. tinderbuild Commands
 
    -init           updates the Jail then updates the Build            
-   -nullfs         uses nullfs instead of NFS to mount Jail and       
-                   PortsTree file systems                             
    -cleanpackages  removes all packages already built fors the        
                    specified Build                                    
    -updateports    updates the Build's PortsTree (NOTE: dangerous if  
@@ -625,16 +626,11 @@
 8.2 Alternative Mounting
 
    If you want to mount /ports inside your PortsTree or /src inside
-   your Jail via nullfs or NFS from another location, use -m switch
-   to create.
+   your Jail via NFS from another location, use -m switch to create.
 
    Examples for NFS:
 # ./tc createPortsTree -p DragonFly -m server:/directory
 # ./tc createJail -j 2.8-DragonFly -m server:/directory
-
-   Examples for nullfs:
-# ./tc createPortsTree -p DragonFly -m /directory
-# ./tc createJail -j 2.8-DragonFly -m /directory
 
    Tinderbuild will ensure that these file systems are correctly
    mounted so you do not need to mount them by your own before
@@ -659,7 +655,7 @@
 
  # ./tc configDistfile -c localhost:${distfiles}
 
-     * nullfs:
+     * nullfs (default):
 
  # ./tc configDistfile -c ${distfiles}
 
@@ -959,7 +955,6 @@
  tinderd_enable="YES"
  tinderd_chroot="${jail_dir}"
  tinderd_directory="${pb}"
- tinderd_flags="-nullfs"
 
     7. Install a web server of your choice in the jail, and follow
        the webserver setup.

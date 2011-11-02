@@ -599,21 +599,21 @@ my $ds = new Tinderbox::TinderboxDS();
 
         "resetBuild" => {
                 help   => "Cleanup and reset a Build environment",
-                usage  => "-b <buildname> [-n]",
-                optstr => 'b:n',
+                usage  => "-b <buildname>",
+                optstr => 'b:',
         },
 
         "tinderbuild" => {
                 help => "Generate packages from an installed Build",
                 usage =>
-                    "-b <build name> [-init] [-cleanpackages] [-updateports] [-skipmake] [-noclean] [-noduds] [-plistcheck] [-nullfs] [-cleandistfiles] [-fetch-original] [-onceonly] [portdir/portname [...]]",
+                    "-b <build name> [-init] [-cleanpackages] [-updateports] [-skipmake] [-noclean] [-noduds] [-plistcheck] [-cleandistfiles] [-fetch-original] [-onceonly] [portdir/portname [...]]",
                 optstr => 'b:',
         },
 
         "updatePortsTree" => {
                 help   => "Update an existing ports tree",
                 usage  => "-p <portstreename>",
-                optstr => 'p',
+                optstr => 'p:',
         },
 
         "copyBuild" => {
@@ -1608,7 +1608,7 @@ sub addBuildPortsQueueEntry {
                     $ds->addBuildPortsQueueEntry($build, $portdir, $priority,
                         $user_id);
                 if (!$rc) {
-                        warn(         "Failed to add port " 
+                        warn(         "Failed to add port "
                                     . $portdir
                                     . " to the datastore: "
                                     . $ds->getError()

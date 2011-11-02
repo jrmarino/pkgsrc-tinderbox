@@ -227,7 +227,6 @@ requestMount () {
     _type=""
     _srcloc=""
     _dstloc=""
-    _nullfs=0
     _readonly=0
     _build=""
     _jail=""
@@ -242,7 +241,6 @@ requestMount () {
 	b)	_build=${OPTARG};;
 	d)	_dstloc=${OPTARG};;
 	j)	_jail=${OPTARG};;
-	n)	_nullfs=1;;
 	p)	_portstree=${OPTARG};;
 	r)	_readonly=1;;
 	s)	_srcloc=${OPTARG};;
@@ -364,65 +362,22 @@ requestMount () {
 	return 0
     fi
 
-    # is _nullfs mount specified?
-    if [ ${_nullfs} -eq 1 -a ${_fqsrcloc} -ne 1 ] ; then
-	_options="-t null"
-    else
-	# lets check what kind of _srcloc we have. If it is already in
-	# a nfs format, we don't need to adjust anything
-	case ${_srcloc} in
+    # The default mounting option is nullfs for DragonFly.  This is required
+    # for HAMMER filesystems as it's not possible to have NFS mounts directly
+    # there.  For UFS, it's still the preferred option for performance
+    # reasons.  Therefore the only attempt to use NFS is if the mount point
+    # is defined in the database and it's in the NFS server:directory format.
 
-	[a-zA-Z0-9\.-_]*:/*)
-		_options="-o nfsv3,intr,tcp"
-		;;
+    _options="-t null"
+    if [ ${_fqsrcloc} -eq 1 ]; then
+       case ${_srcloc} in
 
-	*)
-		if [ ${_fqsrcloc} -eq 1 ] ; then
-		    # some _srcloc's are full qualified sources, means
-		    # don't try to detect sth. or fallback to localhost.
-		    # The user wants exactly what he specified as _srcloc
-		    # don't modify anything. If it's not a nfs mount, it has
-		    # to be a nullfs mount.
-		    _options="-t null"
-		else
-		    # First check the requested source is located on a HAMMER
-		    # Pseudo File System.  If it is, we must use a null mount
-		    # as NFS can't directly mount HAMMER.
-
-		    # find out the filesystem the requested source is in
-		    fsys=$(df ${_srcloc} | awk '{a=$1}  END {print a}')
-		    mtpt=$(df ${_srcloc} | awk '{a=$NF} END {print a}')
-
-		    SNAPLS=`/sbin/hammer snapls ${fsys} 2>/dev/null`
-		    if [ "$SNAPLS" = "" ]; then
-			# this is probably a UFS filesystem, so attempt NFS
-			_options="-o nfsv3,intr,tcp"
-
-			# determine if the filesystem the requested source
-			# specifies an NFS server or a local filesystem
-			case ${fsys} in
-
-			[a-zA-Z0-9\.-_]*:/*)
-			    # maybe our destination is a subdirectory of the
-			    # mountpoint and not the mountpoint itself.
-			    # if that is the case, add the subdir to the mountpoint
-			    _srcloc="${fsys}/$(echo $_srcloc | sed 's|'${mtpt}'||')"
-			    ;;
-
-			*)
-			    # not a nfs mount, nullfs not specified, so
-			    # mount it as nfs from localhost
-			    _srcloc="localhost:/${_srcloc}"
-			    ;;
-
-			esac
-		    else
-			# HAMMER Filesystem require mount_null
-			_options="-t null"
-		    fi
-		fi
-		;;
-	esac
+       [a-zA-Z0-9\.-_]*:/*)
+               _options="-o nfsv3,intr,tcp"
+               ;;
+       *)
+               ;;
+       esac
     fi
 
     if [ ${_readonly} -eq 1 ] ; then

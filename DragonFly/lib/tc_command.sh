@@ -1437,7 +1437,6 @@ makeBuild () {
 resetBuild () {
     # set up defaults
     build=""
-    nullfs=""
     cleandistfiles="0"
 
     # argument handling
@@ -1446,7 +1445,6 @@ resetBuild () {
 	case "${arg}" in
 
 	b)	build="${OPTARG}";;
-	n)	nullfs="-n";;
 	?)	exit 1;;
 
 	esac
@@ -1602,7 +1600,7 @@ tinderbuild_setup () {
     echo "tinderbuild: Finalizing chroot environment"
 
     # Mount ports/
-    if ! requestMount -t buildports -b ${build} -r ${nullfs}; then
+    if ! requestMount -t buildports -b ${build} -r ; then
 	echo "tinderbuild: cannot mount ports source"
 	tinderbuild_cleanup 1
     fi
@@ -1610,7 +1608,7 @@ tinderbuild_setup () {
     ln -s ../a/pkgsrc ${buildRoot}/usr/pkgsrc
 
     # Mount src/
-    if ! requestMount -t buildsrc -b ${build} -r ${nullfs}; then
+    if ! requestMount -t buildsrc -b ${build} -r ; then
 	echo "tinderbuild: cannot mount jail source"
 	tinderbuild_cleanup 1
     fi
@@ -1664,7 +1662,7 @@ tinderbuild_setup () {
 	mkdir -p ${ccacheDir} $(tinderLoc buildccache ${build})
 
 	if ! requestMount -t buildccache -b ${build} \
-		-s ${ccacheDir} ${nullfs}; then
+		-s ${ccacheDir} ; then
 	    echo "tinderbuild: cannot mount ccache"
 	    tinderbuild_cleanup 1
 	fi
@@ -1681,8 +1679,7 @@ tinderbuild_setup () {
 
 	mkdir -p ${optionsDir} $(tinderLoc buildoptions ${build})
 
-	if ! requestMount -t buildoptions -b ${build} \
-	    	-s ${optionsDir} ${nullfs}; then
+	if ! requestMount -t buildoptions -b ${build} -s ${optionsDir} ; then
 	    echo "tinderbuild: cannot mount options"
 	    tinderbuild_cleanup 1
 	fi
@@ -1768,7 +1765,6 @@ tinderbuild () {
     onceonly=0
     onlymake=0
     noduds=""
-    nullfs=""
     pbargs=""
     skipmake=0
     updateports=0
@@ -1815,7 +1811,6 @@ tinderbuild () {
 	x-fetch-original)	pbargs="${pbargs} -fetch-original";;
 	x-noclean)		pbargs="${pbargs} -noclean";;
 	x-nolog)		pbargs="${pbargs} -nolog";;
-	x-nullfs)		pbargs="${pbargs} -nullfs"; nullfs="-n";;
 	x-plistcheck)		pbargs="${pbargs} -plistcheck";;
 	x-onceonly)		onceonly=1;;
 
