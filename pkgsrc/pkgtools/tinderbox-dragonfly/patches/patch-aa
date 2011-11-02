@@ -646,7 +646,28 @@ $NetBSD$
      cp $(tinderLoc scripts lib/enterbuild) ${buildRoot}/root
      chroot ${buildRoot} /root/enterbuild ${portDir}
      rm -f ${buildRoot}/tmp/.sleep_${sleepName}
-@@ -1438,7 +1606,8 @@ tinderbuild_setup () {
+@@ -1269,7 +1437,6 @@ makeBuild () {
+ resetBuild () {
+     # set up defaults
+     build=""
+-    nullfs=""
+     cleandistfiles="0"
+ 
+     # argument handling
+@@ -1278,7 +1445,6 @@ resetBuild () {
+ 	case "${arg}" in
+ 
+ 	b)	build="${OPTARG}";;
+-	n)	nullfs="-n";;
+ 	?)	exit 1;;
+ 
+ 	esac
+@@ -1434,22 +1600,23 @@ tinderbuild_setup () {
+     echo "tinderbuild: Finalizing chroot environment"
+ 
+     # Mount ports/
+-    if ! requestMount -t buildports -b ${build} -r ${nullfs}; then
++    if ! requestMount -t buildports -b ${build} -r ; then
  	echo "tinderbuild: cannot mount ports source"
  	tinderbuild_cleanup 1
      fi
@@ -655,8 +676,11 @@ $NetBSD$
 +    ln -s ../a/pkgsrc ${buildRoot}/usr/pkgsrc
  
      # Mount src/
-     if ! requestMount -t buildsrc -b ${build} -r ${nullfs}; then
-@@ -1448,8 +1617,8 @@ tinderbuild_setup () {
+-    if ! requestMount -t buildsrc -b ${build} -r ${nullfs}; then
++    if ! requestMount -t buildsrc -b ${build} -r ; then
+ 	echo "tinderbuild: cannot mount jail source"
+ 	tinderbuild_cleanup 1
+     fi
  
      # For use by pnohang
      # XXX: though killall may not work since it's a dynamic executable
@@ -667,7 +691,7 @@ $NetBSD$
  
      # Mount /dev, since we're going to be chrooting shortly
      mount -t devfs devfs ${buildRoot}/dev >/dev/null 2>&1
-@@ -1466,12 +1635,6 @@ tinderbuild_setup () {
+@@ -1466,12 +1633,6 @@ tinderbuild_setup () {
  	tinderbuild_cleanup 1
      fi
  
@@ -680,7 +704,42 @@ $NetBSD$
      # Handle the distfile cache
      if [ -n "${DISTFILE_CACHE}" ]; then
  	if ! requestMount -t builddistcache -b ${build} \
-@@ -1780,7 +1943,8 @@ tinderbuild () {
+@@ -1501,7 +1662,7 @@ tinderbuild_setup () {
+ 	mkdir -p ${ccacheDir} $(tinderLoc buildccache ${build})
+ 
+ 	if ! requestMount -t buildccache -b ${build} \
+-		-s ${ccacheDir} ${nullfs}; then
++		-s ${ccacheDir} ; then
+ 	    echo "tinderbuild: cannot mount ccache"
+ 	    tinderbuild_cleanup 1
+ 	fi
+@@ -1518,8 +1679,7 @@ tinderbuild_setup () {
+ 
+ 	mkdir -p ${optionsDir} $(tinderLoc buildoptions ${build})
+ 
+-	if ! requestMount -t buildoptions -b ${build} \
+-	    	-s ${optionsDir} ${nullfs}; then
++	if ! requestMount -t buildoptions -b ${build} -s ${optionsDir} ; then
+ 	    echo "tinderbuild: cannot mount options"
+ 	    tinderbuild_cleanup 1
+ 	fi
+@@ -1605,7 +1765,6 @@ tinderbuild () {
+     onceonly=0
+     onlymake=0
+     noduds=""
+-    nullfs=""
+     pbargs=""
+     skipmake=0
+     updateports=0
+@@ -1652,7 +1811,6 @@ tinderbuild () {
+ 	x-fetch-original)	pbargs="${pbargs} -fetch-original";;
+ 	x-noclean)		pbargs="${pbargs} -noclean";;
+ 	x-nolog)		pbargs="${pbargs} -nolog";;
+-	x-nullfs)		pbargs="${pbargs} -nullfs"; nullfs="-n";;
+ 	x-plistcheck)		pbargs="${pbargs} -plistcheck";;
+ 	x-onceonly)		onceonly=1;;
+ 
+@@ -1780,7 +1938,8 @@ tinderbuild () {
  		echo "tinderbuild: cannot mount portstree: ${portstree}"
  		exit 1
  	    fi
@@ -690,7 +749,7 @@ $NetBSD$
  		$(tinderLoc scripts lib/makemake) ${noduds} ${build} ${ports}
  	)
  	if [ $? -ne 0 ]; then
-@@ -1799,10 +1963,6 @@ tinderbuild () {
+@@ -1799,10 +1958,6 @@ tinderbuild () {
  
      # Set up the chrooted environment
      osmajor=$(echo ${jail} | sed -E -e 's|(^[[:digit:]]+).*$|\1|')
@@ -701,7 +760,7 @@ $NetBSD$
  
      tinderbuild_setup
  
-@@ -1829,21 +1989,46 @@ init () {
+@@ -1829,21 +1984,46 @@ init () {
  	mkdir -p ${pb}/${dir}
      done
  
@@ -754,7 +813,7 @@ $NetBSD$
  
      return 0
  }
-@@ -1892,7 +2077,8 @@ addPortToBuild () {
+@@ -1892,7 +2072,8 @@ addPortToBuild () {
      buildenv ${jail} ${portsTree} ${build}
      buildenvNoHost ${build}
  
@@ -764,7 +823,7 @@ $NetBSD$
      if [ -z "${portDir}" ]; then
  	${tc} addPortToOneBuild -b ${build} ${norecurse}
      else
-@@ -1902,36 +2088,7 @@ addPortToBuild () {
+@@ -1902,36 +2083,7 @@ addPortToBuild () {
          fi
          ${tc} addPortToOneBuild -b ${build} -d ${portDir} ${norecurse}
      fi
@@ -802,7 +861,7 @@ $NetBSD$
  
      if [ -n "${save_SRCBASE}" ]; then
  	export SRCBASE=${save_SRCBASE}
-@@ -2118,10 +2275,7 @@ copyBuild () {
+@@ -2118,10 +2270,7 @@ copyBuild () {
  		if [ ! -d ${destOptionsDir} ]; then
  		    mkdir -p ${destOptionsDir}
  		fi
@@ -814,7 +873,7 @@ $NetBSD$
  	    else
  		echo "copyBuild: not copying OPTIONS to ${dest} since it has no OPTIONS directory"
  	    fi
-@@ -2237,13 +2391,13 @@ tbcleanup () {
+@@ -2237,13 +2386,13 @@ tbcleanup () {
  	pathFound=0
          for portstree in ${portstrees} ; do
  	    path=$(tinderLoc portstree ${portstree})
@@ -831,7 +890,7 @@ $NetBSD$
  		    if [ -f "${distinfo}" ]; then
  			for df in $(grep '^MD5' ${distinfo} | awk -F '[\(\)]' '{print $2}'); do
  			    if ! grep -q "^${df}\$" ${disttmp}; then
-@@ -2327,7 +2481,7 @@ tbcleanup () {
+@@ -2327,7 +2476,7 @@ tbcleanup () {
  	    fi
  
  	    path=$(tinderLoc portstree ${portstree})

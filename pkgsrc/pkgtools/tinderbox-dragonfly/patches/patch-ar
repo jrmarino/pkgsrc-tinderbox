@@ -90,9 +90,28 @@ $NetBSD$
  
     If you will be sending emails from Tinderbox (e.g. build failure
     or build completion emails) you must install net/p5-Net to get the
-@@ -239,83 +240,74 @@
+@@ -218,12 +219,12 @@
+ 
+     9. Tinderbox can use either NFS or nullfs to mount the required
+        file systems within the build chroots (called Builds in
+-       Tinderbox). If you wish to use nullfs, skip to step 12.
++       Tinderbox). If you wish to use nullfs (default), skip to step 12.
+ 
+    10. Setup the Tinderbox server as an NFS server by adding the
+        following to /etc/exports:
+ 
+- ${pb} -alldirs -maproot=0:0 localhost
++ ${pb} -alldirs -maproot=root localhost
+ 
+          Important: ${pb} CANNOT be a symlink. It should be a real,
+          fully qualified path (hint: use realpath on your desired
+@@ -238,84 +239,78 @@
+  nfs_server_enable="YES"
   nfs_reserved_port_only="YES"
  
++       NullFS will still be used unless the mount point is defined, and
++       it's defined in the format server:directory.
++
     12. Create the required Jails using the tc command. A Jail is
 -       nothing more than a version of FreeBSD. For example, to create
 -       a Jail for FreeBSD 8.2-RELEASE:
@@ -108,12 +127,12 @@ $NetBSD$
  
 - # cd ${pb}/scripts && ./tc createJail -j 8.2 -d "FreeBSD 8.2-RELEASE" \
 -         -t 8.2-RELEASE -u LFTP -H ftp.freebsd.org
+-
+-       The first method will download source via cvsup and use make
+-       world to compile a complete FreeBSD installation.
 +# cd ${pb}/scripts && ./tc createJail -j 2.12 -d "DragonFly 2.12-RELEASE" \
 +        -t 2.12.1 -u RELEASE -H http://ftp.dragonflybsd.org/dragonflybsd
  
--       The first method will download source via cvsup and use make
--       world to compile a complete FreeBSD installation.
--
 -       The second method will instead download binary release sets
 -       (used on CDs) and install them, making the process much
 -       shorter. As the command suggests, the second method requires
@@ -220,7 +239,7 @@ $NetBSD$
       --------------------------------------------------------------
  
                            Chapter 4 Upgrading
-@@ -359,9 +351,9 @@
+@@ -359,9 +354,9 @@
     Where {BUILD} is the name of the Build for which this port should
     be built and {PORT DIRECTORY} is the directory within the
     PortsTree where this port can be found. For example, to build the
@@ -232,7 +251,7 @@ $NetBSD$
  
       Note: A port does not have to be added to the database for
       Tinderbox to build it. If you just want to do a quick ad hoc
-@@ -376,10 +368,9 @@
+@@ -376,10 +371,9 @@
  
   # cd ${pb}/scripts && ./tc tinderbuild -b {BUILD} {PORT DIRECTORY}
  
@@ -245,7 +264,7 @@ $NetBSD$
  
       Tip: The example above will run the build in the foreground with
       all messages and errors echoing to the terminal. To capture all
-@@ -388,13 +379,13 @@
+@@ -388,13 +382,13 @@
  
         * Bourne shell equivalents:
  
@@ -263,7 +282,7 @@ $NetBSD$
  
       More advanced logging options are also available. All log files
       including tinderbuild output, make logs, and individual port
-@@ -404,7 +395,7 @@
+@@ -404,7 +398,7 @@
       If set to a directory, a subdirectory will be created in the
       format of {BUILD}-{DATE} where {BUILD} is the Build name, and
       {DATE} is the date in the format YYYYMMDDHHMMSS (e.g.
@@ -272,7 +291,16 @@ $NetBSD$
       the tinderbuild log, and symlinks to the make logs and
       individual port build logs. If you would rather have the log
       files copied to this location (instead of using symlinks), set
-@@ -472,23 +463,23 @@
+@@ -432,8 +426,6 @@
+    Table 5-2. tinderbuild Commands
+ 
+    -init           updates the Jail then updates the Build            
+-   -nullfs         uses nullfs instead of NFS to mount Jail and       
+-                   PortsTree file systems                             
+    -cleanpackages  removes all packages already built fors the        
+                    specified Build                                    
+    -updateports    updates the Build's PortsTree (NOTE: dangerous if  
+@@ -472,23 +464,23 @@
  
     To update existing Jails:
  
@@ -301,7 +329,7 @@ $NetBSD$
     respectively in this example) must already exist. By default,
     copyBuild will copy the environment file, OPTIONS, and ports from
     the source Build to the destination Build. It can also optionally
-@@ -597,29 +588,37 @@
+@@ -597,47 +589,48 @@
  
  8.1 Alternative Means of Creating Jail Sources and PortsTrees
  
@@ -352,26 +380,37 @@ $NetBSD$
  
       --------------------------------------------------------------
  
-@@ -630,14 +629,12 @@
-    to create.
+ 8.2 Alternative Mounting
+ 
+    If you want to mount /ports inside your PortsTree or /src inside
+-   your Jail via nullfs or NFS from another location, use -m switch
+-   to create.
++   your Jail via NFS from another location, use -m switch to create.
  
     Examples for NFS:
 -
 - # ./tc createPortsTree -p FreeBSD -m server:/directory
 - # ./tc createJail -j 8-FreeBSD -m server:/directory
-+# ./tc createPortsTree -p DragonFly -m server:/directory
-+# ./tc createJail -j 2.8-DragonFly -m server:/directory
- 
-    Examples for nullfs:
+-
+-   Examples for nullfs:
 -
 - # ./tc createPortsTree -p FreeBSD -m /directory
 - # ./tc createJail -j 8-FreeBSD -m /directory
-+# ./tc createPortsTree -p DragonFly -m /directory
-+# ./tc createJail -j 2.8-DragonFly -m /directory
++# ./tc createPortsTree -p DragonFly -m server:/directory
++# ./tc createJail -j 2.8-DragonFly -m server:/directory
  
     Tinderbuild will ensure that these file systems are correctly
     mounted so you do not need to mount them by your own before
-@@ -719,8 +716,8 @@
+@@ -662,7 +655,7 @@
+ 
+  # ./tc configDistfile -c localhost:${distfiles}
+ 
+-     * nullfs:
++     * nullfs (default):
+ 
+  # ./tc configDistfile -c ${distfiles}
+ 
+@@ -719,8 +712,8 @@
   PERL_VERSION=5.6.2
  
     Likewise, if you want to enable debugging for a particular
@@ -382,7 +421,7 @@ $NetBSD$
  
   CFLAGS="-O -g -pipe"
   STRIP=
-@@ -740,27 +737,14 @@
+@@ -740,27 +733,14 @@
  
  8.7 Configuring port OPTIONS
  
@@ -418,7 +457,7 @@ $NetBSD$
  
     Once this structure is setup, then enable OPTIONS support in
     Tinderbox, and specify the path to the OPTIONS directory
-@@ -776,15 +760,52 @@
+@@ -776,15 +756,52 @@
  
     -e               enable OPTIONS support                            
     -d               disable OPTIONS support                           
@@ -479,7 +518,7 @@ $NetBSD$
  
       --------------------------------------------------------------
  
-@@ -904,14 +925,14 @@
+@@ -904,14 +921,14 @@
  
  8.11 Running Tinderbox in a Jail
  
@@ -496,7 +535,7 @@ $NetBSD$
  
      2. Install dependencies into the jail (Chapter 2).
  
-@@ -919,7 +940,7 @@
+@@ -919,7 +936,7 @@
  
   # mkdir ${pb}
   # cd ${pb} && \
@@ -505,3 +544,11 @@ $NetBSD$
           tar xvf -
  
      4. Now we need to leave the jail, and on the host system chroot
+@@ -938,7 +955,6 @@
+  tinderd_enable="YES"
+  tinderd_chroot="${jail_dir}"
+  tinderd_directory="${pb}"
+- tinderd_flags="-nullfs"
+ 
+     7. Install a web server of your choice in the jail, and follow
+        the webserver setup.

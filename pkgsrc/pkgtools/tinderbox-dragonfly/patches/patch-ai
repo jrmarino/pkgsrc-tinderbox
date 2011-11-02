@@ -7,22 +7,24 @@ $NetBSD$
  
  usage () {
 -    echo "usage: $0 <build name> <jail name> <portstree name> [-noclean] [-plistcheck] [-nullfs] [-fetch-original] [-nolog] ED PD FD BD RD TD pkgname dirname"
-+    echo "usage: $0 <build name> <jail name> <portstree name> [-noclean] [-plistcheck] [-nullfs] [-fetch-original] [-nolog] ED PD FD BD RD TD SD pkgname dirname"
++    echo "usage: $0 <build name> <jail name> <portstree name> [-noclean] [-plistcheck] [-fetch-original] [-nolog] ED PD FD BD RD TD SD pkgname dirname"
      exit 1
  }
  
-@@ -19,7 +19,9 @@ cleanup()
+@@ -17,9 +17,10 @@ cleanup()
+     cleandirs=$4
+     pkgname=$5
      build=$6
-     nullfs=$7
+-    nullfs=$7
  
 -    umount ${chroot}/compat/linux/proc >/dev/null
-+    if [ ${ARCH} = "i386" ]; then 
++    if [ ${ARCH} = "i386" ]; then
 +	umount ${chroot}/compat/linux/proc >/dev/null
 +    fi
      umount ${chroot}/proc >/dev/null
  
      if [ $noclean -eq 0 ]; then
-@@ -31,9 +33,6 @@ cleanup()
+@@ -31,11 +32,8 @@ cleanup()
  	    rm -rf ${chroot}/tmp/*
  
  	    chroot ${chroot} /sbin/ldconfig -R
@@ -30,9 +32,12 @@ $NetBSD$
 -	        chroot ${chroot} /sbin/ldconfig -aout -R
 -	    fi
  	else
- 	    ${tc} resetBuild -b ${build} ${nullfs}
+-	    ${tc} resetBuild -b ${build} ${nullfs}
++	    ${tc} resetBuild -b ${build}
  	fi
-@@ -56,7 +55,12 @@ mark_failed() {
+     fi
+ 
+@@ -56,7 +54,12 @@ mark_failed() {
  	return
      fi
  
@@ -46,7 +51,25 @@ $NetBSD$
      if [ $? -ne 0 ]; then
  	return
      fi
-@@ -142,8 +146,9 @@ FD=$3
+@@ -71,7 +74,6 @@ mark_failed() {
+ error=0
+ init=0
+ noclean=0
+-nullfs=""
+ fetchorig=0
+ nolog=0
+ plistcheck=""
+@@ -107,9 +109,6 @@ while [ $# -gt 0 -a ${doneargs} -eq 0 ];
+     x-plistcheck)	plistcheck="plistcheck"
+ 			shift;;
+ 
+-    x-nullfs)		nullfs="-n"
+-			shift;;
+-
+     x-fetch-original)	fetchorig=1
+ 			shift;;
+ 
+@@ -142,8 +141,9 @@ FD=$3
  BD=$4
  RD=$5
  TD=$6
@@ -58,7 +81,7 @@ $NetBSD$
  
  echo ${pkgname}
  echo ${dirname}
-@@ -151,7 +156,7 @@ echo ${dirname}
+@@ -151,7 +151,7 @@ echo ${dirname}
  tc=$(tinderLoc scripts tc)
  chroot=$(tinderLoc buildroot ${build})
  echo "chroot is: ${chroot}"
@@ -67,7 +90,7 @@ $NetBSD$
  
  total_size=$(${tc} getPortTotalSize -d ${portdir} -b ${build})
  execute_hook "prePortBuild" "PACKAGE_NAME=${pkgname} BUILD=${build} JAIL=${jail} PORTSTREE=${portstree} CHROOT=${chroot} PORTDIR=${portdir} PB=${pb} TOTAL_SIZE=${total_size}"
-@@ -167,7 +172,7 @@ if [ -f ${dudsfile} ]; then
+@@ -167,7 +167,7 @@ if [ -f ${dudsfile} ]; then
      if grep -qxF ${pkgname} ${dudsfile}; then
          echo "skipping ${pkgname} (found in duds)"
  	${tc} updatePortStatus -d ${portdir} -b ${build} \
@@ -76,7 +99,7 @@ $NetBSD$
  	mark_failed ${tc} ${build} ${pkgname} ${portdir}
  	execute_hook "postPortBuild" "PACKAGE_NAME=${pkgname} BUILD=${build} JAIL=${jail} PORTSTREE=${portstree} CHROOT=${chroot} STATUS=DUD PORTDIR=${portdir} PB=${pb} FAIL_REASON=dud TOTAL_SIZE=0"
          exit 1
-@@ -175,12 +180,12 @@ if [ -f ${dudsfile} ]; then
+@@ -175,12 +175,12 @@ if [ -f ${dudsfile} ]; then
  fi
  
  # directories to clean
@@ -90,7 +113,7 @@ $NetBSD$
  
  # reset mtrees for plist checking
  mtree -deU -f ${chroot}/etc/mtree/BSD.root.dist \
-@@ -190,17 +195,48 @@ mtree -deU -f ${chroot}/etc/mtree/BSD.va
+@@ -190,17 +190,48 @@ mtree -deU -f ${chroot}/etc/mtree/BSD.va
  mtree -deU -f ${chroot}/etc/mtree/BSD.usr.dist \
        -p ${chroot}/usr >/dev/null 2>&1
  
@@ -129,7 +152,7 @@ $NetBSD$
 +
 +# Add per-build custom make options to etc/mk.conf
 +# Intended to default versions e.g. PYTHON_VERSION_DEFAULT
-+# During catenation, comments, blank lines, MAKE_JOBS= and PKG_OPTIONS.xxxx 
++# During catenation, comments, blank lines, MAKE_JOBS= and PKG_OPTIONS.xxxx
 +# variables are stripped out. The latter is handled by pkg_options, and it's
 +# better not to have two sources.
 +
@@ -140,11 +163,11 @@ $NetBSD$
 +fi
 +
 +# mount linprocfs if available
-+if [ ${ARCH} = "i386" ]; then 
++if [ ${ARCH} = "i386" ]; then
      mkdir -p ${chroot}/compat/linux/proc
      mount -t linprocfs linprocfs ${chroot}/compat/linux/proc
  fi
-@@ -251,8 +287,10 @@ if [ x"${CCACHE_ENABLED}" = x"1" ]; then
+@@ -251,8 +282,10 @@ if [ x"${CCACHE_ENABLED}" = x"1" ]; then
      export PATH=/opt:${PATH}
  fi
  
@@ -157,7 +180,7 @@ $NetBSD$
  fi
  
  echo "building $pkgname in $chroot"
-@@ -264,11 +302,7 @@ packages=$(tinderLoc packages ${build})
+@@ -264,11 +297,7 @@ packages=$(tinderLoc packages ${build})
  major_version=$(echo ${jail} | sed -E -e 's|(^[[:digit:]]+).*$|\1|')
  
  if [ -n "${DISTFILE_CACHE}" ]; then
@@ -170,7 +193,16 @@ $NetBSD$
  fi
  
  if [ -n "${DISTFILE_URI}" ]; then
-@@ -294,7 +328,7 @@ if [ x"${CCACHE_ENABLED}" ]; then
+@@ -282,7 +311,7 @@ mkdir -p ${chroot}/tmp/depends ${chroot}
+ echo "building ${pkgname} in directory ${chroot}" | \
+     tee ${chroot}/tmp/${pkgname}.log
+ 
+-trap  "cleanup ${chroot} ${noclean} ${error} \"${cleandirs}\" ${pkgname} ${build} ${nullfs}" 1 2 3 9 10 11 15
++trap  "cleanup ${chroot} ${noclean} ${error} \"${cleandirs}\" ${pkgname} ${build}" 1 2 3 9 10 11 15
+ 
+ # Don't build in a world-writable standard directory because some ports
+ # hardcode this path and try to load things from it at runtime, which is
+@@ -294,7 +323,7 @@ if [ x"${CCACHE_ENABLED}" ]; then
      unset CCACHE_DISABLE
  fi
  
@@ -179,7 +211,7 @@ $NetBSD$
  ldconfig_dirs=""
  for i in ${_ldconfig_dirs}; do
      if [ -d ${chroot}/${i} ]; then
-@@ -302,11 +336,8 @@ for i in ${_ldconfig_dirs}; do
+@@ -302,11 +331,8 @@ for i in ${_ldconfig_dirs}; do
      fi
  done
  chroot ${chroot} /sbin/ldconfig ${ldconfig_dirs}
@@ -192,7 +224,7 @@ $NetBSD$
  shift 1
  
  cd ${chroot}/tmp/depends
-@@ -337,7 +368,7 @@ if [ $? -ne 0 ]; then
+@@ -337,7 +363,7 @@ if [ $? -ne 0 ]; then
      exit 1
  fi
  
@@ -201,7 +233,7 @@ $NetBSD$
  if [ -f ${chroot}/tmp/status ]; then
      error=$(cat ${chroot}/tmp/status)
  else
-@@ -351,14 +382,7 @@ errorsDir=$(tinderLoc builderrors ${buil
+@@ -351,14 +377,7 @@ errorsDir=$(tinderLoc builderrors ${buil
  
  if [ "${error}" = "0" ]; then
      ln -sf ${pkgname}.log2 ${chroot}/tmp/make.log
@@ -217,7 +249,7 @@ $NetBSD$
  
      grep pnohang ${chroot}/tmp/${pkgname}.log2
      cat ${chroot}/tmp/${pkgname}.log2 >> ${chroot}/tmp/${pkgname}.log
-@@ -372,6 +396,7 @@ if [ "${error}" = "0" ]; then
+@@ -372,6 +391,7 @@ if [ "${error}" = "0" ]; then
          cp ${chroot}/tmp/${pkgname}.log ${logsDir}/${pkgname}.log
      fi
      if [ -n "${logdir}" ]; then
@@ -225,7 +257,7 @@ $NetBSD$
  	if [ ${docopy} -eq 1 ]; then
  	    cp ${logsDir}/${pkgname}.log${lext} ${logdir}/${pkgname}.log${lext}
  	else
-@@ -388,6 +413,7 @@ if [ "${error}" = "0" ]; then
+@@ -388,6 +408,7 @@ if [ "${error}" = "0" ]; then
  	cp ${chroot}/tmp/work.tbz ${workDir}/${pkgname}.tbz
      fi
  
@@ -233,7 +265,7 @@ $NetBSD$
      if [ "${error}" = "0" ]; then
          if [ ! -z "${last_version}" ]; then
  	    oldpkgs=$(find ${packages} -name "${last_version}${PKGSUFFIX}")
-@@ -400,8 +426,8 @@ if [ "${error}" = "0" ]; then
+@@ -400,8 +421,8 @@ if [ "${error}" = "0" ]; then
  		tar --unlink -C ${packages} -xvf -
  	[ -f ${packages}/All/${pkgname}${PKGSUFFIX} ] && \
  		touch ${packages}/All/${pkgname}${PKGSUFFIX}
@@ -244,3 +276,10 @@ $NetBSD$
  	    status="BROKEN"
  	elif [ -f ${chroot}/tmp/leftovers ]; then
  	    status="LEFTOVERS"
+@@ -476,5 +497,5 @@ else
+     execute_hook "postPortBuild" "PACKAGE_NAME=${pkgname} BUILD=${build} JAIL=${jail} PORTSTREE=${portstree} CHROOT=${chroot} STATUS=FAIL PORTDIR=${portdir} PB=${pb} ${reasonenv} TOTAL_SIZE=${total_size}"
+ fi
+ 
+-cleanup ${chroot} ${noclean} ${error} "${cleandirs}" ${pkgname} ${build} ${nullfs}
++cleanup ${chroot} ${noclean} ${error} "${cleandirs}" ${pkgname} ${build}
+ exit ${error}
