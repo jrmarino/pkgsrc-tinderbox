@@ -12,8 +12,7 @@ PLIST_VARS+=		WEBUI
 ########################################
 
 .if  empty(PKG_OPTIONS:Mpgsql) && empty(PKG_OPTIONS:Mmysql)
-PKG_FAIL_REASON+=	"Tinderbox requires a database or confirmation you have already installed on."
-PKG_FAIL_REASON+=	"Please select either pgsql or mysql"
+PKG_FAIL_REASON+=	"Tinderbox requires a database, so select pgsql or mysql option."
 .endif
 
 .if !empty(PKG_OPTIONS:Mpgsql)
