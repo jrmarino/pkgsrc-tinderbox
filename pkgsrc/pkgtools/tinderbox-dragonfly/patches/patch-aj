@@ -2,14 +2,6 @@ $NetBSD$
 
 --- ../FreeBSD/lib/buildscript	2011-10-16 00:52:55.000000000 +0000
 +++ lib/buildscript
-@@ -1,6 +1,6 @@
- #!/bin/sh
- 
--# usage: $0 DIRNAME PHASE ED PD FD BD RD TD [PLISTCHECK]
-+# usage: $0 DIRNAME PHASE ED PD FD BD RD TD SD [PLISTCHECK]
- #   PHASE is 1 (checksum) or 2 (package)
- 
- cleanup() {
 @@ -8,7 +8,7 @@ cleanup() {
  
    if [ -e ${dir}/.keep ]; then
@@ -74,13 +66,7 @@ $NetBSD$
  }
  
  dir=$1
-@@ -102,37 +134,46 @@ FD=$5
- BD=$6
- RD=$7
- TD=$8
--PLISTCHECK=$9
-+SD=$9
-+PLISTCHECK=${10}
+@@ -106,31 +138,38 @@ PLISTCHECK=$9
  
  L=$(echo ${LOCALBASE} | sed 's,^/,,')
  
@@ -131,11 +117,8 @@ $NetBSD$
 -  fi
    echo "End Configuration."
  
-+  echo "BOOTSTRAP_DEPENDS=${SD}"
    echo "FETCH_DEPENDS=${FD}"
-   echo "PATCH_DEPENDS=${PD}"
-   echo "EXTRACT_DEPENDS=${ED}"
-@@ -165,19 +206,20 @@ if [ $phase = 1 ]; then
+@@ -165,6 +204,7 @@ if [ $phase = 1 ]; then
  ./${L}/share/xml
  ./${L}/etc/gconf
  ./var/db/fontconfig
@@ -143,10 +126,8 @@ $NetBSD$
  EOF
  
    # Record a "pristine" mtree.
-   mtree -X /tmp/mtree.preexclude -xcn -k uid,gid,mode -p / > /tmp/mtree.pristine
- 
--  add_pkg $FD
-+  add_pkg $SD $FD
+@@ -173,11 +213,11 @@ EOF
+   add_pkg $FD
  
    cd $dir || exit 1
 -  pkgname=$(make package-name)
@@ -159,7 +140,7 @@ $NetBSD$
      cat /tmp/make.log1
      echo "0" > /tmp/status
    else
-@@ -186,15 +228,27 @@ EOF
+@@ -186,36 +226,41 @@ EOF
  
  else
  
@@ -191,7 +172,12 @@ $NetBSD$
    cat /tmp/make.log2
    del_pkg ${ED}
  
-@@ -207,15 +261,13 @@ else
+-  # Fetch depends still need to be here for 'make extract' since that target
+-  # always reruns 'make fetch' due to the lack of fetch cookie (and no place
+-  # to put it since WRKDIR isn't created by 'make fetch')
+-  del_pkg $FD
+-
+   echo "================================================================"
    echo "====================<phase 3: make patch>===================="
    add_pkg ${PD}
    cd $dir
@@ -208,7 +194,7 @@ $NetBSD$
    # Files we do not care about changing between pre-build and post-cleanup
    cat > /tmp/mtree.buildexclude <<EOF
  ./var/log/*
-@@ -247,7 +299,7 @@ EOF
+@@ -247,7 +292,7 @@ EOF
    fi
  
    cd $dir
@@ -217,7 +203,7 @@ $NetBSD$
  
    if [ -f .sleepme ]; then
        set > /tmp/.set_${portdir}
-@@ -259,32 +311,32 @@ EOF
+@@ -259,32 +304,32 @@ EOF
        rm -f /tmp/.set_${portdir}
    fi
  
@@ -271,7 +257,7 @@ $NetBSD$
  
    echo "================================================================"
    echo "====================<phase 6: make install>===================="
-@@ -306,7 +358,7 @@ EOF
+@@ -306,7 +351,7 @@ EOF
    mtree -X /tmp/mtree.exclude -xcn -k uid,gid,mode -p / > /tmp/mtree
  
    cd $dir
@@ -280,7 +266,7 @@ $NetBSD$
      cat /tmp/make.log6
      echo "0" > /tmp/status
    else
-@@ -316,14 +368,14 @@ EOF
+@@ -316,14 +361,14 @@ EOF
    echo "================================================================"
    echo "====================<phase 7: make package>===================="
    cd $dir
@@ -297,7 +283,7 @@ $NetBSD$
    du -skx / | awk '{print $1}' > /tmp/size
    del_pkg ${pkgname}
  
-@@ -349,8 +401,10 @@ EOF
+@@ -349,8 +394,10 @@ EOF
        echo "================================================================"
    fi
  
@@ -309,18 +295,20 @@ $NetBSD$
    echo "=== Checking filesystem state"
  
    if [ -s /tmp/list4 ]; then
-@@ -374,8 +428,8 @@ EOF
+@@ -373,9 +420,10 @@ EOF
+   fi
  
    # BUILD_DEPENDS need to be present at install-time, e.g. gmake
++  # FETCH_DEPENDS contains the digests which is needed throught the process
    # Concatenate and remove duplicates
 -  BRD=$(echo $BD $RD | tr ' ' '\n' | sort -u | tr '\n' ' ')
 -  del_pkg ${BRD}
-+  BRSD=$(echo $BD $RD $SD | tr ' ' '\n' | sort -u | tr '\n' ' ')
-+  del_pkg ${BRSD}
++  BRFD=$(echo $BD $RD $FD | tr ' ' '\n' | sort -u | tr '\n' ' ')
++  del_pkg ${BRFD}
    cd /var/db/pkg
    if [ $(echo $(echo * | wc -c)) != 2 ]; then
      echo "leftover packages:" *
-@@ -430,7 +484,7 @@ EOF
+@@ -430,7 +478,7 @@ EOF
  
    if [ -e ${dir}/.keep ]; then
      cd ${dir}
