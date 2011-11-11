@@ -240,7 +240,7 @@ my $ds = new Tinderbox::TinderboxDS();
                 func => \&getDependenciesForPort,
                 help => "Get stored dependencies for a given port and build",
                 usage =>
-                    "-b <build name> -d <port directory> [-t BOOTSTRAP_DEPENDS|EXTRACT_DEPENDS|PATCH_DEPENDS|FETCH_DEPENDS|BUILD_DEPENDS|LIB_DEPENDS|RUN_DEPENDS|TEST_DEPENDS|DEPENDS]",
+                    "-b <build name> -d <port directory> [-t EXTRACT_DEPENDS|PATCH_DEPENDS|FETCH_DEPENDS|BUILD_DEPENDS|LIB_DEPENDS|RUN_DEPENDS|TEST_DEPENDS|DEPENDS]",
                 optstr => 'b:d:t:',
         },
         "getDependencyCascades" => {
@@ -1531,8 +1531,7 @@ sub addPortToOneBuild {
                                 LIB_DEPENDS     => 'LibDepends',
                                 RUN_DEPENDS     => 'RunDepends',
                                 TEST_DEPENDS    => 'TestDepends',
-                                BOOTSTRAP_DEPENDS => 'BootstrapDepends',
-                                DEPENDS           => 'Buildlink3Depends',
+                                DEPENDS         => 'Buildlink3Depends',
                         );
 
                         $ds->clearDependenciesForPort($pCls, $build, undef);
@@ -1728,8 +1727,7 @@ sub getDependenciesForPort {
                 LIB_DEPENDS     => 4,
                 RUN_DEPENDS     => 5,
                 TEST_DEPEND     => 6,
-                BOOTSTRAP_DEPENDS => 7,
-                DEPENDS           => 8,
+                DEPENDS         => 7,
         );
 
         if (!$opts->{'b'} || !$opts->{'d'}) {

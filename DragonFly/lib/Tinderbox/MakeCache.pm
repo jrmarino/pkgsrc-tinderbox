@@ -62,6 +62,7 @@ sub _execMake {
         my $port = shift;
         my @ret;
         my $target;
+        my $deptype;
         my $tmp = '';
 
         return if ($self->{SEEN}->{$port} eq 1);
@@ -75,7 +76,11 @@ sub _execMake {
         @ret = split("\n", `cd $dir && bmake $customOptions $nativeOptions $tmp`);
 
         foreach $tmp (@makeTargets) {
-                $self->{CACHE}->{$port}{$tmp} = shift @ret;
+                $deptype = $tmp;
+                if (${tmp} eq "BOOTSTRAP_DEPENDS") {
+                        $deptype = "FETCH_DEPENDS";
+                }
+                $self->{CACHE}->{$port}{$deptype} = shift @ret;
         }
         $self->{SEEN}->{$port} = 1;
 }
@@ -215,13 +220,6 @@ sub Maintainer {
         return $self->_getVariable($port, 'MAINTAINER');
 }
 
-# Bootstrap dependencies
-sub BootstrapDepends {
-        my $self = shift;
-        my $port = shift;
-        return $self->_getList($port, 'BOOTSTRAP_DEPENDS');
-}
-
 # Buildlink3 dependencies
 sub Buildlink3Depends {
         my $self = shift;
@@ -297,17 +295,6 @@ sub FetchDependsList {
 
         my @deps;
         push(@deps, $self->FetchDepends($port));
-
-        my %uniq;
-        return grep { !$uniq{$_}++ } @deps;
-}
-
-sub BootstrapDependsList {
-        my $self = shift;
-        my $port = shift;
-
-        my @deps;
-        push(@deps, $self->BootstrapDepends($port));
 
         my %uniq;
         return grep { !$uniq{$_}++ } @deps;

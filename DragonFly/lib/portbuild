@@ -5,7 +5,7 @@
 . ${pb}/scripts/lib/tinderlib.sh
 
 usage () {
-    echo "usage: $0 <build name> <jail name> <portstree name> [-noclean] [-plistcheck] [-fetch-original] [-nolog] ED PD FD BD RD TD SD pkgname dirname"
+    echo "usage: $0 <build name> <jail name> <portstree name> [-noclean] [-plistcheck] [-fetch-original] [-nolog] ED PD FD BD RD TD pkgname dirname"
     exit 1
 }
 
@@ -141,9 +141,8 @@ FD=$3
 BD=$4
 RD=$5
 TD=$6
-SD=$7
-pkgname=$(basename $8 ${PKGSUFFIX})
-dirname=$9
+pkgname=$(basename $7 ${PKGSUFFIX})
+dirname=$8
 
 echo ${pkgname}
 echo ${dirname}
@@ -332,7 +331,7 @@ for i in ${_ldconfig_dirs}; do
 done
 chroot ${chroot} /sbin/ldconfig ${ldconfig_dirs}
 
-set x $ED $FD $PD $BD $RD $TD $SD
+set x $ED $FD $PD $BD $RD $TD
 shift 1
 
 cd ${chroot}/tmp/depends
@@ -363,7 +362,7 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-chroot ${chroot} /buildscript ${dirname} 1 "$ED" "$PD" "$FD" "$BD" "$RD" "$TD" "$SD" "${plistcheck}" 2>&1 | tee -a ${chroot}/tmp/${pkgname}.log
+chroot ${chroot} /buildscript ${dirname} 1 "$ED" "$PD" "$FD" "$BD" "$RD" "$TD" "${plistcheck}" 2>&1 | tee -a ${chroot}/tmp/${pkgname}.log
 if [ -f ${chroot}/tmp/status ]; then
     error=$(cat ${chroot}/tmp/status)
 else
@@ -377,7 +376,7 @@ errorsDir=$(tinderLoc builderrors ${build})
 
 if [ "${error}" = "0" ]; then
     ln -sf ${pkgname}.log2 ${chroot}/tmp/make.log
-    chroot ${chroot} /usr/bin/nice -n $nice /buildscript ${dirname} 2  "$ED" "$PD" "$FD" "$BD" "$RD" "$TD" "$SD" "${plistcheck}" > ${chroot}/tmp/${pkgname}.log2 2>&1
+    chroot ${chroot} /usr/bin/nice -n $nice /buildscript ${dirname} 2  "$ED" "$PD" "$FD" "$BD" "$RD" "$TD" "${plistcheck}" > ${chroot}/tmp/${pkgname}.log2 2>&1
 
     grep pnohang ${chroot}/tmp/${pkgname}.log2
     cat ${chroot}/tmp/${pkgname}.log2 >> ${chroot}/tmp/${pkgname}.log

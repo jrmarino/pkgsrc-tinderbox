@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# usage: $0 DIRNAME PHASE ED PD FD BD RD TD SD [PLISTCHECK]
+# usage: $0 DIRNAME PHASE ED PD FD BD RD TD [PLISTCHECK]
 #   PHASE is 1 (checksum) or 2 (package)
 
 cleanup() {
@@ -134,8 +134,7 @@ FD=$5
 BD=$6
 RD=$7
 TD=$8
-SD=$9
-PLISTCHECK=${10}
+PLISTCHECK=$9
 
 L=$(echo ${LOCALBASE} | sed 's,^/,,')
 
@@ -173,7 +172,6 @@ if [ $phase = 1 ]; then
   echo ""
   echo "End Configuration."
 
-  echo "BOOTSTRAP_DEPENDS=${SD}"
   echo "FETCH_DEPENDS=${FD}"
   echo "PATCH_DEPENDS=${PD}"
   echo "EXTRACT_DEPENDS=${ED}"
@@ -212,7 +210,7 @@ EOF
   # Record a "pristine" mtree.
   mtree -X /tmp/mtree.preexclude -xcn -k uid,gid,mode -p / > /tmp/mtree.pristine
 
-  add_pkg $SD $FD
+  add_pkg $FD
 
   cd $dir || exit 1
 
@@ -251,11 +249,6 @@ else
   fi
   cat /tmp/make.log2
   del_pkg ${ED}
-
-  # Fetch depends still need to be here for 'make extract' since that target
-  # always reruns 'make fetch' due to the lack of fetch cookie (and no place
-  # to put it since WRKDIR isn't created by 'make fetch')
-  del_pkg $FD
 
   echo "================================================================"
   echo "====================<phase 3: make patch>===================="
@@ -427,9 +420,10 @@ EOF
   fi
 
   # BUILD_DEPENDS need to be present at install-time, e.g. gmake
+  # FETCH_DEPENDS contains the digests which is needed throught the process
   # Concatenate and remove duplicates
-  BRSD=$(echo $BD $RD $SD | tr ' ' '\n' | sort -u | tr '\n' ' ')
-  del_pkg ${BRSD}
+  BRFD=$(echo $BD $RD $FD | tr ' ' '\n' | sort -u | tr '\n' ' ')
+  del_pkg ${BRFD}
   cd /var/db/pkg
   if [ $(echo $(echo * | wc -c)) != 2 ]; then
     echo "leftover packages:" *
