@@ -1762,7 +1762,7 @@ tinderbuild () {
     cleanpackages=0
     init=0
     jobs=1
-    onceonly=0
+    twice=0
     onlymake=0
     noduds=""
     pbargs=""
@@ -1812,7 +1812,7 @@ tinderbuild () {
 	x-noclean)		pbargs="${pbargs} -noclean";;
 	x-nolog)		pbargs="${pbargs} -nolog";;
 	x-plistcheck)		pbargs="${pbargs} -plistcheck";;
-	x-onceonly)		onceonly=1;;
+	x-twice)		twice=1;;
 
 	-*)			return 1;;
 	*)			ports="${ports} $1";;
@@ -1965,7 +1965,7 @@ tinderbuild () {
     ${tc} updateBuildStatus -b ${build} -s PORTBUILD
     tinderbuild_phase 0 ${jobs} ${pkgDir}
     error=$?
-    if [ ${onceonly} -ne 1 ]; then
+    if [ ${twice} -eq 1 ]; then
 	if [ ${error} -ne 0 ] ; then
 	    tinderbuild_setup
 	fi
