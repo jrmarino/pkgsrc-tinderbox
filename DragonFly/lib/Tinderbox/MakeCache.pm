@@ -125,6 +125,7 @@ sub _native_preferences {
         my $result = "";
         my $ppkgsrc=`grep PREFER_PKGSRC $moremk`;
         my $pnative=`grep PREFER_NATIVE $moremk`;
+        my $develop=`grep PKG_DEVELOPER $moremk`;
         if ($ppkgsrc) {
             @worker = split(/=/, $ppkgsrc);
             if (scalar (@worker) >= 2) {
@@ -136,6 +137,9 @@ sub _native_preferences {
             if (scalar (@worker) >= 2) {
                 $result .= 'PREFER_NATIVE="' . $self->_trim($worker[1]) . '"';
             }
+        }
+        if ($develop) {
+            $result .= 'PKG_DEVELOPER=yes';
         }
         return $result;
 }
