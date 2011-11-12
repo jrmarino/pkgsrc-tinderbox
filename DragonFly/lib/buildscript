@@ -403,7 +403,9 @@ EOF
   if [ -s /tmp/list4 ]; then
     echo "list of extra files and directories in / (not present before this port was installed but present after it was deinstalled)"
     cat /tmp/list4
-    touch /tmp/leftovers
+    # Files left over here are okay as long as they are gone by list 6
+    # Just list them for informational purposes, but don't act on it.
+    # touch /tmp/leftovers
   fi
   if [ -s /tmp/list5 ]; then
     echo "list of files present before this port was installed but missing after it was deinstalled)"
