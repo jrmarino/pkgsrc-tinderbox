@@ -362,7 +362,7 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-chroot ${chroot} /buildscript ${dirname} 1 "$ED" "$PD" "$FD" "$BD" "$RD" "$TD" "${plistcheck}" 2>&1 | tee -a ${chroot}/tmp/${pkgname}.log
+chroot ${chroot} /buildscript ${dirname} 1 "$ED" "$PD" "$FD" "$BD" "$RD" "$TD" "${pkgname}" "${plistcheck}" 2>&1 | tee -a ${chroot}/tmp/${pkgname}.log
 if [ -f ${chroot}/tmp/status ]; then
     error=$(cat ${chroot}/tmp/status)
 else
@@ -376,7 +376,7 @@ errorsDir=$(tinderLoc builderrors ${build})
 
 if [ "${error}" = "0" ]; then
     ln -sf ${pkgname}.log2 ${chroot}/tmp/make.log
-    chroot ${chroot} /usr/bin/nice -n $nice /buildscript ${dirname} 2  "$ED" "$PD" "$FD" "$BD" "$RD" "$TD" "${plistcheck}" > ${chroot}/tmp/${pkgname}.log2 2>&1
+    chroot ${chroot} /usr/bin/nice -n $nice /buildscript ${dirname} 2  "$ED" "$PD" "$FD" "$BD" "$RD" "$TD" "${pkgname}" "${plistcheck}" > ${chroot}/tmp/${pkgname}.log2 2>&1
 
     grep pnohang ${chroot}/tmp/${pkgname}.log2
     cat ${chroot}/tmp/${pkgname}.log2 >> ${chroot}/tmp/${pkgname}.log
