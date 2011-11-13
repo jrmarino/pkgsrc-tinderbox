@@ -59,6 +59,8 @@ del_pkg() {
   if [ ! -z "${pkgs}" ]; then
     recursion=1
     dellist=""
+    locklist=""
+    recursion_virgin=1
     while [ $recursion -eq 1 ]; do
       unset delpkg nextpkg
       recursion=0
@@ -73,6 +75,27 @@ del_pkg() {
         fi
       done
       pkgs="${nextpkg}"
+      # Apparently pkgsrc packages can remain installed and in the /var
+      # database even after pkg_delete -f command.  This could send the
+      # script into an infinite recursion loop because Tinderbox doesn't
+      # think that can happen.  To recover from this, if we find a repeating
+      # recursion pattern with an empty delete pattern, bail out.
+      if [ -z "${delpkg}" ]; then
+        if [ "${recursion}" -eq 1 ]; then
+          if [ "${recursion_virgin}" -eq 1 ]; then
+            locklist="${pkgs}"
+            recursion_virgin=0
+          else
+            if [ "${pkgs}" = "${locklist}" ]; then
+              delpkg="${pkgs}"
+              pkgs=""
+              recursion=0
+            fi
+          fi
+        fi
+      else
+        recursion_virgin=1
+      fi
       if [ "$dellist" != "" -a "$dellist" = "$delpkg" ]; then
         echo "deleted list =\""$dellist"\", packages to delete ="\"$delpkg\" #"
         echo "The following packages were left behind (perhaps your dependency list is incomplete):"
@@ -445,9 +468,6 @@ EOF
       grep ' missing$' /tmp/list3 > /tmp/list5
       grep -vE ' (extra|missing)$' /tmp/list3 > /tmp/list6
       if [ -n "${PLISTCHECK}" ]; then
-	  if grep -vqE "(${L})/etc/" /tmp/list4; then
-	      #echo "1" > /tmp/status
-	  fi
 	  if [ -s /tmp/list5 ]; then
 	      #echo "1" > /tmp/status
 	  fi
