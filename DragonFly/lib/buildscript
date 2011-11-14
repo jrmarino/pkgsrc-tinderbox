@@ -315,7 +315,7 @@ EOF
   fi
 
   cd $dir
-  portdir=$(echo ${dir} | sed -e 's|^/usr/pkg/||' -e 'y/\//_/')
+  portdir=$(echo ${dir} | sed -e 's|^/usr/pkgsrc/||' -e 'y/\//_/')
 
   if [ -f .sleepme ]; then
       set > /tmp/.set_${portdir}
