@@ -28,7 +28,44 @@ $NetBSD$
  }
  
  del_pkg() {
-@@ -91,6 +92,37 @@ del_pkg() {
+@@ -58,6 +59,8 @@ del_pkg() {
+   if [ ! -z "${pkgs}" ]; then
+     recursion=1
+     dellist=""
++    locklist=""
++    recursion_virgin=1
+     while [ $recursion -eq 1 ]; do
+       unset delpkg nextpkg
+       recursion=0
+@@ -72,6 +75,27 @@ del_pkg() {
+         fi
+       done
+       pkgs="${nextpkg}"
++      # Apparently pkgsrc packages can remain installed and in the /var
++      # database even after pkg_delete -f command.  This could send the
++      # script into an infinite recursion loop because Tinderbox doesn't
++      # think that can happen.  To recover from this, if we find a repeating
++      # recursion pattern with an empty delete pattern, bail out.
++      if [ -z "${delpkg}" ]; then
++        if [ "${recursion}" -eq 1 ]; then
++          if [ "${recursion_virgin}" -eq 1 ]; then
++            locklist="${pkgs}"
++            recursion_virgin=0
++          else
++            if [ "${pkgs}" = "${locklist}" ]; then
++              delpkg="${pkgs}"
++              pkgs=""
++              recursion=0
++            fi
++          fi
++        fi
++      else
++        recursion_virgin=1
++      fi
+       if [ "$dellist" != "" -a "$dellist" = "$delpkg" ]; then
+         echo "deleted list =\""$dellist"\", packages to delete ="\"$delpkg\" #"
+         echo "The following packages were left behind (perhaps your dependency list is incomplete):"
+@@ -91,6 +115,37 @@ del_pkg() {
      done
    fi
    find /var/db/pkg -type f -empty -delete
@@ -66,7 +103,13 @@ $NetBSD$
  }
  
  dir=$1
-@@ -106,31 +138,38 @@ PLISTCHECK=$9
+@@ -102,35 +157,42 @@ FD=$5
+ BD=$6
+ RD=$7
+ TD=$8
+-PLISTCHECK=$9
++pkgname=$9
++PLISTCHECK=${10}
  
  L=$(echo ${LOCALBASE} | sed 's,^/,,')
  
@@ -75,7 +118,6 @@ $NetBSD$
 +
 +cd $dir || exit 1
 +
-+pkgname=`bmake -V '\${PKGNAME}'`
 +INFO_OPTVAR=`bmake -V '\${PKG_OPTIONS_VAR}'`
 +get_package_options `bmake -V '\${DISTNAME}'`
 +
@@ -118,7 +160,7 @@ $NetBSD$
    echo "End Configuration."
  
    echo "FETCH_DEPENDS=${FD}"
-@@ -165,6 +204,7 @@ if [ $phase = 1 ]; then
+@@ -165,6 +227,7 @@ if [ $phase = 1 ]; then
  ./${L}/share/xml
  ./${L}/etc/gconf
  ./var/db/fontconfig
@@ -126,7 +168,7 @@ $NetBSD$
  EOF
  
    # Record a "pristine" mtree.
-@@ -173,11 +213,11 @@ EOF
+@@ -173,11 +236,11 @@ EOF
    add_pkg $FD
  
    cd $dir || exit 1
@@ -140,7 +182,7 @@ $NetBSD$
      cat /tmp/make.log1
      echo "0" > /tmp/status
    else
-@@ -186,36 +226,41 @@ EOF
+@@ -186,36 +249,41 @@ EOF
  
  else
  
@@ -194,16 +236,16 @@ $NetBSD$
    # Files we do not care about changing between pre-build and post-cleanup
    cat > /tmp/mtree.buildexclude <<EOF
  ./var/log/*
-@@ -247,7 +292,7 @@ EOF
+@@ -247,7 +315,7 @@ EOF
    fi
  
    cd $dir
 -  portdir=$(echo ${dir} | sed -e 's|^/usr/ports/||' -e 'y/\//_/')
-+  portdir=$(echo ${dir} | sed -e 's|^/usr/pkg/||' -e 'y/\//_/')
++  portdir=$(echo ${dir} | sed -e 's|^/usr/pkgsrc/||' -e 'y/\//_/')
  
    if [ -f .sleepme ]; then
        set > /tmp/.set_${portdir}
-@@ -259,32 +304,32 @@ EOF
+@@ -259,32 +327,32 @@ EOF
        rm -f /tmp/.set_${portdir}
    fi
  
@@ -257,7 +299,7 @@ $NetBSD$
  
    echo "================================================================"
    echo "====================<phase 6: make install>===================="
-@@ -306,7 +351,7 @@ EOF
+@@ -306,7 +374,7 @@ EOF
    mtree -X /tmp/mtree.exclude -xcn -k uid,gid,mode -p / > /tmp/mtree
  
    cd $dir
@@ -266,11 +308,12 @@ $NetBSD$
      cat /tmp/make.log6
      echo "0" > /tmp/status
    else
-@@ -316,14 +361,14 @@ EOF
+@@ -316,14 +384,15 @@ EOF
    echo "================================================================"
    echo "====================<phase 7: make package>===================="
    cd $dir
 -  if /pnohang $TIMEOUT /tmp/make.log7 ${pkgname} make package; then
++  echo "Starting make process for ${pkgname}"
 +  if /pnohang $TIMEOUT /tmp/make.log7 ${pkgname} bmake package; then
        echo "0" > /tmp/status
    else
@@ -283,7 +326,7 @@ $NetBSD$
    du -skx / | awk '{print $1}' > /tmp/size
    del_pkg ${pkgname}
  
-@@ -349,14 +394,18 @@ EOF
+@@ -349,14 +418,18 @@ EOF
        echo "================================================================"
    fi
  
@@ -304,7 +347,7 @@ $NetBSD$
    fi
    if [ -s /tmp/list5 ]; then
      echo "list of files present before this port was installed but missing after it was deinstalled)"
-@@ -373,9 +422,10 @@ EOF
+@@ -373,9 +446,10 @@ EOF
    fi
  
    # BUILD_DEPENDS need to be present at install-time, e.g. gmake
@@ -317,7 +360,17 @@ $NetBSD$
    cd /var/db/pkg
    if [ $(echo $(echo * | wc -c)) != 2 ]; then
      echo "leftover packages:" *
-@@ -430,7 +480,7 @@ EOF
+@@ -395,9 +469,6 @@ EOF
+       grep ' missing$' /tmp/list3 > /tmp/list5
+       grep -vE ' (extra|missing)$' /tmp/list3 > /tmp/list6
+       if [ -n "${PLISTCHECK}" ]; then
+-	  if grep -vqE "(${L})/etc/" /tmp/list4; then
+-	      #echo "1" > /tmp/status
+-	  fi
+ 	  if [ -s /tmp/list5 ]; then
+ 	      #echo "1" > /tmp/status
+ 	  fi
+@@ -430,7 +501,7 @@ EOF
  
    if [ -e ${dir}/.keep ]; then
      cd ${dir}

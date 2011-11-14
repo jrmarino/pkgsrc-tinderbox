@@ -209,7 +209,16 @@ $NetBSD$
  
  set x $ED $FD $PD $BD $RD $TD
  shift 1
-@@ -351,13 +376,6 @@ errorsDir=$(tinderLoc builderrors ${buil
+@@ -337,7 +362,7 @@ if [ $? -ne 0 ]; then
+     exit 1
+ fi
+ 
+-chroot ${chroot} /buildscript ${dirname} 1 "$ED" "$PD" "$FD" "$BD" "$RD" "$TD" "${plistcheck}" 2>&1 | tee -a ${chroot}/tmp/${pkgname}.log
++chroot ${chroot} /buildscript ${dirname} 1 "$ED" "$PD" "$FD" "$BD" "$RD" "$TD" "${pkgname}" "${plistcheck}" 2>&1 | tee -a ${chroot}/tmp/${pkgname}.log
+ if [ -f ${chroot}/tmp/status ]; then
+     error=$(cat ${chroot}/tmp/status)
+ else
+@@ -351,14 +376,7 @@ errorsDir=$(tinderLoc builderrors ${buil
  
  if [ "${error}" = "0" ]; then
      ln -sf ${pkgname}.log2 ${chroot}/tmp/make.log
@@ -220,9 +229,11 @@ $NetBSD$
 -	    -cf - . | tar --unlink -C ${chroot}${DISTCACHE} -xvf -
 -    fi
 -
-     chroot ${chroot} /usr/bin/nice -n $nice /buildscript ${dirname} 2  "$ED" "$PD" "$FD" "$BD" "$RD" "$TD" "${plistcheck}" > ${chroot}/tmp/${pkgname}.log2 2>&1
+-    chroot ${chroot} /usr/bin/nice -n $nice /buildscript ${dirname} 2  "$ED" "$PD" "$FD" "$BD" "$RD" "$TD" "${plistcheck}" > ${chroot}/tmp/${pkgname}.log2 2>&1
++    chroot ${chroot} /usr/bin/nice -n $nice /buildscript ${dirname} 2  "$ED" "$PD" "$FD" "$BD" "$RD" "$TD" "${pkgname}" "${plistcheck}" > ${chroot}/tmp/${pkgname}.log2 2>&1
  
      grep pnohang ${chroot}/tmp/${pkgname}.log2
+     cat ${chroot}/tmp/${pkgname}.log2 >> ${chroot}/tmp/${pkgname}.log
 @@ -372,6 +390,7 @@ if [ "${error}" = "0" ]; then
          cp ${chroot}/tmp/${pkgname}.log ${logsDir}/${pkgname}.log
      fi
