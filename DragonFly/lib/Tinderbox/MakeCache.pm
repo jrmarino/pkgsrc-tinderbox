@@ -68,7 +68,7 @@ sub _execMake {
         return if ($self->{SEEN}->{$port} eq 1);
 
         foreach $target (@makeTargets) {
-                $tmp .= "-V '\${" . $target . "}' ";		
+                $tmp .= "-V '\${" . $target . "}' ";
         }
         my $dir = $self->{BASEDIR} . '/' . $port;
         my $customOptions = $self->_package_options ($dir);
@@ -92,7 +92,7 @@ sub _package_options {
         unless (-e $self->{OPTFILE}) {
                 return "";
         }
-        my @data = split("\n", 
+        my @data = split("\n",
            `cd $dir && bmake -V '\${PKGNAME}' -V '\${PKG_OPTIONS_VAR}'`);
         my $pkname = $data[0];
         my $optvar = $data[1];
@@ -140,12 +140,13 @@ sub _native_preferences {
         if ($pnative) {
             @worker = split(/=/, $pnative);
             if (scalar (@worker) >= 2) {
-                $result .= 'PREFER_NATIVE="' . $self->_trim($worker[1]) . '"';
+                $result .= 'PREFER_NATIVE="' . $self->_trim($worker[1]) . '" ';
             }
         }
         if ($develop) {
-            $result .= 'PKG_DEVELOPER=yes';
+            $result .= 'PKG_DEVELOPER=yes ';
         }
+        $result .= 'SKIP_LICENSE_CHECK=yes ';
         return $result;
 }
 
