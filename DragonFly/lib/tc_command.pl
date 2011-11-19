@@ -1498,6 +1498,16 @@ sub addPortToOneBuild {
         my $makecache =
             new Tinderbox::MakeCache($ENV{'PORTSDIR'}, $ENV{'OPTNFILE'});
         my @bports = ();
+        my %oper_hash = (
+            EXTRACT_DEPENDS => 'ExtractDepends',
+            PATCH_DEPENDS   => 'PatchDepends',
+            FETCH_DEPENDS   => 'FetchDepends',
+            BUILD_DEPENDS   => 'BuildDepends',
+            LIB_DEPENDS     => 'LibDepends',
+            RUN_DEPENDS     => 'RunDepends',
+            TEST_DEPENDS    => 'TestDepends',
+            DEPENDS         => 'Buildlink3Depends',
+        );
 
         if (!$opts->{'d'}) {
                 foreach my $port ($ds->getPortsForBuild($build)) {
@@ -1509,7 +1519,25 @@ sub addPortToOneBuild {
 
         if ($opts->{'R'}) {
                 foreach my $pdir (@bports) {
-                        addPorts($pdir, $build, $makecache, undef);
+                        my $pCls = addPorts($pdir, $build, $makecache, undef);
+                        $ds->clearDependenciesForPort($pCls, $build, undef);
+                        foreach my $deptype (keys %oper_hash) {
+                                my $oper = $oper_hash{$deptype};
+                                foreach my $dn ($makecache->$oper($pdir)) {
+                                        my $dep = $ds->getPortByDirectory($dn);
+                                        next if (!defined($dep));
+                                        if (
+                                                !$ds->addDependencyForPort(
+                                                        $pCls,    $build,
+                                                        $deptype, $dep
+                                                )
+                                            )
+                                        {
+                                                warn "WARN: Failed to add $deptype entry for $pdir: "
+                                                    . $ds->getError() . "\n";
+                                        }
+                                }
+                        }
                 }
         } else {
                 my @deps = @bports;
@@ -1523,16 +1551,6 @@ sub addPortToOneBuild {
                 }
                 foreach my $port (keys %seen) {
                         my $pCls      = $seen{$port};
-                        my %oper_hash = (
-                                EXTRACT_DEPENDS => 'ExtractDepends',
-                                PATCH_DEPENDS   => 'PatchDepends',
-                                FETCH_DEPENDS   => 'FetchDepends',
-                                BUILD_DEPENDS   => 'BuildDepends',
-                                LIB_DEPENDS     => 'LibDepends',
-                                RUN_DEPENDS     => 'RunDepends',
-                                TEST_DEPENDS    => 'TestDepends',
-                                DEPENDS         => 'Buildlink3Depends',
-                        );
 
                         $ds->clearDependenciesForPort($pCls, $build, undef);
 
