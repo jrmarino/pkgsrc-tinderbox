@@ -66,6 +66,7 @@ mark_failed() {
 
     for dep in ${dependents}; do
 	${tc} updatePortStatus -d ${dep} -b ${branch} -L -s DEPEND -p ${portdir}
+	execute_hook "postPortBuild" "PACKAGE_NAME=${pkgname} BUILD=${branch} JAIL=${jail} PORTSTREE=${portstree} CHROOT=${chroot} PORTDIR=${dep} PB=${pb} STATUS=DEPEND FAIL_REASON=DEPEND TOTAL_SIZE=0"
     done
 }
 
