@@ -24,7 +24,7 @@
 # OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 # SUCH DAMAGE.
 #
-# $MCom: portstools/tinderbox/webui/module/moduleUsers.php,v 1.19.2.6 2011/08/11 12:48:32 beat Exp $
+# $MCom: portstools/tinderbox/webui/module/moduleUsers.php,v 1.19.2.8 2011/11/11 19:41:35 beat Exp $
 #
 
 require_once 'module/module.php';
@@ -319,9 +319,7 @@ class moduleUsers extends module {
 	}
 
 	function get_permission( $object_type, $object_id, $permission ) {
-		if( !is_array( $this->permissions[$object_type][$object_id] ) && !isset( $this->permissions[$object_type][$object_id]['set'] ) ) {
-			$this->fetch_permissions( $object_type, $object_id );
-		}
+		$this->fetch_permissions( $object_type, $object_id );
 		if( isset( $this->permissions[$object_type][$object_id][$permission] ) ) {
 			return true;
 		} else {

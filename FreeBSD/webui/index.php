@@ -24,7 +24,7 @@
 # OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 # SUCH DAMAGE.
 #
-# $MCom: portstools/tinderbox/webui/index.php,v 1.24.2.15 2011/08/11 13:26:30 beat Exp $
+# $MCom: portstools/tinderbox/webui/index.php,v 1.24.2.17 2011/11/13 20:15:10 beat Exp $
 #
 
 $starttimer = explode( ' ', microtime() );
@@ -108,7 +108,7 @@ switch( $action ) {
 					$entry_id   = $_REQUEST['entry_id'];
 					$build_id   = $_REQUEST['build_id'];
 					$priority   = $_REQUEST['priority'];
-					$emailoc    = isset ( $_REQUEST['new_email_on_completion'] ) ? $_REQUEST['new_email_on_completion'] : '';
+					$emailoc    = isset ( $_REQUEST['email_on_completion'] ) ? $_REQUEST['email_on_completion'] : '';
 					$moduleTinderd->change_tinderd_queue( $ctinderdq, $entry_id, $build_id, $priority, $emailoc );
 					$build_id   = $_REQUEST['filter_build_id'];
 					$display    = $moduleTinderd->list_tinderd_queue( $build_id );
@@ -148,8 +148,8 @@ switch( $action ) {
 					$user_name  = $_REQUEST['user_name'];
 					$user_email = $_REQUEST['user_email'];
 					$user_pwd   = $_REQUEST['user_password'];
-					$wwwenabled = $_REQUEST['www_enabled'];
-					$perm_obj   = $_REQUEST['permission_object'];
+					$wwwenabled = isset ( $_REQUEST['www_enabled'] ) ? $_REQUEST['www_enabled'] :'';
+					$perm_obj   = isset ( $_REQUEST['permission_object'] ) ? $_REQUEST['permission_object'] : '';
 					$display    = $moduleUsers->action_user( $actionuser, $user_id, $user_name, $user_email, $user_pwd, $wwwenabled, $perm_obj );
 					switch( $display ) {
 						case '1':   unset( $display ); header( 'Location: index.php' ); break;

@@ -24,7 +24,7 @@
 # OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 # SUCH DAMAGE.
 #
-# $MCom: portstools/tinderbox/webui/core/TinderboxDS.php,v 1.36.2.19 2011/10/16 00:40:20 beat Exp $
+# $MCom: portstools/tinderbox/webui/core/TinderboxDS.php,v 1.36.2.22 2011/11/14 06:55:50 beat Exp $
 #
 
     require_once 'MDB2.php';
@@ -202,7 +202,11 @@
 
             $user = $this->_newFromArray("User", $results);
 
-            return $user[0];
+            if ( !empty ( $user[0] ) ) {
+                return $user[0];
+            } else {
+                return null;
+            }
         }
 
         function getUserPermissions($user_id,$object_type,$object_id) {
@@ -420,7 +424,7 @@
                 $query .= " AND p.port_name LIKE '%" . $this->db->escape( $port_name, TRUE ) . "%'";
             $query .= " ORDER BY " . $this->db->escape( $sortbytable ) . "." . $this->db->escape( $sortby );
             if( $limit != 0 )
-                $query .= " LIMIT " . $this->db->escape( $limit_offset, TRUE ) . "," .  $this->db->escape( $limit, TRUE );
+                $query .= " LIMIT " . $this->db->escape( $limit, TRUE ) . " OFFSET " . $this->db->escape( $limit_offset, TRUE );
 
             $rc = $this->_doQueryHashRef($query, $results, $build->getId());
 
@@ -533,7 +537,7 @@
                  $query .= "AND p.port_maintainer='" . $this->db->escape( $maintainer, TRUE ) . "' ";
             $query .= " ORDER BY " . $this->db->escape( $sortbytable ) . "." . $this->db->escape( $sortby );
             if( $limit != 0 )
-                 $query .= " LIMIT " . $this->db->escape( $limit_offset ) . "," . $limit;
+                 $query .= " LIMIT " . $this->db->escape( $limit, TRUE ) . " OFFSET " . $this->db->escape( $limit_offset, TRUE );
 
             $rc = $this->_doQueryHashRef($query, $results, array());
 
@@ -736,7 +740,11 @@
                 return null;
             }
 
-            return $results[0];
+            if ( isset( $results[0] ) ) {
+                return $results[0];
+            } else {
+                return null;
+            }
         }
 
         function getUserByName($name) {
@@ -746,7 +754,11 @@
                 return null;
             }
 
-            return $results[0];
+            if ( isset( $results[0] ) ) {
+                return $results[0];
+            } else {
+                return null;
+            }
         }
 
         function getConfig($params = array()) {
