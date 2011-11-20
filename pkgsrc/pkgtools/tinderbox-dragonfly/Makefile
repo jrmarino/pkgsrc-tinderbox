@@ -33,6 +33,8 @@ INSTALLATION_DIRS+=	${PKGMANDIR}/man1
 
 SUBST_CLASSES+=		paths
 SUBST_FILES.paths+=	contrib/bulk/add_all_packages.sh
+SUBST_FILES.paths+=	contrib/bulk/bulk_hook_1.sh
+SUBST_FILES.paths+=	contrib/bulk/bulkbuild.sh
 SUBST_SED.paths+=	-e 's,@TINROOT@,${PREFIX}/tinderbox,g'
 SUBST_STAGE.paths=	post-patch
 
@@ -45,8 +47,10 @@ post-extract:
 .endif
 	mv ${WRKSRC}/etc/rc.d ${TRASH}
 	${MKDIR} ${WRKSRC}/contrib/bulk
-	${CP} ${FILESDIR}/add_all_packages.sh.in \
-		${WRKSRC}/contrib/bulk/add_all_packages.sh
+	for dossier in add_all_packages bulk_hook_1 bulkbuild; do \
+		${CP} ${FILESDIR}/$${dossier}.sh.in \
+		${WRKSRC}/contrib/bulk/$${dossier}.sh; \
+	done
 	chmod 755 ${WRKSRC}/contrib/bulk/*
 
 post-patch:
