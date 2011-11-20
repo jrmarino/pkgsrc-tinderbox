@@ -2,7 +2,6 @@
 #
 
 DISTNAME=	tinderbox-dragonfly-${TBOX_VERSION}
-PKGREVISION=	1
 CATEGORIES=	pkgtools
 MASTER_SITES=	http://tinderbox.marcuscom.com/
 DISTFILES=	tinderbox-${TBOX_VERSION}.tar.gz
@@ -16,7 +15,7 @@ DEPENDS+=	p5-Compress-Bzip2>=2:../../archivers/p5-Compress-Bzip2
 DEPENDS+=	csup>=20100101:../../net/csup
 DEPENDS+=	scmgit>1.6:../../devel/scmgit
 
-TBOX_VERSION=		3.4
+TBOX_VERSION=		3.4.1
 PKG_DESTDIR_SUPPORT=	user-destdir
 ONLY_FOR_PLATFORM=	DragonFly-*-*
 
