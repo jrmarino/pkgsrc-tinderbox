@@ -874,17 +874,6 @@ buildJail () {
 	    buildJailCleanup 1 ${jailName} ${J_SRCDIR}
         fi
 
-	# Make upgrade required to link device drivers (e.g. <dev/video/...)
-	echo "${jailName}: making world upgrade"
-
-	cd ${SRCBASE} && env DESTDIR=${J_TMPDIR} \
-           make upgrade >> ${jailBase}/world.tmp 2>&1
-        if [ $? -ne 0 ]; then
-	    echo "ERROR: world upgrade failed - see ${jailBase}/world.tmp"
-	    buildJailCleanup 1 ${jailName} ${J_SRCDIR}
-	    return 1
-	fi
-
         # Make a complete distribution
         echo "${jailName}: making distribution"
 
@@ -892,6 +881,17 @@ buildJail () {
 	    make -m ${J_TMPDIR}/usr/share/mk distribution > ${jailBase}/distribution.tmp 2>&1
         if [ $? -ne 0 ]; then
 	    echo "ERROR: distribution failed - see ${jailBase}/distribution.tmp"
+	    buildJailCleanup 1 ${jailName} ${J_SRCDIR}
+	    return 1
+	fi
+
+        # Make upgrade required to link device drivers (e.g. <dev/video/...)
+        echo "${jailName}: making world upgrade"
+
+        cd ${SRCBASE} && env DESTDIR=${J_TMPDIR} \
+            make upgrade > ${jailBase}/upgrade.tmp 2>&1
+        if [ $? -ne 0 ]; then
+	    echo "ERROR: world upgrade failed - see ${jailBase}/upgrade.tmp"
 	    buildJailCleanup 1 ${jailName} ${J_SRCDIR}
 	    return 1
 	fi
@@ -988,7 +988,7 @@ buildJail () {
     fi
 
     # Move new logfiles into place
-    for logfile in world distribution pkgsrc
+    for logfile in world distribution pkgsrc upgrade
     do
 	rm -f ${jailBase}/${logfile}.log
 	mv -f ${jailBase}/${logfile}.tmp ${jailBase}/${logfile}.log 2>/dev/null
