@@ -874,6 +874,17 @@ buildJail () {
 	    buildJailCleanup 1 ${jailName} ${J_SRCDIR}
         fi
 
+	# Make upgrade required to link device drivers (e.g. <dev/video/...)
+	echo "${jailName}: making world upgrade"
+
+	cd ${SRCBASE} && env DESTDIR=${J_TMPDIR} \
+           make upgrade >> ${jailBase}/world.tmp 2>&1
+        if [ $? -ne 0 ]; then
+	    echo "ERROR: world upgrade failed - see ${jailBase}/world.tmp"
+	    buildJailCleanup 1 ${jailName} ${J_SRCDIR}
+	    return 1
+	fi
+
         # Make a complete distribution
         echo "${jailName}: making distribution"
 
