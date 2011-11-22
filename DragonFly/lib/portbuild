@@ -170,7 +170,8 @@ if [ -f ${dudsfile} ]; then
 		-L -s DUD -v ${pkgname} -r arch
 	mark_failed ${tc} ${build} ${pkgname} ${portdir}
 	execute_hook "postPortBuild" "PACKAGE_NAME=${pkgname} BUILD=${build} JAIL=${jail} PORTSTREE=${portstree} CHROOT=${chroot} STATUS=DUD PORTDIR=${portdir} PB=${pb} FAIL_REASON=dud TOTAL_SIZE=0"
-        exit 1
+	# exit with success, we need all the ports to fire on the above hook
+        exit 0
     fi
 fi
 
@@ -335,6 +336,7 @@ chroot ${chroot} /sbin/ldconfig ${ldconfig_dirs}
 set x $ED $FD $PD $BD $RD $TD
 shift 1
 
+MISSINGDEP=
 cd ${chroot}/tmp/depends
 while [ $# -gt 0 ]; do
 
@@ -350,6 +352,7 @@ while [ $# -gt 0 ]; do
 
     if [ ! -f $1 ]; then
 	echo "skipping package $1 for ${pkgname} since it is missing"
+	MISSINGDEP=$1
     fi
 
     shift
@@ -363,6 +366,7 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
+if [ -z "${MISSINGDEP}" ]; then
 chroot ${chroot} /buildscript ${dirname} 1 "$ED" "$PD" "$FD" "$BD" "$RD" "$TD" "${pkgname}" "${plistcheck}" 2>&1 | tee -a ${chroot}/tmp/${pkgname}.log
 if [ -f ${chroot}/tmp/status ]; then
     error=$(cat ${chroot}/tmp/status)
@@ -370,6 +374,9 @@ else
     error=255
 fi
 execute_hook "postPortChecksum" "PACKAGE_NAME=${pkgname} BUILD=${build} JAIL=${jail} PORTSTREE=${portstree} CHROOT=${chroot} PORTDIR=${portdir} ERROR=${error} PB=${pb} TOTAL_SIZE=${total_size}"
+else
+    error=200
+fi
 
 last_version=$(${tc} getPortLastBuiltVersion -d ${portdir} -b ${build})
 logsDir=$(tinderLoc buildlogs ${build})
@@ -490,8 +497,15 @@ else
     if [ ${old_size} -gt ${total_size} ]; then
 	total_size=${old_size}
     fi
+
+    PORTSTATUS=FAIL
+    if [ "${error}" = "200" ]; then
+       PORTSTATUS=DEPEND
+       reason="-r depend_package -p ${MISSINGDEP}"
+       reasonenv="FAIL_REASON=depend"
+    fi
     ${tc} updatePortStatus -d ${portdir} -b ${build} \
-		-L -s FAIL -v ${pkgname} ${reason} -t ${total_size}
+		-L -s ${PORTSTATUS} -v ${pkgname} ${reason} -t ${total_size}
     mark_failed ${tc} ${build} ${pkgname} ${portdir}
     ${tc} sendBuildErrorMail -d ${portdir} -b ${build} -p ${pkgname} -x ${lext}
     execute_hook "postPortBuild" "PACKAGE_NAME=${pkgname} BUILD=${build} JAIL=${jail} PORTSTREE=${portstree} CHROOT=${chroot} STATUS=FAIL PORTDIR=${portdir} PB=${pb} ${reasonenv} TOTAL_SIZE=${total_size}"
