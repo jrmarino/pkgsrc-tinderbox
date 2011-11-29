@@ -1315,6 +1315,9 @@ enterBuild () {
         esac
     done
 
+    tc=$(tinderLoc scripts tc)
+    HOST_WORKDIR=$(${tc} configGet | awk -F= '/^HOST_WORKDIR/ {print $2}')
+
     if [ -z "${portDir}" ]; then
 	echo "enterBuild: no port specified"
 	return 1
