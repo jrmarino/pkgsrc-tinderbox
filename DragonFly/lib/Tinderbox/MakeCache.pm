@@ -170,14 +170,16 @@ sub _getList {
 
         $self->_execMake($port);
         foreach my $dep (split(/\s+/, $self->{CACHE}->{$port}{$item})) {
-                $dep =~ s/^\s+//;
-                $dep =~ s/\s+$//;
-                my ($d, $ddir) = split(/:/, $dep);
+                my ($d, $ddir) = split(/:/, $self->_trim($dep));
                 if (!defined($ddir)) {
                         $ddir = $d;
                 }
-                $ddir =~ s|^$self->{BASEDIR}/||;
-                $ddir =~ s|^\.\.\/\.\.\/||;
+                if ($d =~ /^{perl>=?5.+,.+}$/) {
+                        $ddir = "lang/perl5"
+                } else {
+                        $ddir =~ s|^$self->{BASEDIR}/||;
+                        $ddir =~ s|^\.\.\/\.\.\/||;
+                }
                 if ($ddir) {
                         $found = 0;
                         foreach my $storedep (@deps) {
