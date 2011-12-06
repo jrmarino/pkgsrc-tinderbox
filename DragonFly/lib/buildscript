@@ -121,22 +121,21 @@ del_pkg() {
 
 get_package_options() {
     # If the option file exists, it's stored in PKG_OPTIONS_FILE env var.
-    # The format is ${DISTNAME}:jobs override:options list
+    # The format is ${PKGNAME_NOREV}:jobs override:options list
     # example: gcc-4.6.1::-gcc-fortran
     #          In this example, there is no makejob override, fortran removed
     # example: gawk-3.1.8:1:portals
     #          In the above example, MAKE_JOBS=1, portals option added
-    # Don't include any "nbX" suffixes, that is ${PKGNAME}.
-    # Use the "DISTNAME" definition in the makefile.
+    # Use the "PKGNAME_NOREV" definition in the makefile.
 
-    INFO_DISTNAME=$1
+    INFO_PKGNAME=$1
     MAKEJOBS_OVERRIDE=
     SPECIFIC_OPTIONS=
     if [ -z "${PKG_OPTIONS_FILE}" ]; then
 	return
     fi
 
-    instructions=`grep ${INFO_DISTNAME}: ${PKG_OPTIONS_FILE}`
+    instructions=`grep ${INFO_PKGNAME}: ${PKG_OPTIONS_FILE}`
     if [ -z "${instructions}" ]; then
 	return
     fi
@@ -168,7 +167,7 @@ export WRKOBJDIR=/work
 cd $dir || exit 1
 
 INFO_OPTVAR=`bmake -V '\${PKG_OPTIONS_VAR}'`
-get_package_options `bmake -V '\${DISTNAME}'`
+get_package_options `bmake -V '\${PKGNAME_NOREV}'`
 
 if [ $phase = 1 ]; then
 

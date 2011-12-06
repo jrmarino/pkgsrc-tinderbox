@@ -764,9 +764,9 @@
    entry for net/wget-1.13.4 when it's time to upgrade that port.
 
    Each line reports a port, and the line format is as follows:
-   <PKGNAME>:<JOB OVERRIDE>:<PKGSRC OPTIONS>
+   <PKGNAME_NOREV>:<JOB OVERRIDE>:<PKGSRC OPTIONS>
 
-   The <PKGNAME> would be wget-1.13.4 in this example, not
+   The <PKGNAME_NOREV> would be wget-1.13.4 in this example, not
    wget-1.13.4nb2.  Leave off the nbX suffixes, otherwise the entry
    will be ignored.
 
