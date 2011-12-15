@@ -18,7 +18,7 @@ cleanup()
     pkgname=$5
     build=$6
 
-    if [ ${ARCH} = "i386" ]; then
+    if [ ${TBOXARCH} = "i386" ]; then
 	umount ${chroot}/compat/linux/proc >/dev/null
     fi
     umount ${chroot}/proc >/dev/null
@@ -232,7 +232,7 @@ if [ -f ${more_mkconf} ]; then
 fi
 
 # mount linprocfs if available
-if [ ${ARCH} = "i386" ]; then
+if [ ${TBOXARCH} = "i386" ]; then
     mkdir -p ${chroot}/compat/linux/proc
     mount -t linprocfs linprocfs ${chroot}/compat/linux/proc
 fi
