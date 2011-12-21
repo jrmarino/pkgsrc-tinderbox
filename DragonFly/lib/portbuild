@@ -390,24 +390,7 @@ if [ "${error}" = "0" ]; then
     cat ${chroot}/tmp/${pkgname}.log2 >> ${chroot}/tmp/${pkgname}.log
     rm ${chroot}/tmp/${pkgname}.log2
 
-    lext=""
-    if [ ${compress_logs} -ne 0 ]; then
-	bzip2 -c ${chroot}/tmp/${pkgname}.log > ${logsDir}/${pkgname}.log.bz2
-	lext=".bz2"
-    else
-        cp ${chroot}/tmp/${pkgname}.log ${logsDir}/${pkgname}.log
-    fi
-    if [ -n "${logdir}" ]; then
-        rm -f ${logdir}/${pkgname}.log${lext}
-	if [ ${docopy} -eq 1 ]; then
-	    cp ${logsDir}/${pkgname}.log${lext} ${logdir}/${pkgname}.log${lext}
-	else
-	    ln -s ${logsDir}/${pkgname}.log${lext} ${logdir}/${pkgname}.log${lext}
-	fi
-    fi
     error=$(cat ${chroot}/tmp/status)
-
-#    rm -rf ${chroot}/${WRKDIRPREFIX}
 
     if [ -e ${chroot}/tmp/work.tbz ]; then
 	workDir=$(tinderLoc buildworkdir ${build})
@@ -415,8 +398,22 @@ if [ "${error}" = "0" ]; then
 	cp ${chroot}/tmp/work.tbz ${workDir}/${pkgname}.tbz
     fi
 
+    rm -f ${logsDir}/${pkgname}.log*
     rm -f ${errorsDir}/${pkgname}.log*
     if [ "${error}" = "0" ]; then
+	lext=""
+	if [ ${compress_logs} -ne 0 ]; then
+	    bzip2 -c ${chroot}/tmp/${pkgname}.log > ${logsDir}/${pkgname}.log.bz2
+	    lext=".bz2"
+	else
+            cp ${chroot}/tmp/${pkgname}.log ${logsDir}/${pkgname}.log
+	fi
+	if [ ${docopy} -eq 1 ]; then
+	    cp ${logsDir}/${pkgname}.log${lext} ${logdir}/${pkgname}.log${lext}
+	else
+	    ln -s ${logsDir}/${pkgname}.log${lext} ${logdir}/${pkgname}.log${lext}
+	fi
+
         if [ ! -z "${last_version}" ]; then
 	    oldpkgs=$(find ${packages} -name "${last_version}${PKGSUFFIX}")
 	    for _pkg in ${oldpkgs}; do
@@ -448,11 +445,19 @@ if [ "${error}" = "0" ]; then
 	    ${tc} sendBuildErrorMail -d ${portdir} -b ${build} -p ${pkgname} -x ${lext} -l
 	fi
     else
-	ln -f ${logsDir}/${pkgname}.log${lext} ${errorsDir}/${pkgname}.log${lext}
+	# never compress failure logs, only success logs.  ProcessLog can't read bz2 and "log" link broken
+	cp ${chroot}/tmp/${pkgname}.log ${logsDir}/${pkgname}.log
+	ln -f ${logsDir}/${pkgname}.log ${errorsDir}/${pkgname}.log
+	if [ ${docopy} -eq 1 ]; then
+	    cp ${logsDir}/${pkgname}.log ${logdir}/${pkgname}.log
+	else
+	    ln -s ${logsDir}/${pkgname}.log ${logdir}/${pkgname}.log
+	fi
+
 	reason=""
 	reasonenv=""
 	if [ ${nolog} -eq 0 ]; then
-	    reasontxt=$(${tc} processLog -l ${logsDir}/${pkgname}.log${lext})
+	    reasontxt=$(${tc} processLog -l ${logsDir}/${pkgname}.log)
 	    reason="-r ${reasontxt}"
 	    reasonenv="FAIL_REASON=${reasontxt}"
 	fi
@@ -467,25 +472,24 @@ if [ "${error}" = "0" ]; then
 	${tc} updatePortStatus -d ${portdir} -b ${build} \
 		-L -s FAIL -v ${pkgname} ${reason} -t ${total_size}
 	mark_failed ${tc} ${build} ${pkgname} ${portdir}
-        ${tc} sendBuildErrorMail -d ${portdir} -b ${build} -p ${pkgname} -x ${lext}
+        ${tc} sendBuildErrorMail -d ${portdir} -b ${build} -p ${pkgname}
 	execute_hook "postPortBuild" "PACKAGE_NAME=${pkgname} BUILD=${build} JAIL=${jail} PORTSTREE=${portstree} CHROOT=${chroot} STATUS=FAIL PORTDIR=${portdir} PB=${pb} ${reasonenv} TOTAL_SIZE=${total_size}"
     fi
     rm -rf ${chroot}/${WRKDIRPREFIX}
 else
-    lext=""
-    if [ ${compress_logs} -ne 0 ]; then
-	bzip2 -c ${chroot}/tmp/${pkgname}.log > ${logsDir}/${pkgname}.log.bz2
-	ln -f ${logsDir}/${pkgname}.log.bz2 ${errorsDir}/${pkgname}.log.bz2
-	lext=".bz2"
+    # never compress failure logs, only success logs.  ProcessLog can't read bz2 and "log" link broken
+    cp ${chroot}/tmp/${pkgname}.log ${logsDir}/${pkgname}.log
+    ln -f ${logsDir}/${pkgname}.log ${errorsDir}/${pkgname}.log
+    if [ ${docopy} -eq 1 ]; then
+	cp ${logsDir}/${pkgname}.log ${logdir}/${pkgname}.log
     else
-        cp ${chroot}/tmp/${pkgname}.log ${logsDir}/${pkgname}.log
-        ln -f ${logsDir}/${pkgname}.log ${errorsDir}/${pkgname}.log
+	ln -s ${logsDir}/${pkgname}.log ${logdir}/${pkgname}.log
     fi
 
     reason=""
     reasonenv=""
     if [ ${nolog} -eq 0 ]; then
-	reasontxt=$(${tc} processLog -l ${logsDir}/${pkgname}.log${lext})
+	reasontxt=$(${tc} processLog -l ${logsDir}/${pkgname}.log)
         reason="-r ${reasontxt}"
 	reasonenv="FAIL_REASON=${reasontxt}"
     fi
@@ -507,7 +511,7 @@ else
     ${tc} updatePortStatus -d ${portdir} -b ${build} \
 		-L -s ${PORTSTATUS} -v ${pkgname} ${reason} -t ${total_size}
     mark_failed ${tc} ${build} ${pkgname} ${portdir}
-    ${tc} sendBuildErrorMail -d ${portdir} -b ${build} -p ${pkgname} -x ${lext}
+    ${tc} sendBuildErrorMail -d ${portdir} -b ${build} -p ${pkgname}
     execute_hook "postPortBuild" "PACKAGE_NAME=${pkgname} BUILD=${build} JAIL=${jail} PORTSTREE=${portstree} CHROOT=${chroot} STATUS=FAIL PORTDIR=${portdir} PB=${pb} ${reasonenv} TOTAL_SIZE=${total_size}"
 fi
 
