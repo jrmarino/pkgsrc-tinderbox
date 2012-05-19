@@ -21,6 +21,7 @@ tinderbox/scripts/contrib/hooks/mass-build-pgsql/mass-build-pgsql.sh
 tinderbox/scripts/contrib/bulk/add_all_packages.sh
 tinderbox/scripts/contrib/bulk/bulkbuild.sh
 tinderbox/scripts/contrib/bulk/bulk_hook_1.sh
+tinderbox/scripts/contrib/bulk/prune_obsolete.sh
 tinderbox/scripts/etc/env/.keep_me
 tinderbox/scripts/lib/Tinderbox/Build.pm
 tinderbox/scripts/lib/Tinderbox/BuildPortsQueue.pm

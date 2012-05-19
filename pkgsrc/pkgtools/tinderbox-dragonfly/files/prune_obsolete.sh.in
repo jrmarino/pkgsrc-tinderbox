@@ -1,0 +1,34 @@
+#!/bin/sh
+#
+# Accepts the build ($1) and then scans associated portstree.
+# If it finds an entry that doesn't have a matching port directory,
+# the entry is removed from the build database.
+
+PB=@TINROOT@
+
+exitusage()
+{
+  echo "Usage: prune_obsolete.sh <build>"
+  exit
+}
+
+buildNF()
+{
+  echo "The build '${1}' was not found in the database."
+  exit
+}
+
+[ $# -ne 1 ] && exitusage;
+
+BUILD=`${PB}/scripts/tc listBuilds | grep ^$1\$`
+[ -z "${BUILD}" ] && buildNF $1;
+
+PTREE=`${PB}/scripts/tc getPortsTreeForBuild -b ${BUILD}`
+CURPORTS=`${PB}/scripts/tc getPortsForBuild -b ${BUILD}`
+
+cd ${PB}/portstrees/${PTREE}/pkgsrc
+for CANDIDATE in ${CURPORTS}; do
+	[ ! -d ${CANDIDATE} ] && \
+	  `${PB}/scripts/tc rmPort -f -d ${CANDIDATE} -b ${BUILD}` && \
+	  echo "${CANDIDATE} Deleted."
+done

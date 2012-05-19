@@ -36,6 +36,7 @@ SUBST_CLASSES+=		paths
 SUBST_FILES.paths+=	contrib/bulk/add_all_packages.sh
 SUBST_FILES.paths+=	contrib/bulk/bulk_hook_1.sh
 SUBST_FILES.paths+=	contrib/bulk/bulkbuild.sh
+SUBST_FILES.paths+=	contrib/bulk/prune_obsolete.sh
 SUBST_SED.paths+=	-e 's,@TINROOT@,${PREFIX}/tinderbox,g'
 SUBST_STAGE.paths=	post-patch
 
