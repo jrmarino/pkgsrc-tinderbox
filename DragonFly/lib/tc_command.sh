@@ -907,6 +907,7 @@ buildJail () {
                archivers/bzip2 \
                archivers/libarchive \
                security/openssl \
+               lang/gcc47 \
                net/libfetch \
                devel/zlib \
                bootstrap \
